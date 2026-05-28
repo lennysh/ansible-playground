@@ -1,0 +1,3 @@
+# Copy to sanitize-hostname.conf and set your values (conf is gitignored).
+REAL_HOST=your-hostname.example.com
+PLACEHOLDER=lennysh-laptop

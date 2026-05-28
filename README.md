@@ -18,3 +18,27 @@ ansible-playbook playbook.yml
 ```
 
 Each demo README includes details on what to look for in the output, things to try, and — where relevant — how to adapt the pattern for use in Ansible Automation Platform (AAP).
+
+## Pre-commit
+
+This repo uses [pre-commit](https://pre-commit.com/) to scrub your real hostname from staged files before each commit. The real hostname lives in a **local, gitignored config** — not in the script.
+
+```bash
+pip install pre-commit   # if needed
+cp scripts/sanitize-hostname.conf.example scripts/sanitize-hostname.conf
+# edit sanitize-hostname.conf — set REAL_HOST to your FQDN
+pre-commit install
+```
+
+If the hook modifies files, re-stage and commit again:
+
+```bash
+git add -u
+git commit
+```
+
+Run manually against all files:
+
+```bash
+pre-commit run sanitize-hostname --all-files
+```

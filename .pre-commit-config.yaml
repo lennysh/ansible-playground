@@ -1,0 +1,10 @@
+# See https://pre-commit.com for more information
+repos:
+  - repo: local
+    hooks:
+      - id: sanitize-hostname
+        name: Replace real hostname with placeholder
+        description: Rewrites your real hostname to a placeholder in staged text files.
+        entry: scripts/sanitize-hostname.sh
+        language: script
+        types: [text]

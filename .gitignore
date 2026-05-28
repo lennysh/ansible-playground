@@ -1,1 +1,31 @@
+# Local Ansible runtime data (collections cache, lock file, etc.)
 .ansible/
+
+# Retry files from failed playbook runs
+*.retry
+
+# Vault password files — never commit secrets
+.vault_pass
+.vault_pass.*
+*.vault_pass
+.ansible_vault
+
+# Local / personal inventory overrides
+inventory/local*
+inventory/*.local
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python (if scripts grow beyond shell)
+__pycache__/
+*.py[cod]
+
+# Local pre-commit hostname scrub config (contains your real FQDN)
+scripts/sanitize-hostname.conf
