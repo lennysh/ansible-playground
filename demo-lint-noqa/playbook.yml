@@ -1,0 +1,24 @@
+---
+- name: Lint NoQA Demo
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # Fails: long line inside a block scalar — noqa cannot target lines inside | blocks
+    - name: Demo yaml[line-length] without noqa (expect FAIL)
+      ansible.builtin.debug:
+        msg: |
+          This debug message is intentionally written as one long line that exceeds the one hundred and sixty character maximum line length rule used by ansible-lint yaml[line-length] checks in this demo playbook.
+
+    # Passes: noqa must be on the SAME physical line as the violation (end of line)
+    - name: Demo yaml[line-length] with noqa on the long line (expect PASS)
+      ansible.builtin.debug:
+        msg: "This debug message is intentionally written as one long line that exceeds the one hundred and sixty character maximum line length rule used by ansible-lint yaml[line-length] checks in this demo playbook."  # noqa: yaml[line-length]
+
+    # Passes: for block scalars (| or >-), use yamllint directives — not noqa
+    - name: Demo yaml[line-length] with yamllint disable for block scalar (expect PASS)
+      ansible.builtin.debug:
+        # yamllint disable rule:line-length
+        msg: |
+          This debug message is intentionally written as one long line that exceeds the one hundred and sixty character maximum line length rule used by ansible-lint yaml[line-length] checks in this demo playbook.
+        # yamllint enable rule:line-length
+...
