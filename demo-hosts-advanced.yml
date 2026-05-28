@@ -1,0 +1,129 @@
+---
+- name: Play 1 - Register hosts in inventory (not needed in AAP)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Add fake hosts to inventory
+      ansible.builtin.add_host:
+        name: "fake-host-{{ item }}"
+        groups: demo_hosts
+        ansible_connection: local
+      loop: "{{ range(1, 11) | list }}"
+      loop_control:
+        loop_var: item
+        label: "Dynamically adding fake-host-{{ item }}"
+
+- name: Play 2 - Set host_limit (simulating an AAP Survey response)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # Change this key to exercise a different input scenario in Play 3
+    host_limit_scenario: messy_all
+
+    host_limit_scenarios:
+      csv:
+        description: Comma-separated list with domain suffix and mixed case
+        input: "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6,fake-host-7.domain.com,FAKE-HOST-8,Fake-Host-9,fake-host-10"
+      multiline:
+        description: One host per line (multiline survey field)
+        input: |
+          fake-host-1
+          fake-host-2
+          fake-host-3
+          fake-host-4
+          fake-host-5
+          fake-host-6
+          fake-host-7.domain.com
+          FAKE-HOST-8
+          Fake-Host-9
+          fake-host-10
+      whitespace:
+        description: Tabs, spaces, and newlines used as separators
+        input: "fake-host-1\tfake-host-2 fake-host-3\nfake-host-4 fake-host-5 fake-host-6"
+      duplicate_commas:
+        description: Duplicate commas between hostnames
+        input: "fake-host-1,,fake-host-2,,,fake-host-3,,fake-host-4,,,fake-host-5"
+      leading_trailing:
+        description: Leading/trailing commas and surrounding whitespace
+        input: "  , fake-host-1 , fake-host-2 , fake-host-3 , fake-host-4 ,  "
+      empty_lines:
+        description: Blank lines mixed into multiline input
+        input: |
+          fake-host-1
+
+          fake-host-2
+
+
+          fake-host-3
+
+          fake-host-4
+      domains_and_case:
+        description: Domain suffix stripping and lowercasing
+        input: "FAKE-HOST-7.domain.com, FAKE-HOST-8, Fake-Host-9"
+      messy_all:
+        description: Combined messy survey input exercising all filters
+        input: |
+          , FAKE-HOST-1.domain.com,,
+          	fake-host-2	FAKE-HOST-3.domain.com
+
+          ,,fake-host-4 ,,
+
+          fake-host-5,,fake-host-6
+           FAKE-HOST-7.domain.com ,, Fake-Host-8
+          ,fake-host-9,,fake-host-10 ,
+  tasks:
+    - name: Preview all host_limit filter scenarios
+      ansible.builtin.debug:
+        msg:
+          scenario: "{{ item.key }} — {{ item.value.description }}"
+          raw: "{{ item.value.input }}"
+          normalized: >-
+            {{
+              item.value.input | default('')
+              | regex_replace('[ \t,\r\n]+', ',')
+              | regex_replace(',+', ',')
+              | regex_replace('.domain.com', '')
+              | regex_replace('^,|,$', '')
+              | lower
+            }}
+      loop: "{{ host_limit_scenarios | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Set host_limit
+      ansible.builtin.set_fact:
+        host_limit: "{{ host_limit_scenarios[host_limit_scenario].input }}"
+      delegate_to: localhost
+      delegate_facts: true
+
+    - name: Debug active scenario
+      ansible.builtin.debug:
+        msg:
+          scenario: "{{ host_limit_scenario }} — {{ host_limit_scenarios[host_limit_scenario].description }}"
+          raw: "{{ hostvars['localhost']['host_limit'] }}"
+
+- name: Advanced Hosts Var Demo
+  hosts: "{{ host_limit }}"
+  gather_facts: false
+  vars:
+    host_limit: >-
+      {{
+        hostvars['localhost']['host_limit'] | default('')
+        | regex_replace('[ \t,\r\n]+', ',')
+        | regex_replace(',+', ',')
+        | regex_replace('.domain.com', '')
+        | regex_replace('^,|,$', '')
+        | lower
+      }}
+  tasks:
+    - name: Debug host_limit
+      ansible.builtin.debug:
+        msg: "Hosts: {{ host_limit }}"
+      run_once: true
+
+    - name: Debug Host
+      ansible.builtin.debug:
+        msg: "Hosts: {{ inventory_hostname }}"
+...
