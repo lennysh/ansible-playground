@@ -90,10 +90,9 @@ Re-enable the rule after the block so later tasks are still checked.
 
 ## How to run
 
-Use the **ansible-2.18** virtualenv (ansible-core 2.18 + ansible-lint). The system Python 3.14 / ansible-lint install may fail with a version mismatch.
+Requires [ansible-lint](https://ansible.readthedocs.io/projects/lint/) and ansible-core installed.
 
 ```bash
-source ~/.virtualenvs/ansible-2.18/bin/activate
 cd demo-lint-noqa
 ansible-lint playbook.yml
 ```
@@ -105,8 +104,6 @@ The playbook itself is valid and can be executed:
 ```bash
 ansible-playbook playbook.yml
 ```
-
-Deactivate when done: `deactivate`
 
 ## Sample output
 
