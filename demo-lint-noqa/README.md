@@ -31,16 +31,35 @@ The playbook has three tasks on `localhost`:
 
 3. **Task 3** — Same block scalar as task 1, but wrapped with **yamllint** disable/enable comments before and after `msg:`. This is the reliable approach when you need multiline `|` or folded `>-` blocks and cannot put noqa on the long line itself.
 
-## `# noqa` vs task-based rules
+## `# noqa` placement depends on the rule type
 
-ansible-lint supports two kinds of suppressions:
+ansible-lint rules fall into two categories, and **the same `# noqa` comment does not work everywhere**:
 
-- **Task-based rules** — `# noqa` on the task `name:` line (or module parameters) can skip rules for the whole task.
-- **Line-based rules** — `# noqa` must appear at the **end of the exact line** that triggers the violation.
+| Rule type | Where to put `# noqa` | Example rules |
+|-----------|----------------------|---------------|
+| **Task-based** | Task `name:` line or a module parameter line | `package-latest`, `no-changed-when`, `fqcn[action]` |
+| **Line-based** | End of the **exact physical line** that triggers the violation | `yaml[line-length]`, `jinja[spacing]` |
 
-`yaml[line-length]` is **line-based**. Placing `# noqa: yaml[line-length]` on the task name does **not** suppress a long line inside `msg:`.
+`yaml[line-length]` is **line-based**. Putting `# noqa: yaml[line-length]` on the task `name:` does **not** suppress a long line elsewhere in the task — the noqa only applies to the line it is on.
 
-### Correct: noqa on the long line
+```yaml
+# Does NOT skip the long msg line — noqa is on the name line only
+- name: Long msg demo  # noqa: yaml[line-length]
+  ansible.builtin.debug:
+    msg: "..."
+```
+
+For task-based rules, noqa on the task line **does** suppress the whole task:
+
+```yaml
+# Skips package-latest for this task (task-based rule)
+- name: Upgrade packages  # noqa: package-latest
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+```
+
+### Correct: noqa on the long line (line-based rule)
 
 ```yaml
 - name: Demo yaml[line-length] with noqa on the long line (expect PASS)
@@ -48,10 +67,10 @@ ansible-lint supports two kinds of suppressions:
     msg: "This debug message is intentionally written as one long line..."  # noqa: yaml[line-length]
 ```
 
-### Incorrect placements (do not work for block content)
+### Incorrect placements for `yaml[line-length]`
 
 ```yaml
-# On task name — only covers the name line, not line 10 inside msg:
+# On task name — noqa only covers that line; does not reach msg: content
 - name: Long msg demo  # noqa: yaml[line-length]
 
 # After the block — not on the violating line:
