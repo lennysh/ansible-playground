@@ -19,6 +19,8 @@ This playbook is structured so it runs standalone from the command line, but **o
 
 ### Adapting Step 2 for AAP
 
+A ready-to-use version is in [`playbook-aap.yml`](playbook-aap.yml).
+
 In the CLI demo, Step 1 creates `demo_hosts` with `ansible_connection: local` so no remote targets are required. In AAP:
 
 - Remove Step 1 entirely

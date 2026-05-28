@@ -18,6 +18,8 @@ The playbook runs entirely on `localhost` with hardcoded play `vars` so it works
 
 ### Adapting for AAP
 
+A ready-to-use version is in [`playbook-aap.yml`](playbook-aap.yml). Optional Survey questions: **`enforce_msdtc`** (boolean) and **`optional_flag`** (string, default `"false"`).
+
 Remove the play-level `vars` block and let variables come from their real sources:
 
 ```yaml

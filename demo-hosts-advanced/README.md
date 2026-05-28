@@ -29,6 +29,8 @@ This playbook is structured so it runs standalone from the command line, but **o
 
 ### Adapting Play 3 for AAP
 
+A ready-to-use version is in [`playbook-aap.yml`](playbook-aap.yml). It expects a Survey question named **`host_limit`** (multiline text).
+
 In the CLI demo, Play 2 stores the raw survey value as a fact on `localhost`, so Play 3 reads it back via `hostvars`:
 
 ```yaml

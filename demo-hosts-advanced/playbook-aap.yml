@@ -1,0 +1,27 @@
+---
+# AAP version — requires a job template Survey question named "host_limit"
+# (multiline text). Raw survey input is normalized and used as the play target.
+- name: Advanced Hosts Var Demo
+  hosts: "{{ host_limit_normalized }}"
+  gather_facts: false
+  vars:
+    host_limit_normalized: >-
+      {{
+        host_limit | default('')
+        | regex_replace('[ \t,\r\n]+', ',')
+        | regex_replace(',+', ',')
+        | regex_replace('.domain.com', '')
+        | regex_replace('^,|,$', '')
+        | lower
+      }}
+  tasks:
+    - name: Debug host_limit
+      ansible.builtin.debug:
+        msg: "Hosts: {{ host_limit_normalized }}"
+      run_once: true
+
+    - name: Debug Host
+      ansible.builtin.debug:
+        msg: "Hosts: {{ inventory_hostname }}"
+
+...
