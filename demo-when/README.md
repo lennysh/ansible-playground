@@ -4,12 +4,47 @@ A collection of **`when:` patterns** — from straightforward version checks to 
 
 Each task name includes the expected outcome (`RUN` or `SKIP`) so you can compare against actual playbook output.
 
+## CLI demo vs. AAP usage
+
+The playbook runs entirely on `localhost` with hardcoded play `vars` so it works without real targets or fact gathering. **The `when:` patterns themselves are what you'd use in AAP** — only the variable sources change.
+
+| CLI demo scaffolding | In AAP |
+|----------------------|--------|
+| `hosts: localhost` | Target your inventory hosts so conditions evaluate per-host |
+| `gather_facts: false` | Enable fact gathering (or use the `setup` module) |
+| `ansible_distribution_version: 10.0.20348` hardcoded in `vars` | Comes from gathered facts on each host (`ansible_distribution_version`) |
+| `enforce_msdtc: false` hardcoded in `vars` | Comes from a **Survey question** or job template extra variable |
+| `optional_flag: "false"` hardcoded in `vars` | Comes from a **Survey question** — survey answers are always strings |
+
+### Adapting for AAP
+
+Remove the play-level `vars` block and let variables come from their real sources:
+
+```yaml
+- name: WHEN Statement Testing
+  hosts: all          # your inventory group
+  gather_facts: true  # provides ansible_distribution_version per host
+  tasks:
+    - name: "Example 2 — version OR enforce flag (expect: RUN or SKIP per host)"
+      ansible.builtin.debug:
+        msg: "Version threshold met OR enforce_msdtc enabled"
+      when: >
+        (ansible_distribution_version is version('10.0.20348', '>=')) or
+        (enforce_msdtc | default(false) | bool)
+```
+
+- `enforce_msdtc` — define as a Survey question on the job template (remember to pipe through `| bool`)
+- `optional_flag` — if used, also comes from a Survey question; the string `"false"` pitfall (Examples 4 & 5) is especially relevant here
+- `ansible_distribution_version` — no survey needed; remove the hardcoded override and gather facts instead
+
+The nine example tasks and their `when:` expressions transfer as-is — nothing needs a `hostvars` lookup or `set_fact` workaround.
+
 ## Playbook variables
 
 ```yaml
-ansible_distribution_version: 10.0.20348   # meets the version threshold
-enforce_msdtc: false                       # boolean false
-optional_flag: "false"                     # string "false" — not the same thing
+ansible_distribution_version: 10.0.20348   # simulates a gathered fact (CLI only)
+enforce_msdtc: false                       # simulates a survey/extra var (CLI only)
+optional_flag: "false"                     # simulates a survey answer string (CLI only)
 ```
 
 ## Examples at a glance

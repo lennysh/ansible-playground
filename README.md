@@ -17,4 +17,4 @@ cd demo-<name>
 ansible-playbook playbook.yml
 ```
 
-Each demo README includes details on what to look for in the output and things to try.
+Each demo README includes details on what to look for in the output, things to try, and — where relevant — how to adapt the pattern for use in Ansible Automation Platform (AAP).

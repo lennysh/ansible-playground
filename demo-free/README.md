@@ -8,11 +8,37 @@ With the default `linear` strategy, Ansible runs each task across **all** hosts 
 
 With `strategy: free`, each host runs **independently**. A host that finishes a task immediately proceeds to the next one without waiting for the rest of the group. In the output you will see debug messages from different hosts interleaved and out of order, reflecting their individual progress through the task list.
 
+## CLI demo vs. AAP usage
+
+This playbook is structured so it runs standalone from the command line, but **only Step 2 is what you would carry into AAP**. Step 1 exists purely to simulate conditions that AAP already provides.
+
+| Step | CLI demo purpose | In AAP |
+|------|------------------|--------|
+| **Step 1** | Dynamically registers 10 fake local hosts with `add_host` | **Not needed** — hosts come from the job template's attached inventory |
+| **Step 2** | Runs tasks with `strategy: free` against the fake group | **This is the real pattern** — set `strategy: free` on the play and target your inventory group |
+
+### Adapting Step 2 for AAP
+
+In the CLI demo, Step 1 creates `demo_hosts` with `ansible_connection: local` so no remote targets are required. In AAP:
+
+- Remove Step 1 entirely
+- Change `hosts: demo_hosts` to your inventory group (or rely on the job template's **Limit** field)
+- Keep `strategy: free` on the play — AAP honours play-level strategy the same way `ansible-playbook` does
+- Replace the `sleep`/`debug` tasks with your real workload; the sleeps only exist to make interleaved output visible
+
+```yaml
+- name: Production work with free strategy
+  hosts: all   # or your inventory group
+  strategy: free
+  tasks:
+    # your real tasks here
+```
+
 ## How it works
 
 The playbook has two plays:
 
-1. **Step 1** — Dynamically creates 10 fake local hosts (`fake-host-1` through `fake-host-10`) using `add_host` and adds them to the `demo_hosts` group. No real remote targets are needed.
+1. **Step 1** — Dynamically creates 10 fake local hosts (`fake-host-1` through `fake-host-10`) using `add_host` and adds them to the `demo_hosts` group. Standalone CLI scaffolding only.
 
 2. **Step 2** — Targets `demo_hosts` with `strategy: free`. Each host runs 10 pairs of tasks:
    - A `sleep` with a random duration (0.1–0.9 seconds) to simulate variable host speed

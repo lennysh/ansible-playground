@@ -17,18 +17,61 @@ input | default('')
 | lower                               # lowercase for inventory matching
 ```
 
+## CLI demo vs. AAP usage
+
+This playbook is structured so it runs standalone from the command line, but **only Play 3 is what you would carry into AAP**. Plays 1 and 2 exist purely to simulate conditions that AAP already provides.
+
+| Play | CLI demo purpose | In AAP |
+|------|------------------|--------|
+| **Play 1** | Dynamically registers fake hosts with `add_host` | **Not needed** — hosts come from the job template's attached inventory |
+| **Play 2** | Simulates survey input via `set_fact` and previews filter scenarios | **Not needed** — a Survey question on the job template provides the variable directly |
+| **Play 3** | Normalizes input and targets `hosts:` dynamically | **This is the real pattern** — apply the filter pipeline to the survey variable |
+
+### Adapting Play 3 for AAP
+
+In the CLI demo, Play 2 stores the raw survey value as a fact on `localhost`, so Play 3 reads it back via `hostvars`:
+
+```yaml
+hostvars['localhost']['host_limit'] | default('')
+```
+
+In AAP, the survey answer is already available as a job extra variable — there is no `set_fact` step and no need to reach into `hostvars`. Replace the `hostvars` lookup with your survey variable name (shown here as `host_limit`, matching the survey question):
+
+```yaml
+- name: Advanced Hosts Var Demo
+  hosts: "{{ host_limit_normalized }}"
+  gather_facts: false
+  vars:
+    host_limit_normalized: >-
+      {{
+        host_limit | default('')
+        | regex_replace('[ \t,\r\n]+', ',')
+        | regex_replace(',+', ',')
+        | regex_replace('.domain.com', '')
+        | regex_replace('^,|,$', '')
+        | lower
+      }}
+  tasks:
+    # ...
+```
+
+- `host_limit` — raw, messy value from the survey question (replaces `hostvars['localhost']['host_limit']`)
+- `host_limit_normalized` — filtered result used in `hosts:`
+
+The filter pipeline stays the same; only the **source** of the raw input changes.
+
 ## How it works
 
 The playbook has three plays:
 
-1. **Play 1** — Dynamically registers 10 fake local hosts (`fake-host-1` … `fake-host-10`) into the `demo_hosts` group. This step is only needed for standalone CLI runs; in AAP the hosts already exist in inventory.
+1. **Play 1** — Dynamically registers 10 fake local hosts (`fake-host-1` … `fake-host-10`) into the `demo_hosts` group. Standalone CLI scaffolding only.
 
 2. **Play 2** — Simulates an AAP survey response:
    - Defines `host_limit_scenarios` — a dictionary of realistic messy inputs with descriptions
    - Previews every scenario, showing raw input vs. normalized output
-   - Sets `host_limit` from the active scenario (controlled by `host_limit_scenario`, default `messy_all`)
+   - Sets `host_limit` via `set_fact` on `localhost` (mimics what a survey variable would provide)
 
-3. **Play 3** — Uses the normalized `host_limit` as the play's `hosts:` target and prints each matched host's `inventory_hostname`.
+3. **Play 3** — The pattern that matters: normalizes the raw host list and uses it as the play's `hosts:` target, then prints each matched host's `inventory_hostname`.
 
 ## Things to try
 
