@@ -1,0 +1,21 @@
+---
+- name: WHEN Statement Testing
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_distribution_version: 10.0.20348
+    enforce_msdtc: false
+  tasks:
+    - name: Debug Variable
+      ansible.builtin.debug:
+        msg: "WHEN evaluates to TRUE"
+      # when: >
+      #   (ansible_distribution_version is version('10.0.20348', '>=')) or
+      #   (enforce_msdtc | default(false) | bool)
+      when: |
+        (enforce_msdtc | default(false) | bool) or
+        (
+          (enforce_msdtc | default(true) | bool) and
+          (ansible_distribution_version is version('10.0.20348', '>='))
+        )
+...

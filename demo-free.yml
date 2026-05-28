@@ -1,0 +1,126 @@
+---
+- name: Step 1 - Dynamically Create 10 Fake Hosts
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Add 10 fake local hosts to memory
+      ansible.builtin.add_host:
+        name: "fake-host-{{ item }}"
+        groups: demo_hosts
+        ansible_connection: local
+      loop: "{{ range(1, 11) | list }}"
+
+- name: Step 2 - Demonstrate Strategy Free
+  hosts: demo_hosts
+  gather_facts: false
+  strategy: free  # <--- This forces hosts to run independently
+  tasks:
+    # ----------------------------------------------------
+    # TASK 1
+    # ----------------------------------------------------
+    - name: "Task 1: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 1"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 1"
+
+    # ----------------------------------------------------
+    # TASK 2
+    # ----------------------------------------------------
+    - name: "Task 2: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 2"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 2"
+
+    # ----------------------------------------------------
+    # TASK 3
+    # ----------------------------------------------------
+    - name: "Task 3: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 3"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 3"
+
+    # ----------------------------------------------------
+    # TASK 4
+    # ----------------------------------------------------
+    - name: "Task 4: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 4"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 4"
+
+    # ----------------------------------------------------
+    # TASK 5
+    # ----------------------------------------------------
+    - name: "Task 5: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 5"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 5"
+
+    # ----------------------------------------------------
+    # TASK 6
+    # ----------------------------------------------------
+    - name: "Task 6: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 6"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 6"
+
+    # ----------------------------------------------------
+    # TASK 7
+    # ----------------------------------------------------
+    - name: "Task 7: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 7"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 7"
+
+    # ----------------------------------------------------
+    # TASK 8
+    # ----------------------------------------------------
+    - name: "Task 8: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 8"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 8"
+
+    # ----------------------------------------------------
+    # TASK 9
+    # ----------------------------------------------------
+    - name: "Task 9: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 9"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 9"
+
+    # ----------------------------------------------------
+    # TASK 10
+    # ----------------------------------------------------
+    - name: "Task 10: Sleep"
+      ansible.builtin.command: "sleep {{ (range(1, 10) | random) * 0.1 }}"
+      changed_when: false
+
+    - name: "Debug 10"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} completed Task 10"
