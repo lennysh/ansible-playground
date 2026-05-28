@@ -2,9 +2,11 @@
 repos:
   - repo: local
     hooks:
-      - id: sanitize-hostname
-        name: Replace real hostname with placeholder
-        description: Rewrites your real hostname to a placeholder in staged text files.
-        entry: scripts/sanitize-hostname.sh
+      - id: sanitize-strings
+        name: Scrub sensitive strings before commit
+        description: >-
+          Rewrites configured old:new string pairs in staged text files
+          (see scripts/sanitize-strings.conf.example).
+        entry: scripts/sanitize-strings.sh
         language: script
         types: [text]

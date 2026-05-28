@@ -1,0 +1,11 @@
+# Copy to sanitize-strings.conf and add one replacement per line (conf is gitignored).
+#
+# Format:  oldstring:newstring
+# Split on the FIRST colon only — newstring may contain colons.
+#
+# Examples:
+#   your-hostname.example.com:lennysh-laptop
+#   10.0.0.50:192.0.2.1
+#   your.email@company.com:user@example.com
+
+your-hostname.example.com:lennysh-laptop

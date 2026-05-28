@@ -21,13 +21,20 @@ Each demo README includes details on what to look for in the output, things to t
 
 ## Pre-commit
 
-This repo uses [pre-commit](https://pre-commit.com/) to scrub your real hostname from staged files before each commit. The real hostname lives in a **local, gitignored config** — not in the script.
+This repo uses [pre-commit](https://pre-commit.com/) to scrub sensitive strings from staged files before each commit. Replacements live in a **local, gitignored config** — not in the script.
 
 ```bash
 pip install pre-commit   # if needed
-cp scripts/sanitize-hostname.conf.example scripts/sanitize-hostname.conf
-# edit sanitize-hostname.conf — set REAL_HOST to your FQDN
+cp scripts/sanitize-strings.conf.example scripts/sanitize-strings.conf
+# edit sanitize-strings.conf — one old:new pair per line
 pre-commit install
+```
+
+Config format (`oldstring:newstring`, split on the first colon):
+
+```text
+your-hostname.example.com:lennysh-laptop
+10.0.0.50:192.0.2.1
 ```
 
 If the hook modifies files, re-stage and commit again:
@@ -40,5 +47,5 @@ git commit
 Run manually against all files:
 
 ```bash
-pre-commit run sanitize-hostname --all-files
+pre-commit run sanitize-strings --all-files
 ```

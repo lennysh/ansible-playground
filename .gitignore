@@ -27,5 +27,5 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 
-# Local pre-commit hostname scrub config (contains your real FQDN)
-scripts/sanitize-hostname.conf
+# Local pre-commit string scrub config (may contain hostnames, IPs, etc.)
+scripts/sanitize-strings.conf
