@@ -13,7 +13,7 @@
 - name: Step 2 - Demonstrate Strategy Free
   hosts: demo_hosts
   gather_facts: false
-  strategy: free  # <--- This forces hosts to run independently
+  strategy: free  # noqa: run-once[play]  # hosts run independently (demo of free strategy)
   tasks:
     # ----------------------------------------------------
     # TASK 1
@@ -124,3 +124,5 @@
     - name: "Debug 10"
       ansible.builtin.debug:
         msg: "Host {{ inventory_hostname }} completed Task 10"
+
+...
