@@ -121,5 +121,45 @@ Expected PLAY RECAP: `ok=5`, `skipped=4`.
 <!-- Paste raw `ansible-playbook playbook.yml` output below -->
 
 ```text
+PLAY [WHEN Statement Testing] *****************************************************************************************************************************************************************************************
 
+TASK [Example 1 — version check (expect: RUN)] ************************************************************************************************************************************************************************
+ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+    "msg": "Version 10.0.20348 meets threshold"
+}
+
+TASK [Example 2 — version OR enforce flag, consistent defaults (expect: RUN)] *****************************************************************************************************************************************
+ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+    "msg": "Version threshold met OR enforce_msdtc enabled"
+}
+
+TASK [Example 3 — inconsistent defaults on enforce_msdtc (expect: SKIP)] **********************************************************************************************************************************************
+skipping: [lshirley-thinkpadp1gen7.rmtusga.csb]
+
+TASK [Example 4 — bare string variable (expect: RUN — trap!)] *********************************************************************************************************************************************************
+ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+    "msg": "optional_flag is the string \"false\", which Jinja2 treats as truthy because it is a non-empty string"
+}
+
+TASK [Example 5 — string coerced with bool filter (expect: SKIP)] *****************************************************************************************************************************************************
+skipping: [lshirley-thinkpadp1gen7.rmtusga.csb]
+
+TASK [Example 6 — variable is defined (expect: RUN)] ******************************************************************************************************************************************************************
+ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+    "msg": "enforce_msdtc is defined (value: False)"
+}
+
+TASK [Example 7 — missing variable with default fallback (expect: SKIP)] **********************************************************************************************************************************************
+skipping: [lshirley-thinkpadp1gen7.rmtusga.csb]
+
+TASK [Example 8 — AND requires both clauses true (expect: SKIP)] ******************************************************************************************************************************************************
+skipping: [lshirley-thinkpadp1gen7.rmtusga.csb]
+
+TASK [Example 9 — AND with OR grouped correctly (expect: RUN)] ********************************************************************************************************************************************************
+ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+    "msg": "Version threshold met; enforce_msdtc state does not matter here"
+}
+
+PLAY RECAP ************************************************************************************************************************************************************************************************************
+lshirley-thinkpadp1gen7.rmtusga.csb : ok=5    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0
 ```
