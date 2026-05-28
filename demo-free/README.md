@@ -62,16 +62,16 @@ Compare against default behavior by temporarily removing (or commenting out) `st
 PLAY [Step 1 - Dynamically Create 10 Fake Hosts] **********************************************************************************************************************************************************************
 
 TASK [Add 10 fake local hosts to memory] ******************************************************************************************************************************************************************************
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=1)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=2)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=3)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=4)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=5)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=6)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=7)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=8)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=9)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=10)
+changed: [lennysh-laptop] => (item=1)
+changed: [lennysh-laptop] => (item=2)
+changed: [lennysh-laptop] => (item=3)
+changed: [lennysh-laptop] => (item=4)
+changed: [lennysh-laptop] => (item=5)
+changed: [lennysh-laptop] => (item=6)
+changed: [lennysh-laptop] => (item=7)
+changed: [lennysh-laptop] => (item=8)
+changed: [lennysh-laptop] => (item=9)
+changed: [lennysh-laptop] => (item=10)
 
 PLAY [Step 2 - Demonstrate Strategy Free] *****************************************************************************************************************************************************************************
 
@@ -834,5 +834,5 @@ fake-host-6                : ok=20   changed=0    unreachable=0    failed=0    s
 fake-host-7                : ok=20   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 fake-host-8                : ok=20   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 fake-host-9                : ok=20   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-lshirley-thinkpadp1gen7.rmtusga.csb : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+lennysh-laptop : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```

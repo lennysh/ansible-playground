@@ -102,70 +102,70 @@ ansible-playbook playbook.yml
 PLAY [Play 1 - Register hosts in inventory (not needed in AAP)] *******************************************************************************************************************************************************
 
 TASK [Add fake hosts to inventory] ************************************************************************************************************************************************************************************
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-1)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-2)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-3)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-4)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-5)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-6)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-7)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-8)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-9)
-changed: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=Dynamically adding fake-host-10)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-1)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-2)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-3)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-4)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-5)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-6)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-7)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-8)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-9)
+changed: [lennysh-laptop] => (item=Dynamically adding fake-host-10)
 
 PLAY [Play 2 - Set host_limit (simulating an AAP Survey response)] ****************************************************************************************************************************************************
 
 TASK [Preview all host_limit filter scenarios] ************************************************************************************************************************************************************************
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=csv) => {
+ok: [lennysh-laptop] => (item=csv) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6,fake-host-7,fake-host-8,fake-host-9,fake-host-10",
         "raw": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6,fake-host-7.domain.com,FAKE-HOST-8,Fake-Host-9,fake-host-10",
         "scenario": "csv — Comma-separated list with domain suffix and mixed case"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=multiline) => {
+ok: [lennysh-laptop] => (item=multiline) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6,fake-host-7,fake-host-8,fake-host-9,fake-host-10",
         "raw": "fake-host-1\nfake-host-2\nfake-host-3\nfake-host-4\nfake-host-5\nfake-host-6\nfake-host-7.domain.com\nFAKE-HOST-8\nFake-Host-9\nfake-host-10\n",
         "scenario": "multiline — One host per line (multiline survey field)"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=whitespace) => {
+ok: [lennysh-laptop] => (item=whitespace) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6",
         "raw": "fake-host-1\tfake-host-2 fake-host-3\nfake-host-4 fake-host-5 fake-host-6",
         "scenario": "whitespace — Tabs, spaces, and newlines used as separators"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=duplicate_commas) => {
+ok: [lennysh-laptop] => (item=duplicate_commas) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5",
         "raw": "fake-host-1,,fake-host-2,,,fake-host-3,,fake-host-4,,,fake-host-5",
         "scenario": "duplicate_commas — Duplicate commas between hostnames"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=leading_trailing) => {
+ok: [lennysh-laptop] => (item=leading_trailing) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4",
         "raw": "  , fake-host-1 , fake-host-2 , fake-host-3 , fake-host-4 ,  ",
         "scenario": "leading_trailing — Leading/trailing commas and surrounding whitespace"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=empty_lines) => {
+ok: [lennysh-laptop] => (item=empty_lines) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4",
         "raw": "fake-host-1\n\nfake-host-2\n\n\nfake-host-3\n\nfake-host-4\n",
         "scenario": "empty_lines — Blank lines mixed into multiline input"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=domains_and_case) => {
+ok: [lennysh-laptop] => (item=domains_and_case) => {
     "msg": {
         "normalized": "fake-host-7,fake-host-8,fake-host-9",
         "raw": "FAKE-HOST-7.domain.com, FAKE-HOST-8, Fake-Host-9",
         "scenario": "domains_and_case — Domain suffix stripping and lowercasing"
     }
 }
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=messy_all) => {
+ok: [lennysh-laptop] => (item=messy_all) => {
     "msg": {
         "normalized": "fake-host-1,fake-host-2,fake-host-3,fake-host-4,fake-host-5,fake-host-6,fake-host-7,fake-host-8,fake-host-9,fake-host-10",
         "raw": ", FAKE-HOST-1.domain.com,,\n\tfake-host-2\tFAKE-HOST-3.domain.com\n\n,,fake-host-4 ,,\n\nfake-host-5,,fake-host-6\n FAKE-HOST-7.domain.com ,, Fake-Host-8\n,fake-host-9,,fake-host-10 ,\n",
@@ -174,10 +174,10 @@ ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => (item=messy_all) => {
 }
 
 TASK [Set host_limit] *************************************************************************************************************************************************************************************************
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb -> localhost]
+ok: [lennysh-laptop -> localhost]
 
 TASK [Debug active scenario] ******************************************************************************************************************************************************************************************
-ok: [lshirley-thinkpadp1gen7.rmtusga.csb] => {
+ok: [lennysh-laptop] => {
     "msg": {
         "raw": ", FAKE-HOST-1.domain.com,,\n\tfake-host-2\tFAKE-HOST-3.domain.com\n\n,,fake-host-4 ,,\n\nfake-host-5,,fake-host-6\n FAKE-HOST-7.domain.com ,, Fake-Host-8\n,fake-host-9,,fake-host-10 ,\n",
         "scenario": "messy_all — Combined messy survey input exercising all filters"
@@ -234,5 +234,5 @@ fake-host-6                : ok=1    changed=0    unreachable=0    failed=0    s
 fake-host-7                : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 fake-host-8                : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 fake-host-9                : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
-lshirley-thinkpadp1gen7.rmtusga.csb : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0 
+lennysh-laptop : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
