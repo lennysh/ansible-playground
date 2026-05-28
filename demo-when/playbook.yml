@@ -1,0 +1,86 @@
+---
+- name: WHEN Statement Testing
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_distribution_version: 10.0.20348
+    enforce_msdtc: false
+    optional_flag: "false"  # string, not boolean — a common survey/extra-var pitfall
+  tasks:
+    # ------------------------------------------------------------------
+    # Example 1 — straightforward version comparison
+    # ------------------------------------------------------------------
+    - name: "Example 1 — version check (expect: RUN)"
+      ansible.builtin.debug:
+        msg: "Version {{ ansible_distribution_version }} meets threshold"
+      when: ansible_distribution_version is version('10.0.20348', '>=')
+
+    # ------------------------------------------------------------------
+    # Example 2 — correct OR logic (the intended pattern)
+    # ------------------------------------------------------------------
+    - name: "Example 2 — version OR enforce flag, consistent defaults (expect: RUN)"
+      ansible.builtin.debug:
+        msg: "Version threshold met OR enforce_msdtc enabled"
+      when: >
+        (ansible_distribution_version is version('10.0.20348', '>=')) or
+        (enforce_msdtc | default(false) | bool)
+
+    # ------------------------------------------------------------------
+    # Example 3 — inconsistent default() on the same variable (bug)
+    # ------------------------------------------------------------------
+    - name: "Example 3 — inconsistent defaults on enforce_msdtc (expect: SKIP)"
+      ansible.builtin.debug:
+        msg: "This looks like it should run — but it does not"
+      when: |
+        (enforce_msdtc | default(false) | bool) or
+        (
+          (enforce_msdtc | default(true) | bool) and
+          (ansible_distribution_version is version('10.0.20348', '>='))
+        )
+
+    # ------------------------------------------------------------------
+    # Example 4 — Jinja2 truthiness: non-empty strings are truthy
+    # ------------------------------------------------------------------
+    - name: "Example 4 — bare string variable (expect: RUN — trap!)"
+      ansible.builtin.debug:
+        msg: >-
+          optional_flag is the string "false", which Jinja2 treats as truthy
+          because it is a non-empty string
+      when: optional_flag
+
+    - name: "Example 5 — string coerced with bool filter (expect: SKIP)"
+      ansible.builtin.debug:
+        msg: "optional_flag | bool correctly evaluates the string as false"
+      when: optional_flag | bool
+
+    # ------------------------------------------------------------------
+    # Example 6 — defined vs missing variables
+    # ------------------------------------------------------------------
+    - name: "Example 6 — variable is defined (expect: RUN)"
+      ansible.builtin.debug:
+        msg: "enforce_msdtc is defined (value: {{ enforce_msdtc }})"
+      when: enforce_msdtc is defined
+
+    - name: "Example 7 — missing variable with default fallback (expect: SKIP)"
+      ansible.builtin.debug:
+        msg: "unset_var is not defined; default(false) prevents an error"
+      when: unset_var | default(false) | bool
+
+    # ------------------------------------------------------------------
+    # Example 8 — combining conditions with parentheses
+    # ------------------------------------------------------------------
+    - name: "Example 8 — AND requires both clauses true (expect: SKIP)"
+      ansible.builtin.debug:
+        msg: "Both enforce_msdtc AND version threshold must be true"
+      when: >
+        (enforce_msdtc | bool) and
+        (ansible_distribution_version is version('10.0.20348', '>='))
+
+    - name: "Example 9 — AND with OR grouped correctly (expect: RUN)"
+      ansible.builtin.debug:
+        msg: "Version threshold met; enforce_msdtc state does not matter here"
+      when: >
+        (enforce_msdtc | bool) or
+        (ansible_distribution_version is version('10.0.20348', '>='))
+
+...
