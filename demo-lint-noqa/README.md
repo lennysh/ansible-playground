@@ -110,15 +110,16 @@ Deactivate when done: `deactivate`
 
 ## Sample output
 
-```text
+```shell
 WARNING  Listing 1 violation(s) that are fatal
+yaml[line-length]: Line too long (213 > 160 characters)
+playbook.yml:10
+
 Read documentation for instructions on how to ignore specific rule violations.
 
 # Rule Violation Summary
 
   1 yaml profile:basic tags:formatting,yaml
 
-Failed: 1 failure(s), 0 warning(s) on 1 files. Last profile that met the validation criteria was 'min'.
-yaml[line-length]: Line too long (213 > 160 characters)
-playbook.yml:10
+Failed: 1 failure(s), 0 warning(s) on 2 files. Last profile that met the validation criteria was 'min'.
 ```
