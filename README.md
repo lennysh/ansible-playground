@@ -6,7 +6,7 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 
 | Demo | Topic |
 |------|-------|
-| [demo-free](demo-free/README.md) | [`strategy: free`](demo-free/README.md) — how the free execution strategy lets hosts run tasks independently instead of waiting at task barriers |
+| [demo-strategy-free](demo-strategy-free/README.md) | [`strategy: free`](demo-strategy-free/README.md) — how the free execution strategy lets hosts run tasks independently instead of waiting at task barriers |
 | [demo-hosts-advanced](demo-hosts-advanced/README.md) | [Normalizing messy host limit input](demo-hosts-advanced/README.md) — parsing AAP survey-style host lists into a clean dynamic `hosts:` target |
 | [demo-when](demo-when/README.md) | [`when:` condition examples and pitfalls](demo-when/README.md) — version checks, boolean coercion, `default()` bugs, and AND/OR grouping |
 | [demo-lint-noqa](demo-lint-noqa/README.md) | [Suppressing `yaml[line-length]`](demo-lint-noqa/README.md) — `# noqa` vs yamllint for long lines |

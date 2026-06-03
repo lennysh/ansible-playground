@@ -1,4 +1,4 @@
-# demo-free — `strategy: free`
+# demo-strategy-free — `strategy: free`
 
 Demonstrates how Ansible's **`free` execution strategy** behaves compared to the default **`linear`** strategy.
 
