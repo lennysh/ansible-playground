@@ -1,0 +1,8 @@
+---
+# Inventory sources merged in list order (top = lowest precedence).
+# Later entries override conflicting variables from earlier entries.
+plugin: merge_inventory
+sources:
+  - sources/01-base.ini
+  - sources/02-overrides.yaml
+  - sources/03-final.json

@@ -1,0 +1,15 @@
+{
+  "all": {
+    "vars": {
+      "global_var": "from_file_three",
+      "demo_label": "final-json"
+    },
+    "children": {
+      "webservers": {
+        "vars": {
+          "shared_var": "from_file_three"
+        }
+      }
+    }
+  }
+}

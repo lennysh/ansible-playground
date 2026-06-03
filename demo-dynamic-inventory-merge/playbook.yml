@@ -1,0 +1,15 @@
+---
+- name: Demonstrate merged inventory variable precedence
+  hosts: webservers
+  gather_facts: false
+  tasks:
+    - name: Show effective variables after merge (later sources win)
+      ansible.builtin.debug:
+        msg:
+          inventory_hostname: "{{ inventory_hostname }}"
+          app_port: "{{ app_port | default('undefined') }}"
+          deployment_env: "{{ deployment_env | default('undefined') }}"
+          shared_var: "{{ shared_var | default('undefined') }}"
+          global_var: "{{ global_var | default('undefined') }}"
+          demo_label: "{{ demo_label | default('undefined') }}"
+          only_in_two: "{{ only_in_two | default('undefined') }}"

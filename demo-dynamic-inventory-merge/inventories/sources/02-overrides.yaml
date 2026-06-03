@@ -1,0 +1,13 @@
+---
+all:
+  vars:
+    global_var: from_file_two
+    only_in_two: true
+  children:
+    webservers:
+      hosts:
+        host-a:
+          app_port: 9090
+      vars:
+        deployment_env: staging
+        shared_var: from_file_two

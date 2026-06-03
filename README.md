@@ -11,7 +11,7 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 | [demo-when](demo-when/README.md) | [`when:` condition examples and pitfalls](demo-when/README.md) — version checks, boolean coercion, `default()` bugs, and AND/OR grouping |
 | [demo-lint-noqa](demo-lint-noqa/README.md) | [Suppressing `yaml[line-length]`](demo-lint-noqa/README.md) — `# noqa` vs yamllint for long lines |
 | [demo-dynamic-inventory-csv](demo-dynamic-inventory-csv/README.md) | [CSV-driven dynamic inventory](demo-dynamic-inventory-csv/README.md) — one plugin, many inventory YAML filters from a single spreadsheet |
-| [demo-dynamic-inventory-executable](demo-dynamic-inventory-executable/README.md) | [Merging flat inventories via script](demo-dynamic-inventory-executable/README.md) — layer INI/YAML/JSON sources with last-wins precedence |
+| [demo-dynamic-inventory-merge](demo-dynamic-inventory-merge/README.md) | [Merging flat inventories via plugin](demo-dynamic-inventory-merge/README.md) — layer INI/YAML/JSON sources with last-wins precedence |
 
 
 ## Running a demo
