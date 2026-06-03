@@ -1,0 +1,20 @@
+plugin: csv_inventory
+csv_file: ../MSP_Managed.csv
+filters:
+  Org:
+    - Customer B
+  Cloud:
+    - Azure
+  Env:
+    - DEV
+    - QA
+always_groups:
+  - msp_managed
+keyed_groups:
+  - prefix: region
+    key: Region | lower
+flag_groups:
+  linux_team: LinuxTeam
+  windows_team: WindowsTeam
+  database_servers: DatabaseServer
+  web_servers: WebServer
