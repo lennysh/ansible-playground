@@ -4,11 +4,11 @@ Demonstrates building **multiple Ansible inventories from a single CSV file** us
 
 ## What this shows
 
-Many teams maintain host lists in spreadsheets or exports (Org, environment, cloud, team ownership, etc.). Instead of writing a separate inventory plugin for every combination of filters, this demo keeps **all rows in one CSV** and defines **views** as small YAML files:
+Many teams maintain host lists in spreadsheets or exports (Org, environment, cloud, team ownership, etc.). Instead of writing a separate inventory plugin for every combination of filters, this pattern keeps **all rows in one CSV** and defines **views** as small YAML files:
 
 | Concept | Where it lives |
 |---------|----------------|
-| Host data | `MSP_Managed.csv` (demo/fictional hostnames only) |
+| Host data | `MSP_Managed.csv` (sample/fictional hostnames) |
 | Plugin logic | `plugins/inventory/csv_inventory.py` (single plugin) |
 | Per-inventory filters & groups | `inventories/*.yaml` |
 
@@ -21,7 +21,7 @@ Each YAML file is a standalone inventory source you can pass to `ansible-invento
 | `Org` | `Customer A`, `Customer B` | Customer / tenant |
 | `Host` | `demo-ca-aws-pri-dev-app01` | Hostname (uppercased by the plugin) |
 | `Cloud` | `AWS`, `Azure`, `VMWare` | Cloud provider |
-| `Region` | `Primary`, `DR` | Region (DR used for AWS in this demo) |
+| `Region` | `Primary`, `DR` | Region (sample data uses DR for AWS only) |
 | `Env` | `DEV`, `QA`, `PROD` | Environment |
 | `LinuxTeam` | `TRUE` / `FALSE` | Linux team ownership flag |
 | `WindowsTeam` | `TRUE` / `FALSE` | Windows team ownership flag |
@@ -91,12 +91,12 @@ ansible-inventory -i inventories/MSP_Managed_CustomerA_AWS_DEV_QA.yaml --list
 ansible-inventory -i inventories/MSP_Managed_CustomerA_AWS_All.yaml --list | jq '.region_primary.hosts'
 ```
 
-### Try these during a customer demo
+### Things to try
 
-1. **Same CSV, different slice** — compare `--graph` output for `_AWS_All` vs `_AWS_DEV_QA` vs `_AWS_DR_All`.
-2. **Keyed groups** — show `region_primary` and `region_dr` appear automatically from the `Region` column.
-3. **Flag groups** — show `linux_team` vs `windows_team` membership from boolean columns.
-4. **Add a row** — edit `MSP_Managed.csv`, re-run `--graph`, and show the new host appears in the right inventories only.
+1. **Same CSV, different slice** — compare `--graph` output for `MSP_Managed_CustomerA_AWS_All.yaml` vs `_AWS_DEV_QA.yaml` vs `_AWS_DR_All.yaml` and note how filters change the host set without duplicating the CSV.
+2. **Keyed groups** — confirm `region_primary` and `region_dr` are created from the `Region` column via `keyed_groups`.
+3. **Flag groups** — inspect `linux_team` and `windows_team` membership driven by the `LinuxTeam` and `WindowsTeam` columns.
+4. **Add a row** — append a host to `MSP_Managed.csv`, re-run `--graph`, and verify it appears only in inventories whose filters match.
 
 ## Plugin options
 
@@ -110,11 +110,11 @@ ansible-inventory -i inventories/MSP_Managed_CustomerA_AWS_All.yaml --list | jq 
 | `groups` | Jinja2 conditional groups |
 | `compose` | Jinja2 derived host variables |
 
-## Demo data note
+## Sample data
 
-`MSP_Managed.csv` contains **fictional hostnames** (`demo-ca-*`, `demo-cb-*`) sized for presentations (~30 rows). It is not production data. Replace with your own export keeping the same column headers.
+`MSP_Managed.csv` ships with **fictional hostnames** (`demo-ca-*`, `demo-cb-*`) and about 30 rows so the examples stay easy to read. Replace it with your own export using the same column headers.
 
-## AAP / production considerations
+## Using in production
 
 - Place the plugin in a **custom execution environment** or mount `plugins/inventory/` via `ansible.cfg` / `ANSIBLE_INVENTORY_PLUGINS`.
 - Point each AAP inventory source at one YAML file under `inventories/`, or use an inventory plugin source synced from this repo.
