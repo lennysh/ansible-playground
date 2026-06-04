@@ -6,6 +6,10 @@
   hosts: localhost
   gather_facts: false
   vars:
+    satellite_server_url: "{{ FOREMAN_SERVER_URL }}"
+    satellite_username: "{{ FOREMAN_USERNAME }}"
+    satellite_password: "{{ FOREMAN_PASSWORD }}"
+
     satellite_organization: "{{ satellite_organization | default('Default Organization') }}"
     satellite_workflow_step: "{{ satellite_workflow_step | default('upstream') }}"
     satellite_lifecycle_library: "{{ satellite_lifecycle_library | default('Library') }}"
