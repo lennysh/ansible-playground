@@ -6,10 +6,12 @@
   hosts: localhost
   gather_facts: false
   vars:
-    satellite_server_url: "{{ FOREMAN_SERVER_URL }}"
-    satellite_username: "{{ FOREMAN_USERNAME }}"
-    satellite_password: "{{ FOREMAN_PASSWORD }}"
+    # These are set by the AAP Credential Type: Red Hat Satellite 6
+    satellite_server_url: "{{ lookup('env', 'FOREMAN_SERVER_URL') }}"
+    satellite_username: "{{ lookup('env', 'FOREMAN_USERNAME') }}"
+    satellite_password: "{{ lookup('env', 'FOREMAN_PASSWORD') }}"
 
+    # These are set or overridden by the AAP Job Template Survey
     satellite_organization: "{{ satellite_organization | default('Default Organization') }}"
     satellite_workflow_step: "{{ satellite_workflow_step | default('upstream') }}"
     satellite_lifecycle_library: "{{ satellite_lifecycle_library | default('Library') }}"
