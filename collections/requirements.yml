@@ -5,3 +5,4 @@ collections:
   - name: redhat.satellite
     # wait_for_task needs 3.13.0+; pin after `ansible-galaxy collection list` in your environment
     version: ">=3.13.0"
+  - name: community.proxmox
