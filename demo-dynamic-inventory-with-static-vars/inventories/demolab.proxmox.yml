@@ -1,0 +1,24 @@
+plugin: community.proxmox.proxmox
+validate_certs: false
+want_facts: true
+keyed_groups:
+    # proxmox_tags_parsed is an example of a fact only returned when 'want_facts=true'
+  - key: proxmox_tags_parsed
+    separator: ""
+    prefix: group_
+# groups:
+#   webservers: "'web' in (proxmox_tags_parsed | list)"
+#   mailservers: "'mail' in (proxmox_tags_parsed | list)"
+# compose:
+# Note that this can easily give you wrong values as ansible_host. See further below for
+# an example where this is set to `false` and where ansible_host is set with `compose`.
+want_proxmox_nodes_ansible_host: true
+# want_proxmox_nodes_ansible_host: false
+compose:
+  # ansible_port: 2222
+  ansible_host: proxmox_agent_interfaces | map(attribute='ip-addresses') | flatten | select('match', '^10\.35\.') | first | regex_replace('/.*$', '')
+  # | selectattr('ip-addresses', 'match', '^10\.35\.') | map(attribute='ip-addresses') | flatten | first | regex_replace('/.*$', '')
+  # | regex_replace('/.*$', '')
+  # | ansible.netcommon.ipaddr('address')
+filters:
+  - proxmox_vmtype == "qemu"
