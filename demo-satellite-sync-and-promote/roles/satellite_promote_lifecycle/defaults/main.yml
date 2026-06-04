@@ -1,0 +1,36 @@
+---
+satellite_content_view: ""
+satellite_lifecycle_library: "Library"
+satellite_lifecycle_dev: "DEV"
+satellite_lifecycle_qa: "QA"
+satellite_lifecycle_prod: "PROD"
+
+# upstream = sync + publish + promote to DEV; promote = one hop via satellite_promote_target
+satellite_workflow_step: upstream
+satellite_promote_target: "{{ satellite_lifecycle_dev }}"
+satellite_promote_to_dev: true
+
+# Lookup table — target must match satellite_promote_target (and your Satellite LE names)
+satellite_lifecycle_promotion_steps:
+  - target: "{{ satellite_lifecycle_dev }}"
+    source: "{{ satellite_lifecycle_library }}"
+    path:
+      - "{{ satellite_lifecycle_library }}"
+      - "{{ satellite_lifecycle_dev }}"
+    gate_before: ""
+  - target: "{{ satellite_lifecycle_qa }}"
+    source: "{{ satellite_lifecycle_dev }}"
+    path:
+      - "{{ satellite_lifecycle_dev }}"
+      - "{{ satellite_lifecycle_qa }}"
+    gate_before: >-
+      Promoting into {{ satellite_lifecycle_qa }}. Ensure {{ satellite_lifecycle_dev }}
+      patching and smoke tests are complete.
+  - target: "{{ satellite_lifecycle_prod }}"
+    source: "{{ satellite_lifecycle_qa }}"
+    path:
+      - "{{ satellite_lifecycle_qa }}"
+      - "{{ satellite_lifecycle_prod }}"
+    gate_before: >-
+      Promoting into {{ satellite_lifecycle_prod }}. Ensure {{ satellite_lifecycle_qa }}
+      sign-off is complete.

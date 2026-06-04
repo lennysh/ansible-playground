@@ -1,0 +1,48 @@
+---
+- name: Validate sync targets are defined
+  ansible.builtin.assert:
+    that:
+      - satellite_sync_targets | length > 0
+    fail_msg: >-
+      Set satellite_sync_targets (list of product/repository dicts).
+      See group_vars/all/satellite.example.yml.
+
+- name: Sync Satellite products or repositories
+  redhat.satellite.repository_sync:
+    organization: "{{ satellite_organization }}"
+    product: "{{ sync_item.product }}"
+    repository: "{{ sync_item.repository | default(omit) }}"
+  loop: "{{ satellite_sync_targets }}"
+  loop_control:
+    loop_var: sync_item
+    label: >-
+      {{ sync_item.product }}{{
+        '/' + sync_item.repository
+        if sync_item.repository is defined and sync_item.repository | length > 0
+        else ' (all repositories)'
+      }}
+  register: satellite_sync_results
+
+- name: Wait for each repository sync task to finish
+  redhat.satellite.wait_for_task:
+    task: "{{ sync_result.task.id }}"
+    timeout: "{{ satellite_sync_wait_timeout }}"
+  loop: "{{ satellite_sync_results.results }}"
+  loop_control:
+    loop_var: sync_result
+    label: "{{ sync_result.sync_item.product | default('sync') }}"
+  when:
+    - sync_result.task is defined
+    - sync_result.task.id is defined
+
+- name: Summarize completed sync tasks
+  ansible.builtin.debug:
+    msg:
+      product: "{{ item.sync_item.product }}"
+      repository: "{{ item.sync_item.repository | default('(all in product)') }}"
+      task_id: "{{ item.task.id }}"
+      task_state: "{{ item.task.state | default('unknown') }}"
+  loop: "{{ satellite_sync_results.results }}"
+  loop_control:
+    label: "{{ item.sync_item.product }}"
+  when: item.task is defined

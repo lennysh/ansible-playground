@@ -1,0 +1,66 @@
+---
+- name: Validate content view name is defined
+  ansible.builtin.assert:
+    that:
+      - satellite_content_view | length > 0
+    fail_msg: Set satellite_content_view to the Content View to promote.
+
+- name: Resolve promotion hop for target lifecycle environment
+  ansible.builtin.set_fact:
+    satellite_promotion_hop: >-
+      {{
+        satellite_lifecycle_promotion_steps
+        | selectattr('target', 'equalto', satellite_promote_target)
+        | list
+        | first
+        | default({})
+      }}
+
+- name: Validate satellite_promote_target
+  ansible.builtin.assert:
+    that:
+      - satellite_promotion_hop | length > 0
+    fail_msg: >-
+      satellite_promote_target '{{ satellite_promote_target }}' is not configured.
+      Use one of: {{ satellite_lifecycle_promotion_steps | map(attribute='target') | join(', ') }}
+      (must match satellite_lifecycle_dev / _qa / _prod).
+
+- name: Gate — confirm prior environment validation
+  when: satellite_promotion_hop.gate_before | default('') | length > 0
+  ansible.builtin.debug:
+    msg: "{{ satellite_promotion_hop.gate_before }}"
+
+- name: Promote content view into target lifecycle environment
+  redhat.satellite.content_view_version:
+    organization: "{{ satellite_organization }}"
+    content_view: "{{ satellite_content_view }}"
+    current_lifecycle_environment: "{{ satellite_promotion_hop.source }}"
+    lifecycle_environments: "{{ satellite_promotion_hop.path }}"
+  register: satellite_promotion_result
+
+- name: Set next-step hint after promotion
+  ansible.builtin.set_fact:
+    satellite_promotion_next_step: >-
+      {{
+        'Patch and validate hosts in ' ~ satellite_lifecycle_dev
+        ~ ', then re-run with satellite_workflow_step=promote and satellite_promote_target='
+        ~ satellite_lifecycle_qa
+        if satellite_promote_target == satellite_lifecycle_dev
+        else (
+          'Validate hosts in ' ~ satellite_lifecycle_qa
+          ~ ', then re-run with satellite_workflow_step=promote and satellite_promote_target='
+          ~ satellite_lifecycle_prod
+          if satellite_promote_target == satellite_lifecycle_qa
+          else (
+            satellite_lifecycle_prod ~ ' hosts bound to this content view can patch from the promoted version.'
+          )
+        )
+      }}
+
+- name: Summarize promotion
+  ansible.builtin.debug:
+    msg:
+      content_view: "{{ satellite_content_view }}"
+      from_environment: "{{ satellite_promotion_hop.source }}"
+      promoted_to: "{{ satellite_promote_target }}"
+      next_step: "{{ satellite_promotion_next_step }}"

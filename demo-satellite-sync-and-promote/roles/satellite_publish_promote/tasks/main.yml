@@ -1,0 +1,22 @@
+---
+- name: Validate content view name is defined
+  ansible.builtin.assert:
+    that:
+      - satellite_content_view | length > 0
+    fail_msg: Set satellite_content_view to the Content View that contains your synced repositories.
+
+- name: Publish content view (new version in Library)
+  redhat.satellite.content_view_version:
+    organization: "{{ satellite_organization }}"
+    content_view: "{{ satellite_content_view }}"
+  register: satellite_cv_publish
+
+- name: Summarize publish
+  ansible.builtin.debug:
+    msg:
+      content_view: "{{ satellite_content_view }}"
+      published: true
+      next_step: >-
+        With satellite_workflow_step=upstream, Library → {{ satellite_lifecycle_dev }}
+        runs next. After DEV patching, re-run with workflow_step=promote and
+        satellite_promote_target={{ satellite_lifecycle_qa }}.

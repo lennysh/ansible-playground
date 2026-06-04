@@ -1,0 +1,3 @@
+---
+satellite_sync_targets: []
+satellite_sync_wait_timeout: 7200

@@ -1,0 +1,33 @@
+---
+# Copy to satellite.yml (or inject via AAP credentials / survey) and adjust for your lab.
+# Do not commit real passwords — use Ansible Vault or AAP credential types.
+
+satellite_server_url: "https://satellite.example.com"
+satellite_username: "ansible-automation"
+satellite_password: "CHANGEME"
+satellite_validate_certs: true
+satellite_organization: "Default Organization"
+
+# upstream = sync + publish + promote to DEV; promote = one hop (set satellite_promote_target)
+satellite_workflow_step: upstream
+satellite_promote_target: "{{ satellite_lifecycle_dev }}"
+
+# Sync entire products and/or individual repositories (repository omitted = all repos in product)
+satellite_sync_targets:
+  - product: "Red Hat Enterprise Linux for x86_64"
+  - product: "Red Hat Enterprise Linux for x86_64"
+    repository: "Red Hat Enterprise Linux 9 for x86_64 - BaseOS (RPMs)"
+
+satellite_sync_wait_timeout: 7200
+
+# Content view that includes the synced repositories
+satellite_content_view: "RHEL 9 Standard"
+
+# Lifecycle path (names must match Satellite — satellite_promote_target uses these exact strings)
+satellite_lifecycle_library: "Library"
+satellite_lifecycle_dev: "DEV"
+satellite_lifecycle_qa: "QA"
+satellite_lifecycle_prod: "PROD"
+
+# Upstream only: when false, sync + publish but skip Library → DEV
+satellite_promote_to_dev: true

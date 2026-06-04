@@ -1,0 +1,68 @@
+---
+# Vars: group_vars/all/satellite.yml
+# Upstream (default):  ansible-playbook playbook.yml
+# Promote to QA:       ansible-playbook playbook.yml -e satellite_workflow_step=promote -e satellite_promote_target=QA
+# Promote to PROD:     ansible-playbook playbook.yml -e satellite_workflow_step=promote -e satellite_promote_target=PROD
+
+- name: Satellite content lifecycle (sync, publish, promote)
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - group_vars/all/satellite.yml
+  module_defaults:
+    group/redhat.satellite.satellite:
+      server_url: "{{ satellite_server_url }}"
+      username: "{{ satellite_username }}"
+      password: "{{ satellite_password }}"
+      validate_certs: "{{ satellite_validate_certs }}"
+  pre_tasks:
+    - name: Verify Satellite API connectivity
+      redhat.satellite.resource_info:
+        resource: organizations
+        search: 'name="{{ satellite_organization }}"'
+      register: satellite_org_lookup
+
+    - name: Fail when organization is missing
+      ansible.builtin.assert:
+        that:
+          - satellite_org_lookup.resources | length > 0
+        fail_msg: >-
+          Organization '{{ satellite_organization }}' was not found on
+          {{ satellite_server_url }}. Check satellite_organization and credentials.
+
+    - name: Set effective promote target for this run
+      ansible.builtin.set_fact:
+        satellite_promote_target: >-
+          {{
+            satellite_lifecycle_dev
+            if satellite_workflow_step == 'upstream'
+            else satellite_promote_target
+          }}
+
+    - name: Show workflow and lifecycle path
+      ansible.builtin.debug:
+        msg:
+          workflow_step: "{{ satellite_workflow_step }}"
+          promote_target: "{{ satellite_promote_target }}"
+          lifecycle_path: >-
+            {{ satellite_lifecycle_library }} → {{ satellite_lifecycle_dev }}
+            → {{ satellite_lifecycle_qa }} → {{ satellite_lifecycle_prod }}
+
+    - name: Fail when promote step targets Library
+      when: satellite_workflow_step == 'promote'
+      ansible.builtin.assert:
+        that:
+          - satellite_promote_target != satellite_lifecycle_library
+        fail_msg: >-
+          satellite_workflow_step=promote requires satellite_promote_target to be
+          {{ satellite_lifecycle_dev }}, {{ satellite_lifecycle_qa }}, or {{ satellite_lifecycle_prod }}.
+
+  roles:
+    - role: satellite_sync
+      when: satellite_workflow_step == 'upstream'
+    - role: satellite_publish_promote
+      when: satellite_workflow_step == 'upstream'
+    - role: satellite_promote_lifecycle
+      when: >-
+        satellite_workflow_step == 'promote' or
+        (satellite_workflow_step == 'upstream' and satellite_promote_to_dev | bool)

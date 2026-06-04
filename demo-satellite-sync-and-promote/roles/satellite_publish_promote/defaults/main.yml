@@ -1,0 +1,5 @@
+---
+satellite_content_view: ""
+satellite_lifecycle_library: "Library"
+satellite_lifecycle_dev: "DEV"
+satellite_lifecycle_qa: "QA"

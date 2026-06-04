@@ -1,0 +1,2 @@
+# Local Satellite credentials (copy from satellite.example.yml)
+group_vars/all/satellite.yml

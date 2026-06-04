@@ -1,0 +1,108 @@
+---
+# Single playbook for AAP — drive behavior with survey extra vars (see README).
+# Credentials: satellite_server_url, satellite_username, satellite_password
+
+- name: Satellite content lifecycle (AAP)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    satellite_organization: "{{ satellite_organization | default('Default Organization') }}"
+    satellite_workflow_step: "{{ satellite_workflow_step | default('upstream') }}"
+    satellite_lifecycle_library: "{{ satellite_lifecycle_library | default('Library') }}"
+    satellite_lifecycle_dev: "{{ satellite_lifecycle_dev | default('DEV') }}"
+    satellite_lifecycle_qa: "{{ satellite_lifecycle_qa | default('QA') }}"
+    satellite_lifecycle_prod: "{{ satellite_lifecycle_prod | default('PROD') }}"
+    satellite_promote_to_dev: "{{ satellite_promote_to_dev | default(true) | bool }}"
+    satellite_sync_targets: >-
+      {{
+        [
+          {'product': satellite_product}
+          | combine(
+              {'repository': satellite_repository}
+              if satellite_repository | default('') | length > 0
+              else {}
+            )
+        ]
+      }}
+    satellite_sync_wait_timeout: "{{ satellite_sync_wait_timeout | default(7200) }}"
+    satellite_content_view: "{{ satellite_content_view }}"
+    satellite_lifecycle_promotion_steps:
+      - target: "{{ satellite_lifecycle_dev }}"
+        source: "{{ satellite_lifecycle_library }}"
+        path:
+          - "{{ satellite_lifecycle_library }}"
+          - "{{ satellite_lifecycle_dev }}"
+        gate_before: ""
+      - target: "{{ satellite_lifecycle_qa }}"
+        source: "{{ satellite_lifecycle_dev }}"
+        path:
+          - "{{ satellite_lifecycle_dev }}"
+          - "{{ satellite_lifecycle_qa }}"
+        gate_before: >-
+          Promoting into {{ satellite_lifecycle_qa }}. Ensure {{ satellite_lifecycle_dev }}
+          patching and smoke tests are complete.
+      - target: "{{ satellite_lifecycle_prod }}"
+        source: "{{ satellite_lifecycle_qa }}"
+        path:
+          - "{{ satellite_lifecycle_qa }}"
+          - "{{ satellite_lifecycle_prod }}"
+        gate_before: >-
+          Promoting into {{ satellite_lifecycle_prod }}. Ensure {{ satellite_lifecycle_qa }}
+          sign-off is complete.
+  module_defaults:
+    group/redhat.satellite.satellite:
+      server_url: "{{ satellite_server_url }}"
+      username: "{{ satellite_username }}"
+      password: "{{ satellite_password }}"
+      validate_certs: "{{ satellite_validate_certs | default(true) }}"
+  pre_tasks:
+    - name: Verify Satellite API connectivity
+      redhat.satellite.resource_info:
+        resource: organizations
+        search: 'name="{{ satellite_organization }}"'
+      register: satellite_org_lookup
+
+    - name: Fail when organization is missing
+      ansible.builtin.assert:
+        that:
+          - satellite_org_lookup.resources | length > 0
+        fail_msg: >-
+          Organization '{{ satellite_organization }}' was not found on
+          {{ satellite_server_url }}.
+
+    - name: Set effective promote target for this run
+      ansible.builtin.set_fact:
+        satellite_promote_target: >-
+          {{
+            satellite_lifecycle_dev
+            if satellite_workflow_step == 'upstream'
+            else satellite_promote_target | default(satellite_lifecycle_qa)
+          }}
+
+    - name: Show workflow and lifecycle path
+      ansible.builtin.debug:
+        msg:
+          workflow_step: "{{ satellite_workflow_step }}"
+          promote_target: "{{ satellite_promote_target }}"
+          lifecycle_path: >-
+            {{ satellite_lifecycle_library }} → {{ satellite_lifecycle_dev }}
+            → {{ satellite_lifecycle_qa }} → {{ satellite_lifecycle_prod }}
+
+    - name: Fail when promote step targets Library
+      when: satellite_workflow_step == 'promote'
+      ansible.builtin.assert:
+        that:
+          - satellite_promote_target != satellite_lifecycle_library
+        fail_msg: >-
+          For satellite_workflow_step=promote, set satellite_promote_target to
+          {{ satellite_lifecycle_dev }}, {{ satellite_lifecycle_qa }}, or {{ satellite_lifecycle_prod }}.
+
+  roles:
+    - role: satellite_sync
+      when: satellite_workflow_step == 'upstream'
+    - role: satellite_publish_promote
+      when: satellite_workflow_step == 'upstream'
+    - role: satellite_promote_lifecycle
+      when: >-
+        satellite_workflow_step == 'promote' or
+        (satellite_workflow_step == 'upstream' and satellite_promote_to_dev | bool)
