@@ -16,9 +16,25 @@ want_proxmox_nodes_ansible_host: true
 # want_proxmox_nodes_ansible_host: false
 compose:
   # ansible_port: 2222
-  ansible_host: proxmox_agent_interfaces | map(attribute='ip-addresses') | flatten | select('match', '^10\.35\.') | first | regex_replace('/.*$', '')
-  # | selectattr('ip-addresses', 'match', '^10\.35\.') | map(attribute='ip-addresses') | flatten | first | regex_replace('/.*$', '')
-  # | regex_replace('/.*$', '')
-  # | ansible.netcommon.ipaddr('address')
+  ansible_host: >-
+    {{
+      proxmox_agent_interfaces
+      | map(attribute='ip-addresses')
+      | flatten
+      | select('match', '^10\.35\.')
+      | first
+      | regex_replace('/.*$', '')
+      if proxmox_vmtype == 'qemu'
+      else (
+        proxmox_lxc_interfaces
+        | selectattr('inet', 'defined')
+        | selectattr('inet', 'match', '^10\.35\.')
+        | map(attribute='inet')
+        | flatten
+        | first
+        | regex_replace('/.*$', '')
+      )
+    }}
 filters:
-  - proxmox_vmtype == "qemu"
+  # - proxmox_vmtype in ['qemu', 'lxc']
+  - proxmox_tags_parsed is defined and 'aap-demolab-inv' in proxmox_tags_parsed
