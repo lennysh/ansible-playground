@@ -12,8 +12,9 @@ keyed_groups:
 # compose:
 # Note that this can easily give you wrong values as ansible_host. See further below for
 # an example where this is set to `false` and where ansible_host is set with `compose`.
-want_proxmox_nodes_ansible_host: true
-# want_proxmox_nodes_ansible_host: false
+# want_proxmox_nodes_ansible_host: true
+exclude_nodes: true
+want_proxmox_nodes_ansible_host: false
 compose:
   # ansible_port: 2222
   ansible_host: >-
