@@ -1,0 +1,386 @@
+---
+- name: ansible.builtin filter examples
+  hosts: localhost
+  gather_facts: false
+  vars:
+    demo_paths:
+      - /var/log/messages
+      - /var/log/secure
+      - /var/log/audit/audit.log
+    left_list: [1, 2, 3, 4]
+    right_list: [3, 4, 5, 6]
+  environment:
+    DEMO_FILTER_VAR: controller-value
+  tasks:
+    # ------------------------------------------------------------------
+    # Encoding and hashing
+    # ------------------------------------------------------------------
+    - name: "b64encode — Base64-encode a string"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | ansible.builtin.b64encode }}"
+
+    - name: "b64decode — Base64-decode a string"
+      ansible.builtin.debug:
+        msg: "{{ 'YW5zaWJsZQ==' | ansible.builtin.b64decode }}"
+
+    - name: "checksum — checksum of input data"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | ansible.builtin.checksum }}"
+
+    - name: "hash — generic hash (sha256 default)"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | ansible.builtin.hash('sha256') }}"
+
+    - name: "md5 — MD5 hash"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | ansible.builtin.md5 }}"
+
+    - name: "sha1 — SHA-1 hash"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | ansible.builtin.sha1 }}"
+
+    # ------------------------------------------------------------------
+    # Type coercion and validation
+    # ------------------------------------------------------------------
+    - name: "bool — coerce survey-style strings to boolean"
+      ansible.builtin.debug:
+        msg: >-
+          true={{ 'true' | ansible.builtin.bool }},
+          false={{ 'false' | ansible.builtin.bool }},
+          yes={{ 'yes' | ansible.builtin.bool }}
+
+    - name: "type_debug — show Jinja/Ansible type of a value"
+      ansible.builtin.debug:
+        msg: "{{ {'a': 1} | ansible.builtin.type_debug }}"
+
+    - name: "mandatory — pass through when variable is defined"
+      ansible.builtin.debug:
+        msg: "{{ 'required-value' | ansible.builtin.mandatory }}"
+
+  # mandatory fails the task when the variable is undefined — isolate in a second play
+- name: mandatory filter failure example
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "mandatory — fail when variable is undefined (expect: FAIL)"
+      ansible.builtin.debug:
+        msg: "{{ missing_required_var | ansible.builtin.mandatory }}"
+      ignore_errors: true
+
+- name: ansible.builtin filter examples (continued)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    demo_paths:
+      - /var/log/messages
+      - /var/log/secure
+      - /var/log/audit/audit.log
+    left_list: [1, 2, 3, 4]
+    right_list: [3, 4, 5, 6]
+    dict_one:
+      app_port: 8080
+      env: dev
+    dict_two:
+      env: staging
+      owner: platform
+    keyed_items:
+      - key: web
+        value: 8080
+      - key: api
+        value: 9090
+    nested_hosts:
+      - hostname: web01
+        interfaces:
+          - name: eth0
+            ip: 192.0.2.10
+          - name: eth1
+            ip: 192.0.2.11
+      - hostname: web02
+        interfaces:
+          - name: eth0
+            ip: 192.0.2.20
+    sample_yaml: |
+      name: demo
+      count: 3
+    sample_json: '{"name": "demo", "count": 3}'
+    sample_url: "https://user:pass@docs.example.com:8443/ansible/latest/?view=core#filters"
+    regex_target: "color=red color=blue color=green"
+    win_path: "C:\\Program Files\\Ansible\\playbook.yml"
+  environment:
+    DEMO_FILTER_VAR: controller-value
+  tasks:
+    # ------------------------------------------------------------------
+    # Dictionaries and lists
+    # ------------------------------------------------------------------
+    - name: "combine — merge dictionaries (recursive=True)"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.combine(dict_two, recursive=True) }}"
+
+    - name: "dict2items — convert dict to list of {key, value}"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.dict2items }}"
+
+    - name: "items2dict — convert list of {key, value} to dict"
+      ansible.builtin.debug:
+        msg: "{{ keyed_items | ansible.builtin.items2dict }}"
+
+    - name: "rekey_on_member — index list of dicts by a field"
+      ansible.builtin.debug:
+        msg: "{{ keyed_items | ansible.builtin.rekey_on_member('key') }}"
+
+    - name: "flatten — flatten nested lists"
+      ansible.builtin.debug:
+        msg: "{{ [[1, 2], [3, [4, 5]]] | ansible.builtin.flatten(levels=2) }}"
+
+    - name: "extract — pull value from list or dict by index/key"
+      ansible.builtin.debug:
+        msg: >-
+          list={{ 1 | ansible.builtin.extract(['a', 'b', 'c']) }},
+          dict={{ 'env' | ansible.builtin.extract(dict_one) }}
+
+  # ------------------------------------------------------------------
+  # Set operations on lists
+  # ------------------------------------------------------------------
+    - name: "difference — items in first list but not second"
+      ansible.builtin.debug:
+        msg: "{{ left_list | ansible.builtin.difference(right_list) }}"
+
+    - name: "intersect — items in both lists"
+      ansible.builtin.debug:
+        msg: "{{ left_list | ansible.builtin.intersect(right_list) }}"
+
+    - name: "symmetric_difference — items in either list but not both"
+      ansible.builtin.debug:
+        msg: "{{ left_list | ansible.builtin.symmetric_difference(right_list) }}"
+
+    - name: "union — unique items from both lists"
+      ansible.builtin.debug:
+        msg: "{{ left_list | ansible.builtin.union(right_list) }}"
+
+    - name: "unique — deduplicate a list"
+      ansible.builtin.debug:
+        msg: "{{ [1, 1, 2, 2, 3] | ansible.builtin.unique }}"
+
+    # ------------------------------------------------------------------
+    # Combinatorics and zip
+    # ------------------------------------------------------------------
+    - name: "combinations — n-length combinations"
+      ansible.builtin.debug:
+        msg: "{{ ['a', 'b', 'c'] | ansible.builtin.combinations(2) | list }}"
+
+    - name: "permutations — n-length permutations"
+      ansible.builtin.debug:
+        msg: "{{ ['a', 'b', 'c'] | ansible.builtin.permutations(2) | list }}"
+
+    - name: "product — cartesian product of iterables"
+      ansible.builtin.debug:
+        msg: "{{ ['dev', 'qa'] | ansible.builtin.product(['web', 'db']) | list }}"
+
+    - name: "zip — combine parallel lists element-wise"
+      ansible.builtin.debug:
+        msg: "{{ ['web', 'db'] | ansible.builtin.zip([8080, 5432]) | list }}"
+
+    - name: "zip_longest — zip with fillvalue for uneven lists"
+      ansible.builtin.debug:
+        msg: "{{ ['a', 'b', 'c'] | ansible.builtin.zip_longest([1, 2], fillvalue=0) | list }}"
+
+    - name: "subelements — nested list expansion (parent × child)"
+      ansible.builtin.debug:
+        msg: "{{ nested_hosts | ansible.builtin.subelements(['interfaces']) | list }}"
+
+    - name: "shuffle — randomize list order"
+      ansible.builtin.debug:
+        msg: "{{ [1, 2, 3, 4, 5] | ansible.builtin.shuffle }}"
+
+    - name: "random — random integer between start and input bound"
+      ansible.builtin.debug:
+        msg: "{{ 100 | ansible.builtin.random(10) }}"
+
+    # ------------------------------------------------------------------
+    # Paths (POSIX)
+    # ------------------------------------------------------------------
+    - name: "basename — final path component"
+      ansible.builtin.debug:
+        msg: "{{ '/etc/ansible/ansible.cfg' | ansible.builtin.basename }}"
+
+    - name: "dirname — directory portion of a path"
+      ansible.builtin.debug:
+        msg: "{{ '/etc/ansible/ansible.cfg' | ansible.builtin.dirname }}"
+
+    - name: "splitext — split root and extension"
+      ansible.builtin.debug:
+        msg: "{{ '/etc/ansible/ansible.cfg' | ansible.builtin.splitext }}"
+
+    - name: "normpath — normalize . and .. segments"
+      ansible.builtin.debug:
+        msg: "{{ '/var/log/../etc/hosts' | ansible.builtin.normpath }}"
+
+    - name: "commonpath — longest shared path prefix"
+      ansible.builtin.debug:
+        msg: "{{ demo_paths | ansible.builtin.commonpath }}"
+
+    - name: "relpath — path relative to a start directory"
+      ansible.builtin.debug:
+        msg: "{{ '/var/log/secure' | ansible.builtin.relpath('/var') }}"
+
+    - name: "realpath — resolve symlinks (controller filesystem)"
+      ansible.builtin.debug:
+        msg: "{{ '/etc/hosts' | ansible.builtin.realpath }}"
+
+    - name: "path_join — join path components"
+      ansible.builtin.debug:
+        msg: "{{ ['/etc', 'ansible', 'ansible.cfg'] | ansible.builtin.path_join }}"
+
+    - name: "fileglob — glob paths on the controller"
+      ansible.builtin.debug:
+        msg: "{{ (playbook_dir ~ '/files/sample-*') | ansible.builtin.fileglob }}"
+
+    - name: "expanduser — expand ~ to home directory"
+      ansible.builtin.debug:
+        msg: "{{ '~' | ansible.builtin.expanduser }}"
+
+    - name: "expandvars — expand shell-style $VAR references"
+      ansible.builtin.debug:
+        msg: "{{ 'prefix-$DEMO_FILTER_VAR-suffix' | ansible.builtin.expandvars }}"
+
+    # ------------------------------------------------------------------
+    # Windows path helpers (string operations; no Windows host required)
+    # ------------------------------------------------------------------
+    - name: "win_basename — Windows path base name"
+      ansible.builtin.debug:
+        msg: "{{ win_path | ansible.builtin.win_basename }}"
+
+    - name: "win_dirname — Windows path directory"
+      ansible.builtin.debug:
+        msg: "{{ win_path | ansible.builtin.win_dirname }}"
+
+    - name: "win_splitdrive — split Windows drive letter"
+      ansible.builtin.debug:
+        msg: "{{ win_path | ansible.builtin.win_splitdrive }}"
+
+    # ------------------------------------------------------------------
+    # Strings, regex, and shell quoting
+    # ------------------------------------------------------------------
+    - name: "split — split string into list"
+      ansible.builtin.debug:
+        msg: "{{ 'a,b,c' | ansible.builtin.split(',') }}"
+
+    - name: "quote — shell-safe quoting"
+      ansible.builtin.debug:
+        msg: "{{ 'hello world' | ansible.builtin.quote }}"
+
+    - name: "comment — prefix lines for config file comments"
+      ansible.builtin.debug:
+        msg: "{{ 'line one\nline two' | ansible.builtin.comment(decoration=' # ') }}"
+
+    - name: "regex_escape — escape regex metacharacters"
+      ansible.builtin.debug:
+        msg: "{{ 'file.txt (prod)' | ansible.builtin.regex_escape }}"
+
+    - name: "regex_search — first regex match"
+      ansible.builtin.debug:
+        msg: "{{ regex_target | ansible.builtin.regex_search('color=(\\w+)', '\\1') }}"
+
+    - name: "regex_findall — all regex matches"
+      ansible.builtin.debug:
+        msg: "{{ regex_target | ansible.builtin.regex_findall('color=(\\w+)') }}"
+
+    - name: "regex_replace — replace via regex"
+      ansible.builtin.debug:
+        msg: "{{ regex_target | ansible.builtin.regex_replace('color=(\\w+)', 'shade=\\1') }}"
+
+  # ------------------------------------------------------------------
+  # Serialization and format conversion
+  # ------------------------------------------------------------------
+    - name: "to_yaml — serialize to YAML"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.to_yaml }}"
+
+    - name: "to_nice_yaml — indented YAML"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.to_nice_yaml }}"
+
+    - name: "from_yaml — parse YAML string"
+      ansible.builtin.debug:
+        msg: "{{ sample_yaml | ansible.builtin.from_yaml }}"
+
+    - name: "from_yaml_all — parse multi-document YAML stream"
+      ansible.builtin.debug:
+        msg: "{{ ('---\nname: one\n---\nname: two\n') | ansible.builtin.from_yaml_all | list }}"
+
+    - name: "to_json — compact JSON"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.to_json }}"
+
+    - name: "to_nice_json — indented JSON"
+      ansible.builtin.debug:
+        msg: "{{ dict_one | ansible.builtin.to_nice_json }}"
+
+    - name: "from_json — parse JSON string"
+      ansible.builtin.debug:
+        msg: "{{ sample_json | ansible.builtin.from_json }}"
+
+    # ------------------------------------------------------------------
+    # Human sizes, dates, and math helpers
+    # ------------------------------------------------------------------
+    - name: "human_readable — bytes to human units"
+      ansible.builtin.debug:
+        msg: "{{ 1536000 | ansible.builtin.human_readable }}"
+
+    - name: "human_to_bytes — parse size strings to bytes"
+      ansible.builtin.debug:
+        msg: "{{ '1.5 MB' | ansible.builtin.human_to_bytes }}"
+
+    - name: "strftime — format epoch/seconds as date string"
+      ansible.builtin.debug:
+        msg: "{{ '%Y-%m-%d' | ansible.builtin.strftime(0) }}"
+
+    - name: "to_datetime — parse string into datetime object"
+      ansible.builtin.debug:
+        msg: "{{ '2026-06-26' | ansible.builtin.to_datetime('%Y-%m-%d') }}"
+
+    - name: "log — logarithm"
+      ansible.builtin.debug:
+        msg: "{{ 1024 | ansible.builtin.log(2) }}"
+
+    - name: "pow — exponentiation"
+      ansible.builtin.debug:
+        msg: "{{ 2 | ansible.builtin.pow(10) }}"
+
+    - name: "root — nth root"
+      ansible.builtin.debug:
+        msg: "{{ 27 | ansible.builtin.root(3) }}"
+
+    - name: "ternary — inline if/else"
+      ansible.builtin.debug:
+        msg: "{{ true | ansible.builtin.ternary('enabled', 'disabled') }}"
+
+    - name: "password_hash — hash a password for /etc/shadow style files (needs passlib on controller)"
+      ansible.builtin.debug:
+        msg: "{{ 'demo-password' | ansible.builtin.password_hash('sha512', 12345) }}"
+      ignore_errors: true
+
+    - name: "to_uuid — deterministic namespaced UUID"
+      ansible.builtin.debug:
+        msg: "{{ 'web01.example.com' | ansible.builtin.to_uuid }}"
+
+    # ------------------------------------------------------------------
+    # URLs and secrets
+    # ------------------------------------------------------------------
+    - name: "urlsplit — break URL into components"
+      ansible.builtin.debug:
+        msg: "{{ sample_url | ansible.builtin.urlsplit }}"
+
+    - name: "urldecode — decode percent-encoded text"
+      ansible.builtin.debug:
+        msg: "{{ 'hello%20world' | ansible.builtin.urldecode }}"
+
+    - name: "vault — encrypt a string inline (demo password: demo-vault-pass)"
+      ansible.builtin.set_fact:
+        demo_vault_blob: "{{ 'demo-secret' | ansible.builtin.vault('demo-vault-pass') }}"
+
+    - name: "unvault — decrypt a vaulted string"
+      ansible.builtin.debug:
+        msg: "{{ demo_vault_blob | ansible.builtin.unvault('demo-vault-pass') }}"
+
+...

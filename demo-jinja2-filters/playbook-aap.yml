@@ -1,0 +1,5 @@
+---
+# AAP version — identical tasks to playbook.yml. Filter expressions work the same in job
+# templates, surveys, and host/group vars; this play uses localhost with sample vars
+# so you can attach it to a minimal inventory without fact gathering.
+- ansible.builtin.import_playbook: playbook.yml

@@ -1,0 +1,250 @@
+---
+- name: Jinja2 built-in filter examples
+  hosts: localhost
+  gather_facts: false
+  vars:
+    sample_string: "  hello ansible world  "
+    sample_list: [3, 1, 4, 1, 5, 9, 2, 6]
+    sample_names: ["alice", "bob", "carol"]
+    sample_dict:
+      zebra: 1
+      alpha: 2
+      mike: 3
+    sample_users:
+      - name: alice
+        role: admin
+      - name: bob
+        role: user
+      - name: carol
+        role: admin
+    sample_html: "<p>Hello <b>world</b></p>"
+    sample_url: "https://docs.ansible.com/ansible/latest/"
+    sample_bytes: 1536000
+    sample_multiline: "line one\nline two\nline three"
+  tasks:
+    # ------------------------------------------------------------------
+    # Math and numeric
+    # ------------------------------------------------------------------
+    - name: "abs — absolute value"
+      ansible.builtin.debug:
+        msg: "{{ -17 | abs }}"
+
+    - name: "float — convert to floating point"
+      ansible.builtin.debug:
+        msg: "{{ '3.14' | float }}"
+
+    - name: "int — convert to integer"
+      ansible.builtin.debug:
+        msg: "{{ '42' | int }}"
+
+    - name: "round — round to precision"
+      ansible.builtin.debug:
+        msg: "{{ 3.14159 | round(2) }}"
+
+    - name: "max — largest value in a sequence"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | max }}"
+
+    - name: "min — smallest value in a sequence"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | min }}"
+
+    - name: "sum — add numeric values (start=100 adds offset)"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | sum(start=100) }}"
+
+    # ------------------------------------------------------------------
+    # String manipulation
+    # ------------------------------------------------------------------
+    - name: "capitalize — first character upper, rest lower"
+      ansible.builtin.debug:
+        msg: "{{ 'hELLO' | capitalize }}"
+
+    - name: "center — pad string to width"
+      ansible.builtin.debug:
+        msg: "'{{ 'ansible' | center(15) }}'"
+
+    - name: "lower — lowercase"
+      ansible.builtin.debug:
+        msg: "{{ 'Ansible' | lower }}"
+
+    - name: "upper — uppercase"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | upper }}"
+
+    - name: "title — title-case words"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible automation platform' | title }}"
+
+    - name: "trim — strip leading and trailing whitespace"
+      ansible.builtin.debug:
+        msg: "'{{ sample_string | trim }}'"
+
+    - name: "truncate — shorten with ellipsis"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible automation platform' | truncate(12, True, '...') }}"
+
+    - name: "wordcount — count words"
+      ansible.builtin.debug:
+        msg: "{{ 'one two three four' | wordcount }}"
+
+    - name: "wordwrap — wrap at column width"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible automation platform filters' | wordwrap(12) }}"
+
+    - name: "replace — substring replacement"
+      ansible.builtin.debug:
+        msg: "{{ 'foo-bar-baz' | replace('-', '_') }}"
+
+    - name: "format — printf-style formatting"
+      ansible.builtin.debug:
+        msg: "{{ '%s has %d hosts' | format('web', 3) }}"
+
+    - name: "indent — indent multiline text"
+      ansible.builtin.debug:
+        msg: "{{ sample_multiline | indent(2, first=True) }}"
+
+    - name: "string — coerce to string"
+      ansible.builtin.debug:
+        msg: "{{ 42 | string }} (type remains string in output)"
+
+    # ------------------------------------------------------------------
+    # Defaults and escaping
+    # ------------------------------------------------------------------
+    - name: "default — fallback when value is undefined"
+      ansible.builtin.debug:
+        msg: "{{ unset_jinja_var | default('fallback-value') }}"
+
+    - name: "escape (alias e) — HTML-escape special characters"
+      ansible.builtin.debug:
+        msg: "{{ '<script>alert(1)</script>' | escape }}"
+
+    - name: "forceescape — escape even if marked safe"
+      ansible.builtin.debug:
+        msg: "{{ ('<b>bold</b>' | safe) | forceescape }}"
+
+    - name: "safe — mark string safe for HTML (no re-escaping)"
+      ansible.builtin.debug:
+        msg: "{{ '<em>trusted</em>' | safe }}"
+
+    - name: "striptags — remove HTML/XML tags"
+      ansible.builtin.debug:
+        msg: "{{ sample_html | striptags }}"
+
+    # ------------------------------------------------------------------
+    # Sequences — length, access, ordering
+    # ------------------------------------------------------------------
+    - name: "length (alias count) — number of items"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | length }}"
+
+    - name: "first — first element"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | first }}"
+
+    - name: "last — last element"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | last }}"
+
+    - name: "join — concatenate with separator"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | join(', ') }}"
+
+    - name: "list — convert iterable to list"
+      ansible.builtin.debug:
+        msg: "{{ 'abc' | list }}"
+
+    - name: "reverse — reverse order"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | reverse | list }}"
+
+    - name: "sort — sort a sequence"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | sort }}"
+
+    - name: "unique — deduplicate (case-sensitive)"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | unique | list }}"
+
+    - name: "slice — chunk into sublists"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | slice(3) | list }}"
+
+    - name: "batch — fixed-size batches"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | batch(3) | list }}"
+
+    - name: "random — pick one random element"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | random }}"
+
+    # ------------------------------------------------------------------
+    # map, select, reject, groupby
+    # ------------------------------------------------------------------
+    - name: "map — apply filter or attribute to each item"
+      ansible.builtin.debug:
+        msg: "{{ sample_names | map('upper') | list }}"
+
+    - name: "select — keep items matching a test"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | select('gt', 4) | list }}"
+
+    - name: "reject — drop items matching a test"
+      ansible.builtin.debug:
+        msg: "{{ sample_list | reject('equalto', 1) | list }}"
+
+    - name: "selectattr — keep objects where attribute passes test"
+      ansible.builtin.debug:
+        msg: "{{ sample_users | selectattr('role', 'equalto', 'admin') | map(attribute='name') | list }}"
+
+    - name: "rejectattr — drop objects where attribute passes test"
+      ansible.builtin.debug:
+        msg: "{{ sample_users | rejectattr('role', 'equalto', 'admin') | map(attribute='name') | list }}"
+
+    - name: "groupby — group items by attribute"
+      ansible.builtin.debug:
+        msg: "{{ sample_users | groupby('role') | map('list') | list }}"
+
+    - name: "attr — dynamic attribute access (same as variable dot notation)"
+      ansible.builtin.debug:
+        msg: "{{ 'ansible' | attr('upper')() }}"
+
+    # ------------------------------------------------------------------
+    # Dictionaries and structured data
+    # ------------------------------------------------------------------
+    - name: "dictsort — sort dict by key (case_sensitive=False)"
+      ansible.builtin.debug:
+        msg: "{{ sample_dict | dictsort(case_sensitive=False) }}"
+
+    - name: "items — key/value pairs for iteration"
+      ansible.builtin.debug:
+        msg: "{{ sample_dict | items | list }}"
+
+    - name: "pprint — pretty-print for debugging"
+      ansible.builtin.debug:
+        msg: "{{ sample_users | pprint }}"
+
+    - name: "tojson — JSON serialization"
+      ansible.builtin.debug:
+        msg: "{{ sample_dict | tojson }}"
+
+    - name: "filesizeformat — human-readable byte size"
+      ansible.builtin.debug:
+        msg: "{{ sample_bytes | filesizeformat }}"
+
+    # ------------------------------------------------------------------
+    # URLs and markup helpers
+    # ------------------------------------------------------------------
+    - name: "urlencode — percent-encode for query strings"
+      ansible.builtin.debug:
+        msg: "{{ 'hello world&foo=bar' | urlencode }}"
+
+    - name: "urlize — convert URLs in text to links"
+      ansible.builtin.debug:
+        msg: "{{ ('Visit ' ~ sample_url) | urlize }}"
+
+    - name: "xmlattr — build XML/HTML attribute string from dict"
+      ansible.builtin.debug:
+        msg: "<input{{ {'type': 'text', 'name': 'host', 'value': 'web01'} | xmlattr }}>"
+
+...

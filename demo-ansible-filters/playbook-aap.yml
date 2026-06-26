@@ -1,0 +1,3 @@
+---
+# AAP version — identical tasks to playbook.yml via import.
+- ansible.builtin.import_playbook: playbook.yml
