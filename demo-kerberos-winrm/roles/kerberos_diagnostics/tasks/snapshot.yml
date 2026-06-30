@@ -1,0 +1,40 @@
+---
+- name: Write snapshot section header ({{ kerberos_diag_label }})
+  ansible.builtin.shell: |
+    echo "" >> {{ kerberos_diag_log_path | quote }}
+    echo "========== SNAPSHOT: {{ kerberos_diag_label }} ==========" >> {{ kerberos_diag_log_path | quote }}
+    date -u >> {{ kerberos_diag_log_path | quote }}
+  changed_when: false
+  failed_when: false
+
+- name: "{{ kerberos_diag_label }} — Kerberos environment variables"
+  ansible.builtin.shell: |
+    echo "--- Kerberos Env Variables ({{ kerberos_diag_label }}) ---" >> {{ kerberos_diag_log_path | quote }}
+    env | grep -E 'KRB5|CONTAINER|HOME|USER|UID' >> {{ kerberos_diag_log_path | quote }} 2>&1 \
+      || echo "(no matching env vars)" >> {{ kerberos_diag_log_path | quote }}
+  changed_when: false
+  failed_when: false
+
+- name: "{{ kerberos_diag_label }} — inspect credential cache (KRB5CCNAME)"
+  ansible.builtin.shell: |
+    echo "--- Inspecting KRB5CCNAME Cache ({{ kerberos_diag_label }}) ---" >> {{ kerberos_diag_log_path | quote }}
+    echo "Raw KRB5CCNAME value: $KRB5CCNAME" >> {{ kerberos_diag_log_path | quote }}
+    CACHE_PATH=$(echo "$KRB5CCNAME" | sed -E 's/^(FILE:|DIR:)//')
+    if [ -z "$CACHE_PATH" ]; then
+      CACHE_PATH="/tmp/krb5cc_$(id -u)"
+      echo "KRB5CCNAME empty. Checking default: $CACHE_PATH" >> {{ kerberos_diag_log_path | quote }}
+    fi
+    ls -la "$CACHE_PATH" >> {{ kerberos_diag_log_path | quote }} 2>&1
+  changed_when: false
+  failed_when: false
+
+- name: "{{ kerberos_diag_label }} — klist ticket cache"
+  ansible.builtin.shell: |
+    echo "--- klist Output ({{ kerberos_diag_label }}) ---" >> {{ kerberos_diag_log_path | quote }}
+    if command -v klist >/dev/null 2>&1; then
+      klist -e -f -a >> {{ kerberos_diag_log_path | quote }} 2>&1
+    else
+      echo "ERROR: klist command not found in this EE image!" >> {{ kerberos_diag_log_path | quote }}
+    fi
+  changed_when: false
+  failed_when: false

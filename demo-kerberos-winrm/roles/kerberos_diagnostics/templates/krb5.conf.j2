@@ -1,0 +1,27 @@
+# Managed by demo-kerberos-winrm (kerberos_diagnostics role).
+# Realm/KDC settings come from vars/kerberos.yml — rebuilding the EE is NOT required.
+
+[libdefaults]
+    default_realm = {{ kerberos_realm }}
+    dns_lookup_kdc = {{ kerberos_dns_lookup_kdc | default(true) | bool | lower }}
+    dns_lookup_realm = false
+    rdns = false
+    ticket_lifetime = 24h
+    renew_lifetime = 7d
+    forwardable = true
+
+[realms]
+    {{ kerberos_realm }} = {
+{% if kerberos_kdc_hosts | default([]) | length > 0 %}
+{% for kdc in kerberos_kdc_hosts %}
+        kdc = {{ kdc }}
+{% endfor %}
+        admin_server = {{ kerberos_kdc_hosts[0] }}
+{% else %}
+        # No static KDCs — dns_lookup_kdc resolves _kerberos._tcp / _kerberos._udp SRV records
+{% endif %}
+    }
+
+[domain_realm]
+    .{{ kerberos_domain }} = {{ kerberos_realm }}
+    {{ kerberos_domain }} = {{ kerberos_realm }}

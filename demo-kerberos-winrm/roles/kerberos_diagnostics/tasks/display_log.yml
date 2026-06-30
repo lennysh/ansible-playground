@@ -1,0 +1,41 @@
+---
+- name: Read Kerberos diagnostic log from EE
+  ansible.builtin.slurp:
+    src: "{{ kerberos_diag_log_path }}"
+  register: kerberos_diag_log_content
+
+- name: Set report path
+  ansible.builtin.set_fact:
+    _kerberos_diag_report_path: >-
+      {{ kerberos_diag_report_path | default(playbook_dir ~ '/kerberos-diag-report.txt') }}
+    _kerberos_diag_raw_log: "{{ kerberos_diag_log_content.content | b64decode }}"
+
+- name: Format Kerberos diagnostic report
+  ansible.builtin.command:
+    cmd: >-
+      python3 {{ role_path }}/files/format_kerberos_report.py
+      --realm {{ kerberos_realm | quote }}
+      --domain {{ kerberos_domain | quote }}
+      --srv-count {{ kerberos_dns_srv_queries | default([]) | length }}
+    stdin: "{{ _kerberos_diag_raw_log }}"
+  register: _kerberos_diag_formatted
+  changed_when: false
+  no_log: true
+
+- name: Write formatted Kerberos diagnostic report on controller
+  ansible.builtin.copy:
+    content: "{{ _kerberos_diag_formatted.stdout }}"
+    dest: "{{ _kerberos_diag_report_path }}"
+    mode: "0644"
+
+- name: Kerberos diagnostic report location
+  ansible.builtin.debug:
+    msg: >-
+      Report written to {{ _kerberos_diag_report_path }}.
+      View with: less {{ _kerberos_diag_report_path }}
+
+- name: Echo Kerberos diagnostic report to playbook stdout
+  ansible.builtin.command:
+    cmd: cat {{ _kerberos_diag_report_path | quote }}
+  changed_when: false
+  when: kerberos_diag_display_mode | default('file') == 'stdout'

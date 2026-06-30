@@ -1,0 +1,57 @@
+---
+# AAP job template entry point — full diagnostics + formatted report.
+#
+# Attach:
+#   - Inventory with hosts in group `windows`
+#   - Machine credential (UPN username + password)
+#   - Custom EE (demo-kerberos-winrm-ee:latest)
+#
+# Survey / extra vars: kerberos_realm, kerberos_domain, kerberos_skip_win_ping, etc.
+# WinRM connection defaults: inventories/group_vars/windows.yml (or host vars).
+
+- name: Kerberos WinRM — EE diagnostics, ticket acquisition, before/after comparison (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_winrm_kinit_mode: manual
+    kerberos_realm: "{{ kerberos_realm | default('EXAMPLE.COM') }}"
+    kerberos_domain: "{{ kerberos_domain | default('example.com') }}"
+    kerberos_kdc_hosts: "{{ kerberos_kdc_hosts | default([]) }}"
+    kerberos_deploy_krb5_conf: "{{ kerberos_deploy_krb5_conf | default(true) | bool }}"
+    kerberos_skip_win_ping: "{{ kerberos_skip_win_ping | default(false) | bool }}"
+    kerberos_run_kinit: "{{ kerberos_run_kinit | default(true) | bool }}"
+    kerberos_diag_log_path: "{{ kerberos_diag_log_path | default('/tmp/ee_krb5_diag.log') }}"
+    kerberos_diag_display_mode: "{{ kerberos_diag_display_mode | default('file') }}"
+  tasks:
+    - name: EE diagnostics — one-off checks and BEFORE ticket snapshot
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: true
+        kerberos_diag_label: BEFORE
+
+    - name: Obtain Kerberos TGT (tickets visible to klist)
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_kinit: "{{ kerberos_run_kinit | bool }}"
+      when: not kerberos_skip_win_ping | bool
+
+    - name: WinRM connectivity (uses tickets from default ccache)
+      ansible.windows.win_ping:
+      when: not kerberos_skip_win_ping | bool
+
+    - name: EE diagnostics — AFTER ticket snapshot
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: false
+        kerberos_diag_label: AFTER
+
+    - name: Write formatted Kerberos diagnostic report
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: false
+        kerberos_diag_label: ""
+        kerberos_diag_display_log: true

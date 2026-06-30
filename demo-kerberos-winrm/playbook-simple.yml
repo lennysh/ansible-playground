@@ -1,0 +1,137 @@
+---
+# Minimal Kerberos + WinRM walkthrough — tickets visible via klist at each step.
+# Run via ansible-navigator only (EE container — do not use ansible-playbook on the host).
+#
+#   ansible-navigator run playbook-simple.yml -e @vars/kerberos.yml
+#
+# Requires: inventories/hosts.yml, vars/kerberos.yml (ansible_user UPN + ansible_password)
+
+- name: Kerberos WinRM — simple kinit / klist / win_ping walkthrough
+  hosts: windows
+  gather_facts: false
+  vars:
+    ansible_winrm_kinit_mode: manual
+  tasks:
+    - name: Deploy krb5.conf for the lab realm
+      ansible.builtin.template:
+        src: roles/kerberos_diagnostics/templates/krb5.conf.j2
+        dest: /etc/krb5.conf
+        mode: "0644"
+      become: true
+      delegate_to: localhost
+      run_once: true
+      when: kerberos_deploy_krb5_conf | default(true) | bool
+
+    - name: Clear any existing ticket cache
+      ansible.builtin.command:
+        cmd: kdestroy -A
+      register: kdestroy_result
+      changed_when: false
+      failed_when: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: klist — empty cache expected
+      ansible.builtin.command:
+        cmd: klist -e -f
+      register: klist_empty
+      changed_when: false
+      failed_when: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display klist — no tickets
+      ansible.builtin.debug:
+        msg: >-
+          {{ klist_empty.stdout_lines if klist_empty.stdout | length > 0
+             else klist_empty.stderr_lines }}
+
+    - name: win_ping without tickets (expect failure in manual mode)
+      ansible.windows.win_ping:
+      register: win_ping_no_tickets
+      ignore_errors: true
+      ignore_unreachable: true
+
+    - name: Display expected win_ping failure (no credentials in cache)
+      ansible.builtin.debug:
+        msg: "{{ win_ping_no_tickets.msg }}"
+      when: >-
+        win_ping_no_tickets.failed | default(false)
+        or win_ping_no_tickets.unreachable | default(false)
+
+    - name: Confirm WinRM did not kinit — manual mode requires a pre-existing TGT
+      ansible.builtin.assert:
+        that:
+          - >-
+            win_ping_no_tickets.failed | default(false)
+            or win_ping_no_tickets.unreachable | default(false)
+        fail_msg: >-
+          win_ping succeeded with an empty cache — unexpected for
+          ansible_winrm_kinit_mode=manual. WinRM should not kinit for you.
+        success_msg: >-
+          win_ping failed with an empty ticket cache (ansible_winrm_kinit_mode=manual).
+          WinRM did not run kinit; a TGT must exist in the default ccache first.
+
+    - name: kinit — obtain TGT manually
+      ansible.builtin.command:
+        cmd: kinit {{ ansible_user | quote }}
+        stdin: "{{ ansible_password }}\n"
+      register: kinit_result
+      no_log: true
+      changed_when: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display kinit result
+      ansible.builtin.debug:
+        msg:
+          principal: "{{ ansible_user }}"
+          rc: "{{ kinit_result.rc }}"
+          stderr: "{{ kinit_result.stderr | default('') }}"
+
+    - name: Fail when kinit did not succeed
+      ansible.builtin.fail:
+        msg: >-
+          kinit failed for {{ ansible_user }} (rc={{ kinit_result.rc }}).
+          {{ kinit_result.stderr }}
+      when: kinit_result.rc != 0
+
+    - name: klist — after kinit
+      ansible.builtin.command:
+        cmd: klist -e -f
+      register: klist_after_kinit
+      changed_when: false
+      failed_when: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display klist — TGT in default ccache
+      ansible.builtin.debug:
+        msg: "{{ klist_after_kinit.stdout_lines }}"
+
+    - name: win_ping — uses TGT from default ccache (still no WinRM kinit)
+      ansible.windows.win_ping:
+
+    - name: klist — after win_ping
+      ansible.builtin.command:
+        cmd: klist -e -f
+      register: klist_after_win_ping
+      changed_when: false
+      failed_when: false
+      delegate_to: localhost
+      run_once: true
+
+    - name: Display klist — TGT plus HTTP service ticket in the same default ccache
+      ansible.builtin.debug:
+        msg: "{{ klist_after_win_ping.stdout_lines }}"
+
+    - name: Confirm WinRM used the default ccache (HTTP ticket visible to klist)
+      ansible.builtin.assert:
+        that:
+          - "'HTTP/' in klist_after_win_ping.stdout"
+        fail_msg: >-
+          No HTTP/ service ticket in the default ccache after win_ping.
+        success_msg: >-
+          HTTP/ service ticket is in the default ccache — the same cache klist
+          reads. WinRM used the existing TGT; in managed mode this ticket would
+          live in an ephemeral cache invisible to klist.

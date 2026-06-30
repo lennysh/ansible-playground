@@ -1,0 +1,36 @@
+---
+# All tasks run inside the EE on the controller (localhost), once per play —
+# even when the play targets multiple Windows hosts.
+- name: Kerberos EE diagnostics on controller (run once per play)
+  delegate_to: localhost
+  run_once: true
+  block:
+    - name: Initialize diagnostic log (BEFORE phase only)
+      ansible.builtin.include_tasks: init_log.yml
+      when: kerberos_diag_label == 'BEFORE'
+
+    - name: Deploy krb5.conf from template (realm-specific lab config)
+      ansible.builtin.include_tasks: deploy_krb5_conf.yml
+      when:
+        - kerberos_deploy_krb5_conf | default(true) | bool
+        - >-
+          kerberos_diag_run_one_off | default(false) | bool or
+          kerberos_diag_run_kinit | default(false) | bool
+
+    - name: Run one-off EE checks (time, krb5.conf, DNS, KDC ports)
+      ansible.builtin.include_tasks: one_off.yml
+      when: kerberos_diag_run_one_off | default(false) | bool
+
+    - name: Obtain Kerberos TGT (manual WinRM kinit mode)
+      ansible.builtin.include_tasks: kinit.yml
+      when:
+        - kerberos_diag_run_kinit | default(false) | bool
+        - ansible_winrm_kinit_mode | default('manual') == 'manual'
+
+    - name: Capture ticket-cache snapshot ({{ kerberos_diag_label }})
+      ansible.builtin.include_tasks: snapshot.yml
+      when: kerberos_diag_label | length > 0
+
+    - name: Display diagnostic log to console
+      ansible.builtin.include_tasks: display_log.yml
+      when: kerberos_diag_display_log | default(false) | bool

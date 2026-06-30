@@ -1,0 +1,2 @@
+# dig for DNS SRV diagnostics — not included in ee-minimal-rhel9
+bind-utils [platform:rpm]

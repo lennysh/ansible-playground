@@ -1,0 +1,55 @@
+---
+# Realm used for DNS SRV lookups and krb5.conf templating (uppercase).
+kerberos_realm: "EXAMPLE.COM"
+
+# DNS domain matching the realm (lowercase). Used in krb5.conf [domain_realm].
+kerberos_domain: "example.com"
+
+# Static KDC hostnames (optional). Leave empty to rely on dns_lookup_kdc / SRV records.
+kerberos_kdc_hosts: []
+# kerberos_kdc_hosts:
+#   - dc1.example.com
+#   - dc2.example.com
+
+# Template krb5.conf at the start of each run (recommended for demos — no EE rebuild).
+kerberos_deploy_krb5_conf: true
+kerberos_krb5_conf_path: "/etc/krb5.conf"
+kerberos_dns_lookup_kdc: true
+
+# Log file on the controller / inside the EE container.
+kerberos_diag_log_path: "/tmp/ee_krb5_diag.log"
+
+# Phase label written into the log — set by the playbook ("BEFORE" / "AFTER").
+kerberos_diag_label: ""
+
+# Run one-time checks (time, krb5.conf, dig, KDC ports) — only on the first play.
+kerberos_diag_run_one_off: false
+
+# Slurp the log and write kerberos-diag-report.txt at end of run.
+kerberos_diag_display_log: false
+
+# Where to write the readable report (controller / mounted playbook dir).
+# kerberos_diag_report_path: "{{ playbook_dir }}/kerberos-diag-report.txt"
+
+# file — write report + one-line pointer (default; open with less/editor)
+# stdout — also cat the report (readable with ansible.cfg result_format=yaml)
+kerberos_diag_display_mode: file
+
+# Run kinit into the default ccache (requires ansible_winrm_kinit_mode=manual).
+kerberos_diag_run_kinit: false
+
+# Optional overrides for kinit (default to ansible_user / ansible_password from vars file).
+# kerberos_kinit_user: svc-ansible@EXAMPLE.COM
+# kerberos_kinit_password: CHANGEME
+
+# SRV records to query for realm / AD discovery issues.
+kerberos_dns_srv_queries:
+  - "_kerberos._tcp.{{ kerberos_realm }}"
+  - "_kerberos._udp.{{ kerberos_realm }}"
+  - "_ldap._tcp.dc._msdcs.{{ kerberos_realm }}"
+
+# TCP port used when testing KDC reachability (88 is the Kerberos default).
+kerberos_kdc_port: 88
+
+# Socket connect timeout (seconds) for KDC checks.
+kerberos_kdc_connect_timeout: 3

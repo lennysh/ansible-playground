@@ -1,0 +1,7 @@
+# Local lab config (copy from *.example.yml)
+vars/kerberos.yml
+inventories/hosts.yml
+
+kerberos-diag-report.txt
+context/*
+!context/bindep.txt

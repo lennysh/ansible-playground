@@ -1,0 +1,17 @@
+---
+- name: Deploy realm-specific krb5.conf into the EE
+  ansible.builtin.template:
+    src: krb5.conf.j2
+    dest: "{{ kerberos_krb5_conf_path }}"
+    mode: "0644"
+  become: true
+
+- name: Log krb5.conf deployment
+  ansible.builtin.shell: |
+    echo "" >> {{ kerberos_diag_log_path | quote }}
+    echo "--- krb5.conf deployed to {{ kerberos_krb5_conf_path }} ---" \
+      >> {{ kerberos_diag_log_path | quote }}
+    cat {{ kerberos_krb5_conf_path | quote }} >> {{ kerberos_diag_log_path | quote }} 2>&1
+  when: kerberos_diag_run_one_off | default(false) | bool
+  changed_when: false
+  failed_when: false

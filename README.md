@@ -15,6 +15,8 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 | [demo-dynamic-inventory-csv](demo-dynamic-inventory-csv/README.md) | [CSV-driven dynamic inventory](demo-dynamic-inventory-csv/README.md) — one plugin, many inventory YAML filters from a single spreadsheet |
 | [demo-dynamic-inventory-merge](demo-dynamic-inventory-merge/README.md) | [Merging flat inventories via plugin](demo-dynamic-inventory-merge/README.md) — layer INI/YAML/JSON sources with last-wins precedence |
 | [demo-satellite-sync-and-promote](demo-satellite-sync-and-promote/README.md) | [Satellite sync, wait, and lifecycle promote](demo-satellite-sync-and-promote/README.md) — sync/publish/DEV, then tag-driven promote to QA and PROD after validation |
+| [demo-kerberos-winrm](demo-kerberos-winrm/README.md) | [Kerberos tickets for WinRM](demo-kerberos-winrm/README.md) — EE diagnostics before/after `win_ping`; run via **ansible-navigator** or AAP only |
+| [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — same Windows host via Navigator/AAP EE, cold vs warm per-iteration comparison |
 
 
 ## Running a demo

@@ -1,0 +1,25 @@
+---
+# Copy to kerberos.yml and edit for your lab:
+#   cp vars/kerberos.example.yml vars/kerberos.yml
+#
+# Navigator (EE container):
+#   ansible-navigator run playbook.yml -e @vars/kerberos.yml
+#   ansible-navigator run playbook-simple.yml -e @vars/kerberos.yml
+
+# --- Kerberos / krb5.conf (templated at runtime) ---
+kerberos_realm: EXAMPLE.COM
+kerberos_domain: example.com
+kerberos_kdc_hosts: []
+# kerberos_kdc_hosts:
+#   - dc1.example.com
+kerberos_deploy_krb5_conf: true
+
+# --- Demo behavior (playbook.yml / playbook-aap.yml) ---
+kerberos_skip_win_ping: false
+kerberos_run_kinit: true
+kerberos_diag_log_path: /tmp/ee_krb5_diag.log
+# kerberos_diag_display_mode: stdout   # optional — also cat report to job output
+
+# --- WinRM credentials (UPN required for Kerberos) ---
+# ansible_user: svc-ansible@EXAMPLE.COM
+# ansible_password: CHANGEME

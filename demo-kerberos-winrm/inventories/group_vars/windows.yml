@@ -1,0 +1,12 @@
+---
+# WinRM + Kerberos connection defaults for the `windows` inventory group.
+# Loaded from inventories/group_vars/ (adjacent to inventories/hosts.yml).
+
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_transport: kerberos
+ansible_winrm_kerberos_delegation: true
+
+# manual (default): run kinit via the role; tickets stay in the default ccache.
+# managed: WinRM kinits into a temp ccache per task (klist snapshots won't see it).
+ansible_winrm_kinit_mode: manual

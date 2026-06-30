@@ -1,0 +1,43 @@
+---
+# Run via ansible-navigator only (EE container — do not use ansible-playbook on the host).
+#
+#   cp vars/kerberos.example.yml vars/kerberos.yml
+#   cp inventories/hosts.example.yml inventories/hosts.yml
+#   ansible-navigator run playbook.yml -e @vars/kerberos.yml
+
+- name: Kerberos WinRM — EE diagnostics, ticket acquisition, before/after comparison
+  hosts: windows
+  gather_facts: false
+  tasks:
+    - name: EE diagnostics — one-off checks and BEFORE ticket snapshot
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: true
+        kerberos_diag_label: BEFORE
+
+    - name: Obtain Kerberos TGT (tickets visible to klist)
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_kinit: "{{ kerberos_run_kinit | default(true) | bool }}"
+      when: not kerberos_skip_win_ping | default(false) | bool
+
+    - name: WinRM connectivity (uses tickets from default ccache)
+      ansible.windows.win_ping:
+      when: not kerberos_skip_win_ping | default(false) | bool
+
+    - name: EE diagnostics — AFTER ticket snapshot
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: false
+        kerberos_diag_label: AFTER
+
+    - name: Write formatted Kerberos diagnostic report
+      ansible.builtin.include_role:
+        name: kerberos_diagnostics
+      vars:
+        kerberos_diag_run_one_off: false
+        kerberos_diag_label: ""
+        kerberos_diag_display_log: true

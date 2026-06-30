@@ -1,0 +1,68 @@
+---
+- name: Record container system time (UTC)
+  ansible.builtin.shell: |
+    echo "--- Container System Time (UTC) ---" >> {{ kerberos_diag_log_path | quote }}
+    date -u >> {{ kerberos_diag_log_path | quote }}
+  changed_when: false
+  failed_when: false
+
+- name: Dump Kerberos-related environment variables
+  ansible.builtin.shell: |
+    echo "--- Kerberos Environment Variables ---" >> {{ kerberos_diag_log_path | quote }}
+    env | grep -E 'KRB5|CONTAINER|HOME|USER|UID' >> {{ kerberos_diag_log_path | quote }} 2>&1 \
+      || echo "(no matching env vars)" >> {{ kerberos_diag_log_path | quote }}
+  changed_when: false
+  failed_when: false
+
+- name: Verify krb5.conf path and permissions
+  ansible.builtin.shell: |
+    echo "--- krb5.conf path ---" >> {{ kerberos_diag_log_path | quote }}
+    TARGET_CONF=${KRB5_CONFIG:-/etc/krb5.conf}
+    echo "File: $TARGET_CONF" >> {{ kerberos_diag_log_path | quote }}
+    ls -la "$TARGET_CONF" >> {{ kerberos_diag_log_path | quote }} 2>&1
+  changed_when: false
+  failed_when: false
+
+- name: Query DNS SRV records for the Kerberos realm
+  ansible.builtin.shell: |
+    echo "--- DNS SRV Lookup: {{ srv_query }} ---" >> {{ kerberos_diag_log_path | quote }}
+    if command -v dig >/dev/null 2>&1; then
+      _answers=$(dig +short SRV "{{ srv_query }}" 2>&1)
+      if [ -n "$_answers" ]; then
+        echo "$_answers" >> {{ kerberos_diag_log_path | quote }}
+      else
+        echo "WARNING: no SRV answers (KDC discovery via DNS will fail)" \
+          >> {{ kerberos_diag_log_path | quote }}
+      fi
+    else
+      echo "ERROR: dig command not found in this EE image" >> {{ kerberos_diag_log_path | quote }}
+    fi
+  loop: "{{ kerberos_dns_srv_queries }}"
+  loop_control:
+    loop_var: srv_query
+    label: "{{ srv_query }}"
+  changed_when: false
+  failed_when: false
+
+- name: Test KDC network connectivity from krb5.conf
+  ansible.builtin.shell: |
+    echo "--- KDC Network Connectivity (via Python) ---" >> {{ kerberos_diag_log_path | quote }}
+    TARGET_CONF=${KRB5_CONFIG:-/etc/krb5.conf}
+    if [ ! -f "$TARGET_CONF" ]; then
+      echo "Skipping network check: krb5.conf not found." >> {{ kerberos_diag_log_path | quote }}
+      exit 0
+    fi
+    grep -E '^\s+kdc\s*=' "$TARGET_CONF" | awk '{print $3}' | sed 's/.*=//' | grep -v '^FILE:' | while read -r kdc; do
+      [ -z "$kdc" ] && continue
+      HOST=$(echo "$kdc" | cut -d: -f1 | tr -d '[:space:]')
+      PORT=$(echo "$kdc" | cut -s -d: -f2)
+      PORT=${PORT:-{{ kerberos_kdc_port }}}
+      echo "Testing connection to $HOST on port $PORT..." >> {{ kerberos_diag_log_path | quote }}
+      python3 -c "import socket; s = socket.socket(); s.settimeout({{ kerberos_kdc_connect_timeout }}); \
+        exit(0) if s.connect_ex(('$HOST', int('$PORT'))) == 0 else exit(1)" \
+        >> {{ kerberos_diag_log_path | quote }} 2>&1 \
+        && echo "SUCCESS: Connected to $HOST:$PORT" >> {{ kerberos_diag_log_path | quote }} \
+        || echo "FAILED: Cannot reach $HOST:$PORT" >> {{ kerberos_diag_log_path | quote }}
+    done
+  changed_when: false
+  failed_when: false

@@ -1,0 +1,11 @@
+# Stub krb5.conf baked into the EE image.
+# Overwritten at playbook runtime when kerberos_deploy_krb5_conf=true (default).
+# See roles/kerberos_diagnostics/templates/krb5.conf.j2
+
+[libdefaults]
+    dns_lookup_kdc = true
+    dns_lookup_realm = false
+    rdns = false
+    ticket_lifetime = 24h
+    renew_lifetime = 7d
+    forwardable = true
