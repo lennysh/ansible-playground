@@ -4,8 +4,8 @@ Runs the **same benchmark task** against one Windows host under **two kinit stra
 
 | Suite | Kinit behavior | WinRM | PSRP |
 |-------|----------------|-------|------|
-| **Manual** | One `kinit` before benchmarks; plugins reuse default ccache | `ansible_winrm_kinit_mode: manual` | Uses shared TGT |
-| **Managed** | Connection plugins kinits per task (`ansible_winrm_kinit_mode: managed`) | WinRM plugin | PSRP Kerberos auth via plugin |
+| **Manual** | One `kinit` before benchmarks; plugins reuse default ccache | `ansible_winrm_kinit_mode: manual` | Uses shared TGT (no PSRP kinit setting) |
+| **Managed** | WinRM plugin kinits per task (`ansible_winrm_kinit_mode: managed`) | WinRM plugin | PSRP Kerberos auth in-process (GSSAPI) |
 
 Per-iteration timings are recorded on the controller so you can compare cold vs warm connection reuse and the cost of per-task authentication.
 
@@ -30,10 +30,10 @@ sequenceDiagram
   Note over EE,Win: Managed — WinRM then PSRP (plugin handles kinit per task)
   loop N iterations
     EE->>EE: date +%s.%N (start)
-    EE->>Win: win_ping (managed kinit inside plugin)
+    EE->>Win: win_ping (managed kinit inside WinRM plugin)
     EE->>EE: date +%s.%N (end)
   end
-  EE->>EE: Summaries — per kinit mode + final matrix
+  EE->>EE: Summaries — per kinit mode + final matrix + TXT report
 ```
 
 | Metric | Meaning |
@@ -46,22 +46,37 @@ sequenceDiagram
 
 Both kinit suites target the **same inventory host** (`hosts: windows`). Manual suite runs first with a shared TGT from `kerberos_prep`; managed suite starts with `kdestroy` so no stale tickets remain. Explicit `kinit` runs **only** in manual mode via `kerberos_prep` — never inside the benchmark timer.
 
+### Playbook flow (`playbook.yml`)
+
+| # | Play | Purpose |
+|---|------|---------|
+| 1 | Kerberos prep | Template `krb5.conf`, run `kinit` (manual mode gate) |
+| 2–3 | WinRM / PSRP manual benchmarks | Timed iterations with shared TGT |
+| 4 | Manual summary | Side-by-side WinRM vs PSRP |
+| 5 | `kdestroy` | Clear ccache before managed suite |
+| 6–7 | WinRM / PSRP managed benchmarks | WinRM tasks override `ansible_winrm_kinit_mode: managed` |
+| 8 | Managed summary | Side-by-side WinRM vs PSRP |
+| 9 | Final matrix + report | `connection-benchmark-report.txt` |
+
 ## Layout
 
 | Path | Purpose |
 |------|---------|
 | [`playbook.yml`](playbook.yml) | Navigator entry point |
 | [`playbook-aap.yml`](playbook-aap.yml) | AAP job template entry point |
-| [`roles/kerberos_prep/`](roles/kerberos_prep/) | Deploy krb5.conf + kinit before benchmarks |
+| [`roles/kerberos_prep/`](roles/kerberos_prep/) | Deploy krb5.conf, `kinit`, and `kdestroy` |
 | [`roles/connection_benchmark/`](roles/connection_benchmark/) | Timed iterations, summaries, and report |
 | [`roles/connection_benchmark/files/format_benchmark_report.py`](roles/connection_benchmark/files/format_benchmark_report.py) | Formats results → readable report |
+| [`roles/connection_benchmark/tasks/measure_iteration_*`](roles/connection_benchmark/tasks/) | One file per kinit mode × plugin × task (no `when` skips in timed loop) |
 | `connection-benchmark-report.txt` | Generated report (gitignored; written each run) |
 | [`vars/benchmark.example.yml`](vars/benchmark.example.yml) | Local lab vars (copy → `vars/benchmark.yml`, gitignored) |
 | [`inventories/group_vars/windows.yml`](inventories/group_vars/windows.yml) | Kerberos WinRM/PSRP connection defaults |
 | [`inventories/hosts.example.yml`](inventories/hosts.example.yml) | Sample Windows inventory |
 | [`execution-environment.yml`](execution-environment.yml) | EE definition (`ee-minimal-rhel9:2.16` + dig + ansible.windows) |
-| [`ansible-navigator.yml`](ansible-navigator.yml) | Navigator defaults (`mode: stdout`, EE image, inventory, `ansible.cfg`) |
+| [`_build/files/krb5.conf.stub`](_build/files/krb5.conf.stub) | Stub krb5.conf baked into the EE image |
+| [`ansible-navigator.yml`](ansible-navigator.yml) | Navigator defaults (mode, EE image, inventory, cmdline) |
 | [`ansible.cfg`](ansible.cfg) | Default inventory + `result_format = yaml` |
+| [`collections/requirements.yml`](collections/requirements.yml) | `ansible.windows` for the EE build |
 
 ## Common setup
 
@@ -78,12 +93,27 @@ cp inventories/hosts.example.yml inventories/hosts.yml
 Pass all lab-specific settings through **one vars file**:
 
 ```bash
-ansible-navigator run playbook.yml -e @vars/benchmark.yml
+ansible-navigator run
 ```
+
+[`ansible-navigator.yml`](ansible-navigator.yml) sets `ansible.cmdline` to `playbook.yml -e @vars/benchmark.yml`. You can still pass overrides on the CLI, but **positional args replace the settings-file cmdline** — prefer `-e` flags for one-off changes.
 
 ### SPN troubleshooting
 
 If connectivity fails with **"Server not found in Kerberos database"**, the `HTTP/<hostname>` SPN is missing or mismatched. Check on Windows with `setspn -L <computername>` and set `ansible_winrm_kerberos_hostname_override` on the host if needed (see [`inventories/hosts.example.yml`](inventories/hosts.example.yml)).
+
+### `ansible_winrm_kinit_mode` in group_vars
+
+[`inventories/group_vars/windows.yml`](inventories/group_vars/windows.yml) sets `ansible_winrm_kinit_mode: manual` as the **inventory baseline** for the Windows group:
+
+- **`kerberos_prep`** runs `kinit` only when mode is `manual`.
+- **Manual benchmark** WinRM tasks also set `ansible_winrm_kinit_mode: "{{ connection_benchmark_kinit_mode }}"` explicitly.
+- **Managed benchmark** WinRM tasks override to `managed` per timed task; inventory stays `manual`.
+- **PSRP** ignores `ansible_winrm_kinit_mode` entirely (no `ansible_psrp_kinit_mode` exists).
+
+Do not remove the group var — WinRM's plugin default is `managed`, which would break the manual suite's shared-ccache model.
+
+> **Do not set `ansible_connection` at the play level.** Connection vars live in `inventories/group_vars/windows.yml` so `delegate_to: localhost` timing tasks stay on the local connection.
 
 ---
 
@@ -103,13 +133,15 @@ ansible-builder build -f execution-environment.yml -t demo-winrm-vs-psrp-ee:late
 
 Base image: `registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.16`
 
+`ee-minimal-rhel9` uses **microdnf**; `execution-environment.yml` sets `options.package_manager_path: /usr/bin/microdnf` and copies `_build/files/krb5.conf.stub` via `additional_build_files`.
+
 **Run the benchmark**:
 
 ```bash
-ansible-navigator run playbook.yml -e @vars/benchmark.yml
+ansible-navigator run
 
 # Interactive TUI (override default stdout mode)
-ansible-navigator run playbook.yml -e @vars/benchmark.yml --mode interactive
+ansible-navigator run --mode interactive
 ```
 
 Navigator settings in [`ansible-navigator.yml`](ansible-navigator.yml):
@@ -120,14 +152,18 @@ Navigator settings in [`ansible-navigator.yml`](ansible-navigator.yml):
 | EE image | `localhost/demo-winrm-vs-psrp-ee:latest` |
 | Inventory | `inventories/hosts.yml` |
 | Ansible config | `ansible.cfg` |
-| Playbook + vars | `playbook.yml -e @vars/benchmark.yml` |
+| Playbook + vars | `-vvvvv playbook.yml -e @vars/benchmark.yml` (via `ansible.cmdline`; remove `-vvvvv` for quieter runs) |
+| Playbook artifacts | `enable: true` — JSON saved as `playbook-artifact-{time_stamp}.json` |
+| Navigator logging | `level: warning` (navigator log only; not ansible-playbook verbosity) |
 
-Optional overrides on the CLI:
+Optional overrides (use `-e`; avoid replacing the whole cmdline with positional args):
 
 ```bash
-ansible-navigator run playbook.yml -e @vars/benchmark.yml -e connection_benchmark_task=win_shell
-ansible-navigator run playbook.yml -e @vars/benchmark.yml -e connection_benchmark_iterations=5
+ansible-navigator run -e connection_benchmark_task=win_shell
+ansible-navigator run -e connection_benchmark_iterations=5
 ```
+
+**Verbose output for debugging:** add `-vvvvv` to `ansible.cmdline` in a copy of the settings file, or run with `ANSIBLE_VERBOSITY=5`. There is no built-in “verbose in artifact only” split — use **`--mode interactive`**, redirect stdout (`> /dev/null 2>&1`), or inspect the saved playbook artifact / `ansible-navigator replay` afterward.
 
 > **Note:** `vars/benchmark.yml` and `inventories/hosts.yml` are gitignored. Copy from the `.example` files.
 
@@ -172,39 +208,41 @@ At the end, a formatted report is written to **`connection-benchmark-report.txt`
 less demo-winrm-vs-psrp/connection-benchmark-report.txt
 ```
 
-Example excerpt:
+Example excerpt (5 iterations; your numbers will vary):
 
 ```text
 ==============================================================================
   WinRM vs PSRP Connection Benchmark
 ==============================================================================
-  Host .......... winsrv-demo-01.lennysh.test
-  Target ........ winsrv-demo-01.lennysh.test
-  Auth .......... kerberos (LENNYSH.TEST)
+  Host .......... winsrv-demo-01.example.com
+  Auth .......... kerberos (EXAMPLE.COM)
   Port .......... 5985
-  Generated ..... 2026-06-30 23:55:43 UTC
 
 ------------------------------------------------------------------------------
   MANUAL KINIT
 ------------------------------------------------------------------------------
+  Task .......... win_ping
+  Iterations .... 5
+
   Per-iteration timings (seconds)
 Iter            WinRM       PSRP        Delta (PSRP-WinRM)
 --------------  ----------  ----------  ------------------
-1 (cold)             5.239       5.680              +0.441
-2 (warm)             5.932       4.222              -1.710
-3 (warm)             5.876       4.649              -1.227
+1 (cold)             5.686       4.466              -1.220
+2 (warm)             6.000       4.988              -1.012
+...
 
   Summary
 Metric          WinRM       PSRP        Delta       Faster
-Total               17.047      14.550      -2.497      PSRP
-...
+Total               29.979      23.133      -6.845      PSRP
+Cold (iter 1)        5.686       4.466      -1.220      PSRP
+Warm avg             6.073       4.667      -1.406      PSRP
 
 ------------------------------------------------------------------------------
   FINAL MATRIX — total seconds
 ------------------------------------------------------------------------------
 Kinit mode      WinRM       PSRP        Faster
-Manual              17.047      14.550      PSRP
-Managed             22.800      21.900      PSRP
+Manual              29.979      23.133      PSRP
+Managed             33.734      23.751      PSRP
 ```
 
 To also `cat` the report into job output:
@@ -223,23 +261,24 @@ All lab-specific settings belong in **`vars/benchmark.yml`** (Navigator) or AAP 
 | `kerberos_domain` | `example.com` | DNS domain for `[domain_realm]` |
 | `kerberos_kdc_hosts` | `[]` | Static KDC list; empty = `dns_lookup_kdc` |
 | `kerberos_deploy_krb5_conf` | `true` | Template krb5.conf at runtime |
-| `kerberos_run_kinit` | `true` | Run `kinit` before manual suite (not used in managed suite) |
-| `connection_benchmark_iterations` | `3` | Timed task repetitions per plugin per kinit mode |
+| `kerberos_run_kinit` | `true` | Run `kinit` before manual suite (gated by `ansible_winrm_kinit_mode: manual`) |
+| `connection_benchmark_iterations` | `3` (role); `5` in `benchmark.example.yml` | Timed task repetitions per plugin per kinit mode |
 | `connection_benchmark_task` | `win_ping` | `win_ping` or `win_shell` |
-| `ansible_winrm_kinit_mode` | `manual` | Default in `group_vars`; overridden to `managed` per task in managed suite |
+| `ansible_winrm_kinit_mode` | `manual` | In `group_vars/windows.yml`; managed WinRM tasks override per iteration |
 | `connection_benchmark_report_path` | `{{ playbook_dir }}/connection-benchmark-report.txt` | Formatted TXT report output |
 | `connection_benchmark_report_display_mode` | `file` | `file` = path only; `stdout` = also `cat` the report |
 
 ## Things to try
 
-- Increase `connection_benchmark_iterations` to observe warm-connection pooling.
+- Increase `connection_benchmark_iterations` to observe warm-connection pooling (very high counts can stress WinRM shell cleanup — watch for read timeouts).
 - Switch to `connection_benchmark_task: win_shell` for slightly heavier remote work.
 - Compare cold (iteration 1) vs warm averages — Kerberos cold times include service ticket acquisition.
 - Run against multiple Windows hosts — prep and benchmarks run per host; summary compares each.
+- Replay a saved artifact: `ansible-navigator replay playbook-artifact-....json`.
 
 ## Role internals
 
-[`roles/kerberos_prep/tasks/main.yml`](roles/kerberos_prep/tasks/main.yml) templates `krb5.conf` and runs `kinit` with `delegate_to: localhost` / `run_once: true`.
+[`roles/kerberos_prep/tasks/main.yml`](roles/kerberos_prep/tasks/main.yml) templates `krb5.conf` and runs `kinit` with `delegate_to: localhost` / `run_once: true`. [`roles/kerberos_prep/tasks/kdestroy.yml`](roles/kerberos_prep/tasks/kdestroy.yml) clears the ccache before the managed suite.
 
 [`roles/connection_benchmark/tasks/write_report.yml`](roles/connection_benchmark/tasks/write_report.yml) runs [`format_benchmark_report.py`](roles/connection_benchmark/files/format_benchmark_report.py) after the final summary to produce `connection-benchmark-report.txt`.
 
@@ -249,4 +288,4 @@ Benchmark iterations use **variable-named task files** (no `when` skips inside t
 include_tasks: measure_iteration_{{ connection_benchmark_kinit_mode }}_{{ connection_benchmark_plugin }}_{{ connection_benchmark_task }}.yml
 ```
 
-The playbook calls the role via `tasks_from` (`measure.yml`, `summary.yml`, `summary_all.yml`) instead of branching in `main.yml`.
+The playbook calls the role via `tasks_from` (`measure.yml`, `summary.yml`, `summary_all.yml`) instead of branching in `main.yml`. `summary_all.yml` includes `summary_final.yml` then `write_report.yml`.

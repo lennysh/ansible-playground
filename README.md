@@ -16,7 +16,7 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 | [demo-dynamic-inventory-merge](demo-dynamic-inventory-merge/README.md) | [Merging flat inventories via plugin](demo-dynamic-inventory-merge/README.md) — layer INI/YAML/JSON sources with last-wins precedence |
 | [demo-satellite-sync-and-promote](demo-satellite-sync-and-promote/README.md) | [Satellite sync, wait, and lifecycle promote](demo-satellite-sync-and-promote/README.md) — sync/publish/DEV, then tag-driven promote to QA and PROD after validation |
 | [demo-kerberos-winrm](demo-kerberos-winrm/README.md) | [Kerberos tickets for WinRM](demo-kerberos-winrm/README.md) — EE diagnostics before/after `win_ping`; run via **ansible-navigator** or AAP only |
-| [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — same Windows host via Navigator/AAP EE, cold vs warm per-iteration comparison |
+| [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — manual vs managed kinit, same Windows host, per-iteration comparison via Navigator/AAP EE |
 
 
 ## Running a demo
@@ -25,6 +25,8 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 cd demo-<name>
 ansible-playbook playbook.yml
 ```
+
+**Kerberos / Windows demos** ([demo-kerberos-winrm](demo-kerberos-winrm/README.md), [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md)) must run via **ansible-navigator** or **AAP** inside an execution environment — not bare `ansible-playbook` on your workstation (they template `/etc/krb5.conf` and run `kinit` on the controller).
 
 Each demo README includes details on what to look for in the output, things to try, and — where relevant — how to adapt the pattern for use in Ansible Automation Platform (AAP).
 
