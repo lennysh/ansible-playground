@@ -1,0 +1,112 @@
+---
+# AAP job template — WinRM vs PSRP under manual and managed kinit modes.
+
+- name: Kerberos prep — krb5.conf and shared TGT for manual kinit benchmarks (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    kerberos_realm: "{{ kerberos_realm | default('EXAMPLE.COM') }}"
+    kerberos_domain: "{{ kerberos_domain | default('example.com') }}"
+    kerberos_kdc_hosts: "{{ kerberos_kdc_hosts | default([]) }}"
+    kerberos_deploy_krb5_conf: "{{ kerberos_deploy_krb5_conf | default(true) | bool }}"
+    kerberos_run_kinit: "{{ kerberos_run_kinit | default(true) | bool }}"
+  tasks:
+    - name: Deploy krb5.conf and obtain Kerberos TGT (manual mode)
+      ansible.builtin.include_role:
+        name: kerberos_prep
+
+- name: WinRM benchmark — manual kinit (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    connection_benchmark_iterations: "{{ connection_benchmark_iterations | default(3) | int }}"
+    connection_benchmark_task: "{{ connection_benchmark_task | default('win_ping') }}"
+    connection_benchmark_plugin: winrm
+    connection_benchmark_kinit_mode: manual
+  tasks:
+    - name: Run WinRM timed benchmark (manual kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: measure.yml
+
+- name: PSRP benchmark — manual kinit (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    connection_benchmark_iterations: "{{ connection_benchmark_iterations | default(3) | int }}"
+    connection_benchmark_task: "{{ connection_benchmark_task | default('win_ping') }}"
+    connection_benchmark_plugin: psrp
+    connection_benchmark_kinit_mode: manual
+  tasks:
+    - name: Run PSRP timed benchmark (manual kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: measure.yml
+
+- name: Comparison summary — manual kinit (AAP)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    connection_benchmark_kinit_mode: manual
+  tasks:
+    - name: Display WinRM vs PSRP comparison (manual kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: summary.yml
+
+- name: Clear ticket cache before managed kinit benchmarks (AAP)
+  hosts: windows
+  gather_facts: false
+  tasks:
+    - name: kdestroy — empty ccache from manual suite
+      ansible.builtin.include_role:
+        name: kerberos_prep
+        tasks_from: kdestroy.yml
+
+- name: WinRM benchmark — managed kinit (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    connection_benchmark_iterations: "{{ connection_benchmark_iterations | default(3) | int }}"
+    connection_benchmark_task: "{{ connection_benchmark_task | default('win_ping') }}"
+    connection_benchmark_plugin: winrm
+    connection_benchmark_kinit_mode: managed
+  tasks:
+    - name: Run WinRM timed benchmark (managed kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: measure.yml
+
+- name: PSRP benchmark — managed kinit (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    connection_benchmark_iterations: "{{ connection_benchmark_iterations | default(3) | int }}"
+    connection_benchmark_task: "{{ connection_benchmark_task | default('win_ping') }}"
+    connection_benchmark_plugin: psrp
+    connection_benchmark_kinit_mode: managed
+  tasks:
+    - name: Run PSRP timed benchmark (managed kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: measure.yml
+
+- name: Comparison summary — managed kinit (AAP)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    connection_benchmark_kinit_mode: managed
+  tasks:
+    - name: Display WinRM vs PSRP comparison (managed kinit)
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: summary.yml
+
+- name: Final comparison — manual vs managed kinit (AAP)
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Display final benchmark matrix and write report
+      ansible.builtin.include_role:
+        name: connection_benchmark
+        tasks_from: summary_all.yml

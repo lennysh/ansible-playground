@@ -1,0 +1,41 @@
+---
+- name: Build final comparison matrix (manual + managed kinit × WinRM + PSRP)
+  ansible.builtin.set_fact:
+    connection_benchmark_final_rows: >-
+      {{
+        connection_benchmark_final_rows | default([])
+        + [_row]
+      }}
+  vars:
+    _results: "{{ hostvars[item].connection_benchmark_results | default({}) }}"
+    _row:
+      host: "{{ item }}"
+      manual:
+        winrm_total: "{{ '%.3f' | format(_results.manual.winrm.total_seconds | default(0) | float) }}"
+        psrp_total: "{{ '%.3f' | format(_results.manual.psrp.total_seconds | default(0) | float) }}"
+        faster: >-
+          {{
+            'psrp'
+            if (_results.manual.psrp.total_seconds | default(0) | float)
+               < (_results.manual.winrm.total_seconds | default(0) | float)
+            else 'winrm'
+          }}
+      managed:
+        winrm_total: "{{ '%.3f' | format(_results.managed.winrm.total_seconds | default(0) | float) }}"
+        psrp_total: "{{ '%.3f' | format(_results.managed.psrp.total_seconds | default(0) | float) }}"
+        faster: >-
+          {{
+            'psrp'
+            if (_results.managed.psrp.total_seconds | default(0) | float)
+               < (_results.managed.winrm.total_seconds | default(0) | float)
+            else 'winrm'
+          }}
+  loop: "{{ groups['windows'] | default([]) }}"
+  run_once: true
+
+- name: Final summary — all kinit modes and plugins
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  loop: "{{ connection_benchmark_final_rows }}"
+  loop_control:
+    label: "{{ item.host }}"

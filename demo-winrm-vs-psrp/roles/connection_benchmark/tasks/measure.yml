@@ -1,0 +1,107 @@
+---
+- name: Validate benchmark task name
+  ansible.builtin.assert:
+    that:
+      - connection_benchmark_task in ['win_ping', 'win_shell']
+    fail_msg: >-
+      connection_benchmark_task must be win_ping or win_shell (got '{{ connection_benchmark_task }}').
+
+- name: Validate benchmark plugin name
+  ansible.builtin.assert:
+    that:
+      - connection_benchmark_plugin in ['winrm', 'psrp']
+    fail_msg: >-
+      connection_benchmark_plugin must be winrm or psrp (got '{{ connection_benchmark_plugin }}').
+
+- name: Validate kinit mode
+  ansible.builtin.assert:
+    that:
+      - connection_benchmark_kinit_mode in ['manual', 'managed']
+    fail_msg: >-
+      connection_benchmark_kinit_mode must be manual or managed (got '{{ connection_benchmark_kinit_mode }}').
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — reset iteration timers"
+  ansible.builtin.set_fact:
+    _connection_benchmark_iteration_seconds: []
+  vars:
+    ansible_connection: "{{ connection_benchmark_plugin }}"
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — run timed benchmark iterations"
+  ansible.builtin.include_tasks: >-
+    measure_iteration_{{ connection_benchmark_kinit_mode }}_{{ connection_benchmark_plugin }}_{{ connection_benchmark_task }}.yml
+  loop: "{{ range(1, connection_benchmark_iterations | int + 1) | list }}"
+  loop_control:
+    loop_var: connection_benchmark_iteration
+    label: "iteration {{ connection_benchmark_iteration }}"
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — compute timing summary"
+  ansible.builtin.set_fact:
+    connection_benchmark_result:
+      plugin: "{{ connection_benchmark_plugin }}"
+      kinit_mode: "{{ connection_benchmark_kinit_mode }}"
+      host: "{{ inventory_hostname }}"
+      ansible_host: "{{ ansible_host | default(inventory_hostname) }}"
+      auth: "kerberos ({{ kerberos_realm | default('EXAMPLE.COM') }})"
+      port: "{{ ansible_port | default(5985) }}"
+      task: "{{ connection_benchmark_task }}"
+      iterations: "{{ connection_benchmark_iterations | int }}"
+      iteration_seconds: "{{ _connection_benchmark_iteration_seconds }}"
+      total_seconds: "{{ _connection_benchmark_iteration_seconds | map('float') | sum }}"
+      cold_seconds: "{{ _connection_benchmark_iteration_seconds[0] | float }}"
+      warm_avg_seconds: >-
+        {{
+          (
+            (_connection_benchmark_iteration_seconds[1:] | map('float') | sum)
+            / (_connection_benchmark_iteration_seconds[1:] | length)
+          )
+          if (_connection_benchmark_iteration_seconds | length) > 1
+          else 0.0
+        }}
+  vars:
+    ansible_connection: "{{ connection_benchmark_plugin }}"
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — show per-iteration timings"
+  ansible.builtin.debug:
+    msg: >-
+      {{ connection_benchmark_kinit_mode | upper }}
+      / {{ connection_benchmark_plugin | upper }}
+      iteration {{ item.1 }}:
+      {{ '%.3f' | format(item.0 | float) }}s
+      {% if item.1 == 1 %}(cold — includes connection setup{% if connection_benchmark_kinit_mode == 'managed' %} + plugin kinit{% endif %}){% else %}(warm){% endif %}
+  delegate_to: localhost
+  loop: >-
+    {{
+      connection_benchmark_result.iteration_seconds
+      | zip(range(1, connection_benchmark_result.iterations | int + 1) | list)
+      | list
+    }}
+  loop_control:
+    label: "iteration {{ item.1 }}"
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — show plugin summary"
+  ansible.builtin.debug:
+    msg:
+      kinit_mode: "{{ connection_benchmark_result.kinit_mode }}"
+      plugin: "{{ connection_benchmark_result.plugin }}"
+      host: "{{ connection_benchmark_result.host }}"
+      task: "{{ connection_benchmark_result.task }}"
+      iterations: "{{ connection_benchmark_result.iterations }}"
+      total_seconds: "{{ '%.3f' | format(connection_benchmark_result.total_seconds | float) }}"
+      cold_seconds: "{{ '%.3f' | format(connection_benchmark_result.cold_seconds | float) }}"
+      warm_avg_seconds: "{{ '%.3f' | format(connection_benchmark_result.warm_avg_seconds | float) }}"
+  delegate_to: localhost
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — persist results for final comparison"
+  ansible.builtin.set_fact:
+    connection_benchmark_results: >-
+      {{
+        connection_benchmark_results | default({})
+        | combine({
+            connection_benchmark_kinit_mode: (
+              connection_benchmark_results[connection_benchmark_kinit_mode] | default({})
+              | combine({connection_benchmark_plugin: connection_benchmark_result})
+            )
+          }, recursive=true)
+      }}
+  vars:
+    ansible_connection: "{{ connection_benchmark_plugin }}"

@@ -1,0 +1,47 @@
+---
+- name: Assemble benchmark report payload
+  ansible.builtin.set_fact:
+    connection_benchmark_report_payload:
+      hosts: "{{ connection_benchmark_report_payload.hosts | default([]) + [_host_entry] }}"
+  vars:
+    _host_entry:
+      host: "{{ item }}"
+      ansible_host: "{{ hostvars[item].ansible_host | default(item) }}"
+      results: "{{ hostvars[item].connection_benchmark_results | default({}) }}"
+  loop: "{{ groups['windows'] | default([]) }}"
+  run_once: true
+
+- name: Set benchmark report path
+  ansible.builtin.set_fact:
+    _connection_benchmark_report_path: >-
+      {{ connection_benchmark_report_path | default(playbook_dir ~ '/connection-benchmark-report.txt') }}
+  run_once: true
+
+- name: Format benchmark report
+  ansible.builtin.command:
+    cmd: python3 {{ role_path }}/files/format_benchmark_report.py
+    stdin: "{{ connection_benchmark_report_payload | to_json }}"
+  register: _connection_benchmark_report_formatted
+  changed_when: false
+  run_once: true
+
+- name: Write connection benchmark report on controller
+  ansible.builtin.copy:
+    content: "{{ _connection_benchmark_report_formatted.stdout }}"
+    dest: "{{ _connection_benchmark_report_path }}"
+    mode: "0644"
+  run_once: true
+
+- name: Benchmark report location
+  ansible.builtin.debug:
+    msg: >-
+      Report written to {{ _connection_benchmark_report_path }}.
+      View with: less {{ _connection_benchmark_report_path }}
+  run_once: true
+
+- name: Echo benchmark report to playbook stdout
+  ansible.builtin.command:
+    cmd: cat {{ _connection_benchmark_report_path | quote }}
+  changed_when: false
+  run_once: true
+  when: connection_benchmark_report_display_mode | default('file') == 'stdout'

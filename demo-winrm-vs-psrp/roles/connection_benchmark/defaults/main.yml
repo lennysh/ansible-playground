@@ -1,0 +1,7 @@
+---
+connection_benchmark_plugin: ""
+connection_benchmark_kinit_mode: manual
+connection_benchmark_iterations: 3
+connection_benchmark_task: win_ping
+connection_benchmark_report_path: "{{ playbook_dir }}/connection-benchmark-report.txt"
+connection_benchmark_report_display_mode: file

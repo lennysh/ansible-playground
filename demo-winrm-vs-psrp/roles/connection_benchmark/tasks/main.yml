@@ -1,0 +1,3 @@
+---
+# Playbook entry points use tasks_from (measure.yml, summary.yml, etc.).
+# This file is not used during benchmark runs.

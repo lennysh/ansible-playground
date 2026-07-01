@@ -1,0 +1,28 @@
+---
+# Copy to benchmark.yml and edit for your lab:
+#   cp vars/benchmark.example.yml vars/benchmark.yml
+#
+# Navigator (EE container):
+#   ansible-navigator run playbook.yml -e @vars/benchmark.yml
+#
+# AAP: inject the same keys via survey / extra vars (no vars file required).
+
+# --- Kerberos / krb5.conf (templated at runtime) ---
+kerberos_realm: EXAMPLE.COM
+kerberos_domain: example.com
+kerberos_kdc_hosts: []
+# kerberos_kdc_hosts:
+#   - dc1.example.com
+kerberos_deploy_krb5_conf: true
+kerberos_run_kinit: true
+
+# --- Benchmark ---
+# Playbook runs both kinit strategies automatically:
+#   manual  — one kinit before benchmarks (ansible_winrm_kinit_mode: manual)
+#   managed — per-task kinit inside the connection plugins (ansible_winrm_kinit_mode: managed)
+connection_benchmark_iterations: 5
+connection_benchmark_task: win_ping
+
+# --- WinRM / PSRP credentials (UPN required for Kerberos) ---
+# ansible_user: svc-ansible@EXAMPLE.COM
+# ansible_password: CHANGEME

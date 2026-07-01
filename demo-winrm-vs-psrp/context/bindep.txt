@@ -1,0 +1,2 @@
+# dig for optional DNS troubleshooting — not included in ee-minimal-rhel9
+bind-utils [platform:rpm]

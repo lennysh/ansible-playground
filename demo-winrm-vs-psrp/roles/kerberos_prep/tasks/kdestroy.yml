@@ -1,0 +1,9 @@
+---
+- name: Clear all Kerberos ticket caches (controller)
+  ansible.builtin.command:
+    cmd: kdestroy -A
+  delegate_to: localhost
+  run_once: true
+  register: kdestroy_result
+  changed_when: false
+  failed_when: false

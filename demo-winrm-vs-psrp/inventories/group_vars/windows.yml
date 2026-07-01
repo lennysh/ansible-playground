@@ -1,0 +1,15 @@
+---
+# WinRM + Kerberos connection defaults for the `windows` inventory group.
+# Same pattern as demo-kerberos-winrm — ansible_connection here applies to
+# windows hosts only, so delegate_to: localhost tasks use local connection.
+
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_transport: kerberos
+ansible_winrm_kerberos_delegation: false
+ansible_psrp_auth: kerberos
+ansible_psrp_cert_validation: ignore
+ansible_winrm_server_cert_validation: ignore
+
+# manual: run kinit via kerberos_prep; tickets stay in the default ccache for both plugins.
+ansible_winrm_kinit_mode: manual

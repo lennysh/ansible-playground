@@ -1,0 +1,27 @@
+---
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — mark iteration {{ connection_benchmark_iteration }} start"
+  ansible.builtin.command: date +%s.%N
+  delegate_to: localhost
+  register: _connection_benchmark_iter_start
+  changed_when: false
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — win_ping (iteration {{ connection_benchmark_iteration }})"
+  ansible.windows.win_ping:
+  vars:
+    ansible_connection: psrp
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — mark iteration {{ connection_benchmark_iteration }} end"
+  ansible.builtin.command: date +%s.%N
+  delegate_to: localhost
+  register: _connection_benchmark_iter_end
+  changed_when: false
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — record iteration {{ connection_benchmark_iteration }} duration"
+  ansible.builtin.set_fact:
+    _connection_benchmark_iteration_seconds: >-
+      {{
+        (_connection_benchmark_iteration_seconds | default([]))
+        + [(_connection_benchmark_iter_end.stdout | float) - (_connection_benchmark_iter_start.stdout | float)]
+      }}
+  vars:
+    ansible_connection: psrp

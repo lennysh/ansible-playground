@@ -1,0 +1,15 @@
+---
+# Copy to hosts.yml and adjust hostnames. Credentials live in vars/benchmark.yml.
+
+all:
+  children:
+    windows:
+      hosts:
+        win2019.example.com:
+          ansible_host: win2019.example.com
+          # ansible_user: svc-ansible@EXAMPLE.COM
+
+          # --- WinRM Kerberos SPN (fix "Server not found in Kerberos database") ---
+          # WinRM requests a ticket for HTTP/<hostname>. If that SPN is not registered in AD,
+          # set this to the name that owns the HTTP SPN (check on Windows: setspn -L <computername>).
+          # ansible_winrm_kerberos_hostname_override: win2019.example.com

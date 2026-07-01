@@ -1,0 +1,68 @@
+---
+# Deploy krb5.conf and kinit on the controller (EE container), once per play.
+- name: Kerberos prep on controller (run once per play)
+  delegate_to: localhost
+  run_once: true
+  block:
+    - name: Deploy realm-specific krb5.conf into the EE
+      ansible.builtin.template:
+        src: krb5.conf.j2
+        dest: "{{ kerberos_krb5_conf_path }}"
+        mode: "0644"
+      become: true
+      when: kerberos_deploy_krb5_conf | default(true) | bool
+
+    - name: Validate kinit credentials are defined
+      ansible.builtin.assert:
+        that:
+          - _kinit_principal | length > 0
+          - _kinit_password | length > 0
+        fail_msg: >-
+          Set ansible_user (UPN) and ansible_password in vars/benchmark.yml, or set
+          kerberos_kinit_user / kerberos_kinit_password explicitly.
+      vars:
+        _kinit_principal: "{{ kerberos_kinit_user | default(ansible_user) | default('') }}"
+        _kinit_password: "{{ kerberos_kinit_password | default(ansible_password) | default('') }}"
+      when:
+        - kerberos_run_kinit | default(true) | bool
+        - ansible_winrm_kinit_mode | default('manual') == 'manual'
+
+    - name: Obtain Kerberos TGT into default credential cache
+      ansible.builtin.command:
+        cmd: kinit {{ _kinit_principal | quote }}
+        stdin: "{{ _kinit_password }}\n"
+      vars:
+        _kinit_principal: "{{ kerberos_kinit_user | default(ansible_user) }}"
+        _kinit_password: "{{ kerberos_kinit_password | default(ansible_password) }}"
+      register: kinit_result
+      no_log: true
+      changed_when: false
+      when:
+        - kerberos_run_kinit | default(true) | bool
+        - ansible_winrm_kinit_mode | default('manual') == 'manual'
+
+    - name: Fail when kinit did not succeed
+      ansible.builtin.fail:
+        msg: >-
+          kinit failed for {{ kerberos_kinit_user | default(ansible_user) }}
+          (rc={{ kinit_result.rc }}). {{ kinit_result.stderr | default('') }}
+          Check realm/KDC in vars/benchmark.yml and credentials.
+      when:
+        - kerberos_run_kinit | default(true) | bool
+        - kinit_result is defined
+        - kinit_result.rc != 0
+
+    - name: Confirm TGT is in the default ccache
+      ansible.builtin.command:
+        cmd: klist -e -f
+      register: klist_after_kinit
+      changed_when: false
+      failed_when: false
+      when: kerberos_run_kinit | default(true) | bool
+
+    - name: Display klist after kinit
+      ansible.builtin.debug:
+        msg: "{{ klist_after_kinit.stdout_lines }}"
+      when:
+        - kerberos_run_kinit | default(true) | bool
+        - klist_after_kinit is defined

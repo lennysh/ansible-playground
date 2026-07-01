@@ -1,0 +1,30 @@
+---
+# Build: ansible-builder build -f execution-environment.yml -t demo-winrm-vs-psrp-ee:latest
+#
+# Base: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.16
+# (ansible-core 2.16, pywinrm[kerberos], pypsrp — WinRM + PSRP connection plugins)
+#
+# Adds: bind-utils (dig), ansible.windows collection, stub krb5.conf
+# Prerequisite: podman login registry.redhat.io
+
+version: 3
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.16
+
+dependencies:
+  galaxy: collections/requirements.yml
+  system: context/bindep.txt
+
+additional_build_files:
+  - src: _build/files/krb5.conf.stub
+    dest: files
+
+options:
+  package_manager_path: /usr/bin/microdnf
+
+additional_build_steps:
+  append_final:
+    - RUN mkdir -p /etc/krb5.conf.d
+    - COPY _build/files/krb5.conf.stub /etc/krb5.conf

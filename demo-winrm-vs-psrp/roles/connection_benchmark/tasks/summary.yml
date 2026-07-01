@@ -1,0 +1,61 @@
+---
+- name: Build WinRM vs PSRP comparison for each Windows host ({{ connection_benchmark_kinit_mode }} kinit)
+  ansible.builtin.set_fact:
+    connection_benchmark_comparisons: >-
+      {{
+        connection_benchmark_comparisons | default([])
+        + [_comparison_row]
+      }}
+  vars:
+    _mode: "{{ connection_benchmark_kinit_mode }}"
+    _winrm: "{{ hostvars[item].connection_benchmark_results[_mode].winrm | default({}) }}"
+    _psrp: "{{ hostvars[item].connection_benchmark_results[_mode].psrp | default({}) }}"
+    _comparison_row:
+      kinit_mode: "{{ _mode }}"
+      host: "{{ item }}"
+      ansible_host: "{{ hostvars[item].ansible_host | default(item) }}"
+      task: "{{ _winrm.task | default(_psrp.task | default('unknown')) }}"
+      iterations: "{{ _winrm.iterations | default(_psrp.iterations | default(0)) }}"
+      winrm:
+        total_seconds: "{{ '%.3f' | format(_winrm.total_seconds | default(0) | float) }}"
+        cold_seconds: "{{ '%.3f' | format(_winrm.cold_seconds | default(0) | float) }}"
+        warm_avg_seconds: "{{ '%.3f' | format(_winrm.warm_avg_seconds | default(0) | float) }}"
+        iteration_seconds: "{{ _winrm.iteration_seconds | default([]) }}"
+      psrp:
+        total_seconds: "{{ '%.3f' | format(_psrp.total_seconds | default(0) | float) }}"
+        cold_seconds: "{{ '%.3f' | format(_psrp.cold_seconds | default(0) | float) }}"
+        warm_avg_seconds: "{{ '%.3f' | format(_psrp.warm_avg_seconds | default(0) | float) }}"
+        iteration_seconds: "{{ _psrp.iteration_seconds | default([]) }}"
+      delta_total_seconds: "{{ (_psrp.total_seconds | default(0) | float) - (_winrm.total_seconds | default(0) | float) }}"
+      delta_cold_seconds: "{{ (_psrp.cold_seconds | default(0) | float) - (_winrm.cold_seconds | default(0) | float) }}"
+      delta_warm_avg_seconds: "{{ (_psrp.warm_avg_seconds | default(0) | float) - (_winrm.warm_avg_seconds | default(0) | float) }}"
+      faster_total: >-
+        {{
+          'psrp'
+          if (_psrp.total_seconds | default(0) | float) < (_winrm.total_seconds | default(0) | float)
+          else 'winrm'
+          if (_winrm.total_seconds | default(0) | float) < (_psrp.total_seconds | default(0) | float)
+          else 'tie'
+        }}
+  loop: "{{ groups['windows'] | default([]) }}"
+  run_once: true
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} kinit — WinRM vs PSRP side-by-side"
+  ansible.builtin.debug:
+    msg: "{{ item }}"
+  loop: "{{ connection_benchmark_comparisons }}"
+  loop_control:
+    label: "{{ item.host }}"
+
+- name: "{{ connection_benchmark_kinit_mode | upper }} kinit — delta (PSRP minus WinRM; negative means PSRP was faster)"
+  ansible.builtin.debug:
+    msg:
+      kinit_mode: "{{ item.kinit_mode }}"
+      host: "{{ item.host }}"
+      delta_total_seconds: "{{ '%+.3f' | format(item.delta_total_seconds | float) }}"
+      delta_cold_seconds: "{{ '%+.3f' | format(item.delta_cold_seconds | float) }}"
+      delta_warm_avg_seconds: "{{ '%+.3f' | format(item.delta_warm_avg_seconds | float) }}"
+      faster_total: "{{ item.faster_total }}"
+  loop: "{{ connection_benchmark_comparisons }}"
+  loop_control:
+    label: "{{ item.host }}"

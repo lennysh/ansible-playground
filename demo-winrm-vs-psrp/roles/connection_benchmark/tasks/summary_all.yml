@@ -1,0 +1,4 @@
+---
+- name: Final comparison matrix and report
+  ansible.builtin.include_tasks: summary_final.yml
+- ansible.builtin.include_tasks: write_report.yml

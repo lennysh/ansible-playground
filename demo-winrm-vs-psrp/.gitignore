@@ -1,0 +1,8 @@
+# Local lab config (copy from *.example.yml)
+vars/benchmark.yml
+inventories/hosts.yml
+
+context/*
+!context/bindep.txt
+
+connection-benchmark-report.txt
