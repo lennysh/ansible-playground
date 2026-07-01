@@ -11,6 +11,7 @@
       $env:COMPUTERNAME
   vars:
     ansible_connection: psrp
+    ansible_password: "intentionally-wrong" # Best way to ensure manual kinit ticket is being used, and not a new one per task
 
 - name: "{{ connection_benchmark_kinit_mode | upper }} / {{ connection_benchmark_plugin | upper }} — mark iteration {{ connection_benchmark_iteration }} end"
   ansible.builtin.command: date +%s.%N
@@ -27,3 +28,4 @@
       }}
   vars:
     ansible_connection: psrp
+    ansible_password: "intentionally-wrong" # Best way to ensure manual kinit ticket is being used, and not a new one per task
