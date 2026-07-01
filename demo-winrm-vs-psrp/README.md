@@ -4,7 +4,7 @@ Runs the **same benchmark task** against one Windows host under **two kinit stra
 
 | Suite | Kinit behavior | WinRM | PSRP |
 |-------|----------------|-------|------|
-| **Manual** | One `kinit` before benchmarks; plugins reuse default ccache | `ansible_winrm_kinit_mode: manual` | Uses shared TGT (no PSRP kinit setting) |
+| **Manual** | One `kinit` before benchmarks; plugins reuse default ccache | `ansible_winrm_kinit_mode: manual` (explicit) | Shared TGT via GSSAPI; proved with wrong password on timed tasks — see [Manual kinit: WinRM vs PSRP](#manual-kinit-winrm-vs-psrp-how-it-works-and-how-we-prove-it) |
 | **Managed** | WinRM plugin kinits per task (`ansible_winrm_kinit_mode: managed`) | WinRM plugin | PSRP Kerberos auth in-process (GSSAPI) |
 
 Per-iteration timings are recorded on the controller so you can compare cold vs warm connection reuse and the cost of per-task authentication.
@@ -114,6 +114,69 @@ If connectivity fails with **"Server not found in Kerberos database"**, the `HTT
 Do not remove the group var — WinRM's plugin default is `managed`, which would break the manual suite's shared-ccache model.
 
 > **Do not set `ansible_connection` at the play level.** Connection vars live in `inventories/group_vars/windows.yml` so `delegate_to: localhost` timing tasks stay on the local connection.
+
+### Manual kinit: WinRM vs PSRP (how it works and how we prove it)
+
+Both plugins can use the TGT that `kerberos_prep` puts in the **default credential cache**, but they expose that behavior very differently. The manual suite is only a fair comparison when you understand — and, for PSRP, verify — that each plugin is actually reusing that ticket.
+
+#### Side-by-side
+
+| | Manual WinRM | Manual PSRP |
+|---|--------------|-------------|
+| **Control knob** | `ansible_winrm_kinit_mode: manual` on the timed task | No equivalent; `ansible_psrp_auth: kerberos` only |
+| **How the TGT is obtained** | `kerberos_prep` runs `kinit` once; WinRM is told **not** to kinit again | Same shared TGT from `kerberos_prep`; PSRP must pick it up via GSSAPI |
+| **Per-task credential acquisition** | WinRM skips its managed kinit path | pypsrp can still acquire creds in-process (GSSAPI APIs, not a `kinit` subprocess) if `ansible_password` is present |
+| **What `-vvvvv` shows** | `ESTABLISH WINRM CONNECTION` → `WINRM CONNECT: transport=kerberos` — **no** `calling kinit with pexpect` | `ESTABLISH PSRP CONNECTION` → `PSRP OPEN RUNSPACE: auth=kerberos` — **no** `kinit` line |
+| **Managed suite contrast** | `calling kinit with pexpect` / `creating Kerberos CC at /tmp/...` on every iteration | Same `auth=kerberos` lines as manual; succeeds after `kdestroy` only because pypsrp obtains creds again (typically using `ansible_password`) |
+
+WinRM **manual** is enforced by configuration: the plugin respects `ansible_winrm_kinit_mode: manual` and uses whatever is already in the default ccache. WinRM **managed** shells out to `kinit` (visible in verbose logs).
+
+PSRP has no `ansible_psrp_kinit_mode`. With `ansible_psrp_auth: kerberos`, pypsrp always negotiates Kerberos over the runspace — the log line `auth=kerberos` appears for **both** manual and managed runs. Logs alone cannot show whether PSRP reused the prep TGT or acquired fresh credentials with the inventory password.
+
+#### How manual PSRP reuses the prep ticket
+
+After `kerberos_prep`:
+
+1. `kinit` stores a TGT in the EE's default ccache (`FILE:/tmp/krb5cc_*` or similar).
+2. Manual PSRP opens a runspace with `auth=kerberos`.
+3. GSSAPI uses the **existing TGT** to request a service ticket for the WinRM/WSMan SPN (`HTTP/host` or `host/host` depending on pypsrp settings).
+4. No new AS-REQ (TGT request) is needed as long as the cache is valid and the password is not used for re-authentication.
+
+That is the same *outcome* as manual WinRM — shared TGT, service ticket per connection — but implemented inside pypsrp/GSSAPI instead of via WinRM's explicit kinit-mode switch.
+
+#### How we prove it in this demo
+
+Manual PSRP iteration tasks deliberately override the inventory password with a value that cannot authenticate:
+
+```yaml
+# measure_iteration_manual_psrp_win_ping.yml (and win_shell variant)
+vars:
+  ansible_connection: psrp
+  ansible_password: "intentionally-wrong"
+```
+
+If PSRP were acquiring a **new** TGT on each task (managed-style behavior using the password), every manual PSRP iteration would **fail**. In practice they **succeed**, which shows:
+
+- The TGT from `kerberos_prep` is present and usable.
+- PSRP is reusing that cache for Kerberos — not re-kinitting with `ansible_password`.
+
+Manual WinRM tasks do **not** need this trick: `ansible_winrm_kinit_mode: manual` already prevents per-task kinit, and verbose output omits `calling kinit with pexpect`.
+
+**Suggested controls** (optional, for teaching):
+
+| Test | Expected |
+|------|----------|
+| Manual PSRP + wrong password (as shipped) | **Success** — uses prep TGT |
+| Manual PSRP + wrong password **without** prior `kerberos_prep` / after `kdestroy` | **Failure** — no TGT to reuse |
+| Managed PSRP + wrong password after `kdestroy` | **Failure** — must acquire creds with password |
+| Managed PSRP + correct password after `kdestroy` | **Success** — pypsrp obtains its own TGT via GSSAPI |
+
+For managed PSRP, leave `ansible_password` at the real value from `vars/benchmark.yml` (see [`measure_iteration_managed_psrp_*.yml`](roles/connection_benchmark/tasks/)).
+
+#### Takeaway for benchmarks
+
+- **Manual WinRM vs manual PSRP** — both intended to run on the **same prep TGT**; PSRP requires the wrong-password check (or KDC logging) to confirm that in logs.
+- **Managed WinRM vs managed PSRP** — both run **after `kdestroy`** with an empty default ccache; WinRM's per-task kinit is obvious in logs, PSRP's is silent but still depends on a valid `ansible_password` when no tickets exist.
 
 ---
 
@@ -275,6 +338,7 @@ All lab-specific settings belong in **`vars/benchmark.yml`** (Navigator) or AAP 
 - Compare cold (iteration 1) vs warm averages — Kerberos cold times include service ticket acquisition.
 - Run against multiple Windows hosts — prep and benchmarks run per host; summary compares each.
 - Replay a saved artifact: `ansible-navigator replay playbook-artifact-....json`.
+- Read [Manual kinit: WinRM vs PSRP](#manual-kinit-winrm-vs-psrp-how-it-works-and-how-we-prove-it) and try the optional control tests (managed PSRP with wrong password after `kdestroy` should fail).
 
 ## Role internals
 
