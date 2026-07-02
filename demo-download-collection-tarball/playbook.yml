@@ -1,0 +1,118 @@
+---
+- name: Download Automation Hub Collection via API
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    hub_content_base: >-
+      https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published
+
+  tasks:
+    - name: Resolve Red Hat offline token
+      ansible.builtin.set_fact:
+        redhat_offline_token: >-
+          {{
+            redhat_offline_token
+            | default(lookup('ansible.builtin.file', playbook_dir + '/.offline_token', errors='ignore'), true)
+            | default(lookup('ansible.builtin.env', 'REDHAT_OFFLINE_TOKEN', default=''), true)
+          }}
+      no_log: true
+
+    - name: Fail early if REDHAT_OFFLINE_TOKEN is missing
+      ansible.builtin.fail:
+        msg: >-
+          Provide redhat_offline_token via credential, export REDHAT_OFFLINE_TOKEN,
+          or create .offline_token in the playbook directory.
+      when: redhat_offline_token | length == 0
+
+    - name: Validate required collection variables
+      ansible.builtin.assert:
+        that:
+          - collection_namespace is defined
+          - collection_namespace | length > 0
+          - collection_name is defined
+          - collection_name | length > 0
+        fail_msg: >-
+          Set collection_namespace and collection_name via -e or Survey
+          (for example: -e collection_namespace=ansible -e collection_name=eda).
+
+    - name: Resolve download directory
+      ansible.builtin.set_fact:
+        download_dir: "{{ download_dir | default(playbook_dir + '/downloads', true) }}"
+
+    - name: Create local download directory
+      ansible.builtin.file:
+        path: "{{ download_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Exchange Offline Token for temporary Access Token
+      ansible.builtin.uri:
+        url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          grant_type: "refresh_token"
+          client_id: "rhsm-api"
+          refresh_token: "{{ redhat_offline_token }}"
+      register: sso_response
+      no_log: true
+
+    - name: Query published versions from Automation Hub
+      ansible.builtin.uri:
+        url: "{{ hub_content_base }}/collections/index/{{ collection_namespace }}/{{ collection_name }}/versions/"
+        headers:
+          Authorization: "Bearer {{ sso_response.json.access_token }}"
+        return_content: true
+      register: collection_versions_response
+      when: collection_version | default('') | length == 0
+
+    - name: Fail when Hub returns no versions for collection
+      ansible.builtin.assert:
+        that:
+          - collection_versions_response.json.data | length > 0
+        fail_msg: >-
+          No published versions found for {{ collection_namespace }}.{{ collection_name }}
+          on Automation Hub.
+      when: collection_version | default('') | length == 0
+
+    - name: Set collection version to latest from Hub
+      ansible.builtin.set_fact:
+        collection_version: "{{ collection_versions_response.json.data[0].version }}"
+      when: collection_version | default('') | length == 0
+
+    - name: Build artifact paths from resolved version
+      ansible.builtin.set_fact:
+        tarball_name: "{{ collection_namespace }}-{{ collection_name }}-{{ collection_version }}.tar.gz"
+        hub_artifact_url: >-
+          {{ hub_content_base }}/collections/artifacts/{{ collection_namespace }}-{{ collection_name }}-{{ collection_version }}.tar.gz
+
+    - name: Show collection download target
+      ansible.builtin.debug:
+        msg:
+          namespace: "{{ collection_namespace }}"
+          name: "{{ collection_name }}"
+          version: "{{ collection_version }}"
+          tarball: "{{ tarball_name }}"
+          destination: "{{ download_dir }}/{{ tarball_name }}"
+
+    - name: Download the collection tarball
+      ansible.builtin.get_url:
+        url: "{{ hub_artifact_url }}"
+        headers:
+          Authorization: "Bearer {{ sso_response.json.access_token }}"
+        unredirected_headers:
+          - Authorization
+        dest: "{{ download_dir }}/{{ tarball_name }}"
+        mode: '0644'
+
+    - name: Confirm download
+      ansible.builtin.stat:
+        path: "{{ download_dir }}/{{ tarball_name }}"
+      register: downloaded_tarball
+
+    - name: Show downloaded file size
+      ansible.builtin.debug:
+        msg: >-
+          Downloaded {{ tarball_name }} ({{ downloaded_tarball.stat.size }} bytes)
+          to {{ download_dir }}/{{ tarball_name }}

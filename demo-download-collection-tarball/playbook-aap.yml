@@ -1,0 +1,12 @@
+---
+# AAP version — same tasks as playbook.yml; collection vars come from Survey / extra vars.
+#
+# Credential (recommended): inject redhat_offline_token from a custom credential type,
+# or set REDHAT_OFFLINE_TOKEN on the job template / execution environment.
+#
+# Survey questions:
+#   collection_namespace  — text  (required)
+#   collection_name       — text  (required)
+#   collection_version    — text  (optional — latest from Hub when omitted)
+#   download_dir          — text  (optional — default /tmp/collection-downloads via playbook)
+- ansible.builtin.import_playbook: playbook.yml
