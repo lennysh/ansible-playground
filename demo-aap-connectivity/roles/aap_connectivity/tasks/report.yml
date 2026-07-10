@@ -56,6 +56,8 @@
     src: connectivity_report.md.j2
     dest: "{{ aap_connectivity_report_path }}"
     mode: "0644"
+  vars:
+    report: "{{ aap_connectivity_report }}"
   run_once: true
 
 - name: Connectivity summary
