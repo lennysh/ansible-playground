@@ -1,0 +1,23 @@
+---
+# Copy to vars/connectivity.yml and customize, or pass with -e @vars/connectivity.yml
+#
+# Suites to run (tags match suite names):
+#   redis       — full mesh among [redis] hosts (6379 + 16379 in cluster mode)
+#   receptor    — mesh among [automationcontroller] + [execution_nodes]
+#   postgresql  — TCP from each service group to its *_pg_host:*_pg_port
+#   platform    — TCP to component nginx HTTPS ports (post-install / partial install)
+aap_connectivity_suites:
+  - redis
+  - receptor
+  - postgresql
+
+# Seconds to wait per connection attempt
+aap_connectivity_timeout: 5
+aap_connectivity_connect_timeout: 3
+
+# Write markdown report on the control node
+aap_connectivity_report_path: "{{ playbook_dir }}/aap-connectivity-report.md"
+aap_connectivity_report_display: true
+
+# Override when inventory does not set redis_mode (containerized default: cluster)
+# aap_connectivity_redis_mode: cluster

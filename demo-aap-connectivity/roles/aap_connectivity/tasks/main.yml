@@ -1,0 +1,37 @@
+---
+- name: Initialize per-host result list
+  ansible.builtin.set_fact:
+    aap_connectivity_host_results: []
+
+- name: Discover inventory topology
+  ansible.builtin.include_tasks: discover.yml
+
+- name: Redis cluster / standalone connectivity
+  ansible.builtin.include_tasks: redis.yml
+  when: "'redis' in aap_connectivity_suites"
+  tags:
+    - redis
+
+- name: Receptor mesh connectivity
+  ansible.builtin.include_tasks: receptor.yml
+  when: "'receptor' in aap_connectivity_suites"
+  tags:
+    - receptor
+
+- name: PostgreSQL TCP connectivity
+  ansible.builtin.include_tasks: postgresql.yml
+  when: "'postgresql' in aap_connectivity_suites"
+  tags:
+    - postgresql
+
+- name: Platform component HTTPS port connectivity
+  ansible.builtin.include_tasks: platform.yml
+  when: "'platform' in aap_connectivity_suites"
+  tags:
+    - platform
+
+- name: PCP monitoring port connectivity
+  ansible.builtin.include_tasks: pcp.yml
+  when: "'pcp' in aap_connectivity_suites"
+  tags:
+    - pcp

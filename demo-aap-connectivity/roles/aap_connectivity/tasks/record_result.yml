@@ -1,0 +1,16 @@
+---
+- name: Append TCP probe result
+  ansible.builtin.set_fact:
+    aap_connectivity_host_results: "{{ aap_connectivity_host_results + [_entry] }}"
+  vars:
+    _entry:
+      suite: "{{ aap_connectivity_current_suite }}"
+      source: "{{ inventory_hostname }}"
+      source_address: "{{ aap_connectivity_source_address }}"
+      target: "{{ aap_connectivity_target_host }}"
+      target_address: "{{ aap_connectivity_target_address }}"
+      port: "{{ aap_connectivity_target_port }}"
+      protocol: tcp
+      success: "{{ not _probe.failed | default(true) }}"
+      elapsed: "{{ _probe.elapsed | default(omit) }}"
+      error: "{{ _probe.msg | default('') if (_probe.failed | default(false)) else '' }}"

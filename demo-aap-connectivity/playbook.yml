@@ -1,0 +1,27 @@
+---
+# Run against a customer AAP installer inventory before install/upgrade.
+#
+#   cp vars/connectivity.example.yml vars/connectivity.yml
+#   ansible-playbook -i /path/to/installer/inventory playbook.yml -e @vars/connectivity.yml
+#
+# Run only Redis checks:
+#   ansible-playbook -i /path/to/inventory playbook.yml --tags redis
+#
+# Example inventories: github.com/lennysh/aap-notes config-examples/AAP25/containerized/
+
+- name: AAP installer connectivity preflight
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Run connectivity suites
+      ansible.builtin.include_role:
+        name: aap_connectivity
+
+- name: AAP installer connectivity report
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Aggregate results and write report
+      ansible.builtin.include_role:
+        name: aap_connectivity
+        tasks_from: report.yml

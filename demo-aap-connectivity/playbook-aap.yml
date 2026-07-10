@@ -1,0 +1,10 @@
+---
+# AAP job template entry point — same tasks as playbook.yml.
+#
+# Survey / extra vars:
+#   aap_connectivity_suites     — list, e.g. ["redis", "receptor", "postgresql"]
+#   aap_connectivity_fail_on_error — bool (default true)
+#   aap_connectivity_report_path  — path on controller for markdown report
+#
+# Inventory: attach the customer's installer inventory (or a static copy) to the JT.
+- ansible.builtin.import_playbook: playbook.yml

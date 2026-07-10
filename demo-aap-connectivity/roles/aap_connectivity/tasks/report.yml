@@ -1,0 +1,84 @@
+---
+- name: Collect connectivity results from all hosts
+  ansible.builtin.set_fact:
+    aap_connectivity_all_results: >-
+      {{
+        aap_connectivity_all_results | default([]) +
+        (hostvars[item].aap_connectivity_host_results | default([]))
+      }}
+  loop: "{{ groups['all'] }}"
+  run_once: true
+
+- name: Build report summary rows
+  ansible.builtin.set_fact:
+    aap_connectivity_summary_rows: >-
+      {{
+        aap_connectivity_summary_rows | default([]) + [{
+          'suite': item,
+          'pass': (aap_connectivity_all_results | selectattr('suite', 'equalto', item) | selectattr('success') | list | length),
+          'fail': (aap_connectivity_all_results | rejectattr('success') | selectattr('suite', 'equalto', item) | list | length),
+          'total': (aap_connectivity_all_results | selectattr('suite', 'equalto', item) | list | length)
+        }]
+      }}
+  loop: "{{ aap_connectivity_all_results | map(attribute='suite') | unique | list }}"
+  run_once: true
+
+- name: Build report payload
+  ansible.builtin.set_fact:
+    aap_connectivity_report:
+      generated_at: "{{ ansible_date_time.iso8601 }}"
+      redis_mode: "{{ hostvars[groups['all'] | first].aap_connectivity_topology.redis_mode | default(aap_connectivity_redis_mode) }}"
+      topology: >-
+        {{
+          [
+            {'name': 'redis', 'count': groups.get('redis', []) | length},
+            {'name': 'automationgateway', 'count': groups.get('automationgateway', []) | length},
+            {'name': 'automationcontroller', 'count': groups.get('automationcontroller', []) | length},
+            {'name': 'execution_nodes', 'count': groups.get('execution_nodes', []) | length},
+            {'name': 'automationhub', 'count': groups.get('automationhub', []) | length},
+            {'name': 'automationeda', 'count': groups.get('automationeda', []) | length},
+            {'name': 'ansiblelightspeed', 'count': groups.get('ansiblelightspeed', []) | length},
+            {'name': 'automationmetrics', 'count': groups.get('automationmetrics', []) | length},
+            {'name': 'database', 'count': groups.get('database', []) | length}
+          ]
+        }}
+      summary: "{{ aap_connectivity_summary_rows | default([]) }}"
+      results: "{{ aap_connectivity_all_results | default([]) }}"
+      failures: "{{ aap_connectivity_all_results | default([]) | rejectattr('success') | list }}"
+      totals:
+        pass: "{{ aap_connectivity_all_results | default([]) | selectattr('success') | list | length }}"
+        fail: "{{ aap_connectivity_all_results | default([]) | rejectattr('success') | list | length }}"
+        total: "{{ aap_connectivity_all_results | default([]) | length }}"
+  run_once: true
+
+- name: Write connectivity report
+  ansible.builtin.template:
+    src: connectivity_report.md.j2
+    dest: "{{ aap_connectivity_report_path }}"
+    mode: "0644"
+  run_once: true
+
+- name: Connectivity summary
+  ansible.builtin.debug:
+    msg: >-
+      AAP connectivity: {{ aap_connectivity_report.totals.pass }}/{{ aap_connectivity_report.totals.total }} passed.
+      Report: {{ aap_connectivity_report_path }}
+  run_once: true
+
+- name: Display connectivity report
+  ansible.builtin.command:
+    cmd: cat {{ aap_connectivity_report_path | quote }}
+  register: _report_cat
+  changed_when: false
+  run_once: true
+  when: aap_connectivity_report_display | bool
+
+- name: Fail when connectivity checks failed
+  ansible.builtin.assert:
+    that:
+      - aap_connectivity_report.totals.fail | int == 0
+    fail_msg: >-
+      {{ aap_connectivity_report.totals.fail }} connectivity probe(s) failed.
+      See {{ aap_connectivity_report_path }}.
+  run_once: true
+  when: aap_connectivity_fail_on_error | default(true) | bool

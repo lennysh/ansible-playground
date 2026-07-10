@@ -1,0 +1,8 @@
+---
+- name: PostgreSQL TCP checks per component
+  ansible.builtin.include_tasks: postgresql_component.yml
+  loop: "{{ aap_connectivity_postgresql_components }}"
+  loop_control:
+    loop_var: _component
+    label: "{{ _component.group }}"
+  when: inventory_hostname in groups.get(_component.group, [])

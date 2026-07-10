@@ -1,0 +1,27 @@
+---
+- name: Record discovered AAP host groups
+  ansible.builtin.set_fact:
+    aap_connectivity_topology:
+      redis: "{{ groups.get('redis', []) }}"
+      automationgateway: "{{ groups.get('automationgateway', []) }}"
+      automationcontroller: "{{ groups.get('automationcontroller', []) }}"
+      execution_nodes: "{{ groups.get('execution_nodes', []) }}"
+      automationhub: "{{ groups.get('automationhub', []) }}"
+      automationeda: "{{ groups.get('automationeda', []) }}"
+      ansiblelightspeed: "{{ groups.get('ansiblelightspeed', []) }}"
+      automationmetrics: "{{ groups.get('automationmetrics', []) }}"
+      database: "{{ groups.get('database', []) }}"
+      redis_mode: "{{ aap_connectivity_redis_mode }}"
+  run_once: true
+
+- name: Summarize discovered topology
+  ansible.builtin.debug:
+    msg:
+      redis_mode: "{{ aap_connectivity_topology.redis_mode }}"
+      redis_nodes: "{{ aap_connectivity_topology.redis | length }}"
+      gateway_nodes: "{{ aap_connectivity_topology.automationgateway | length }}"
+      controller_nodes: "{{ aap_connectivity_topology.automationcontroller | length }}"
+      execution_nodes: "{{ aap_connectivity_topology.execution_nodes | length }}"
+      hub_nodes: "{{ aap_connectivity_topology.automationhub | length }}"
+      eda_nodes: "{{ aap_connectivity_topology.automationeda | length }}"
+  run_once: true

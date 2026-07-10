@@ -1,0 +1,70 @@
+---
+# Suites enabled when not overridden (see vars/connectivity.example.yml)
+aap_connectivity_suites:
+  - redis
+  - receptor
+  - postgresql
+
+aap_connectivity_timeout: 5
+aap_connectivity_connect_timeout: 3
+aap_connectivity_skip_self: true
+
+# Match ansible.containerized_installer role defaults unless inventory sets overrides
+aap_connectivity_redis_mode: "{{ redis_mode | default('cluster') }}"
+aap_connectivity_redis_port: "{{ redis_port | default(6379) }}"
+aap_connectivity_redis_cluster_port: "{{ redis_cluster_port | default(16379) }}"
+aap_connectivity_receptor_port: "{{ receptor_port | default(27199) }}"
+aap_connectivity_pcp_pmcd_port: "{{ pcp_pmcd_port | default(44321) }}"
+aap_connectivity_pcp_pmproxy_port: "{{ pcp_pmproxy_port | default(44322) }}"
+
+aap_connectivity_report_path: "{{ playbook_dir }}/aap-connectivity-report.md"
+aap_connectivity_report_display: true
+aap_connectivity_fail_on_error: true
+
+# PostgreSQL external DB checks — one entry per installer component group
+aap_connectivity_postgresql_components:
+  - group: automationgateway
+    host_var: gateway_pg_host
+    port_var: gateway_pg_port
+    default_port: 5432
+  - group: automationcontroller
+    host_var: controller_pg_host
+    port_var: controller_pg_port
+    default_port: 5432
+  - group: automationhub
+    host_var: hub_pg_host
+    port_var: hub_pg_port
+    default_port: 5432
+  - group: automationeda
+    host_var: eda_pg_host
+    port_var: eda_pg_port
+    default_port: 5432
+  - group: ansiblelightspeed
+    host_var: lightspeed_pg_host
+    port_var: lightspeed_pg_port
+    default_port: 5432
+  - group: automationmetrics
+    host_var: automationmetrics_pg_host
+    port_var: automationmetrics_pg_port
+    default_port: 5432
+
+# Platform HTTPS ports (containerized installer defaults)
+aap_connectivity_platform_components:
+  - group: automationgateway
+    port_var: gateway_nginx_https_port
+    default_port: 8446
+  - group: automationcontroller
+    port_var: controller_nginx_https_port
+    default_port: 8443
+  - group: automationhub
+    port_var: hub_nginx_https_port
+    default_port: 8444
+  - group: automationeda
+    port_var: eda_nginx_https_port
+    default_port: 8445
+  - group: ansiblelightspeed
+    port_var: lightspeed_nginx_https_port
+    default_port: 8447
+  - group: automationmetrics
+    port_var: automationmetrics_nginx_https_port
+    default_port: 8450

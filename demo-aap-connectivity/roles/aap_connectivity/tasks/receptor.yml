@@ -1,0 +1,34 @@
+---
+- name: Build receptor mesh peer list
+  ansible.builtin.set_fact:
+    aap_connectivity_receptor_peers: >-
+      {{
+        (
+          groups.get('automationcontroller', [])
+          + groups.get('execution_nodes', [])
+        )
+        | unique
+        | difference([inventory_hostname] if aap_connectivity_skip_self else [])
+        | list
+      }}
+  when: >-
+    inventory_hostname in (
+      groups.get('automationcontroller', []) + groups.get('execution_nodes', [])
+    )
+
+- name: TCP receptor mesh port to peers
+  ansible.builtin.include_tasks: tcp_probe.yml
+  vars:
+    aap_connectivity_current_suite: receptor
+    aap_connectivity_source_address: "{{ ansible_host | default(inventory_hostname) }}"
+    aap_connectivity_target_host: "{{ item }}"
+    aap_connectivity_target_address: "{{ hostvars[item].ansible_host | default(item) }}"
+    aap_connectivity_target_port: >-
+      {{ hostvars[item].receptor_port | default(aap_connectivity_receptor_port) }}
+  loop: "{{ aap_connectivity_receptor_peers | default([]) }}"
+  loop_control:
+    label: "{{ inventory_hostname }} -> {{ item }}:{{ hostvars[item].receptor_port | default(aap_connectivity_receptor_port) }}"
+  when: >-
+    inventory_hostname in (
+      groups.get('automationcontroller', []) + groups.get('execution_nodes', [])
+    )

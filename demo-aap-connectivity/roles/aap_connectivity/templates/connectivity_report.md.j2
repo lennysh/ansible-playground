@@ -1,0 +1,43 @@
+# {{ report.generated_at }} — AAP installer connectivity report
+
+Inventory groups discovered:
+
+| Group | Hosts |
+| :--- | ---: |
+{% for group in report.topology %}
+| `{{ group.name }}` | {{ group.count }} |
+{% endfor %}
+
+Redis mode: **{{ report.redis_mode }}**
+
+## Summary
+
+| Suite | Pass | Fail | Total |
+| :--- | ---: | ---: | ---: |
+{% for row in report.summary %}
+| {{ row.suite }} | {{ row.pass }} | {{ row.fail }} | {{ row.total }} |
+{% endfor %}
+
+**Overall:** {{ report.totals.pass }} passed, {{ report.totals.fail }} failed ({{ report.totals.total }} probes)
+
+{% if report.failures | length > 0 %}
+## Failures
+
+| Suite | Source | Target | Port | Error |
+| :--- | :--- | :--- | ---: | :--- |
+{% for item in report.failures %}
+| {{ item.suite }} | `{{ item.source }}` ({{ item.source_address }}) | `{{ item.target }}` ({{ item.target_address }}) | {{ item.port }} | {{ item.error | replace('\n', ' ') }} |
+{% endfor %}
+{% else %}
+## Failures
+
+No failed probes.
+{% endif %}
+
+## All probes
+
+| Suite | Source | Target | Port | Result |
+| :--- | :--- | :--- | ---: | :--- |
+{% for item in report.results %}
+| {{ item.suite }} | `{{ item.source }}` | `{{ item.target }}` ({{ item.target_address }}) | {{ item.port }} | {{ 'PASS' if item.success else 'FAIL' }} |
+{% endfor %}

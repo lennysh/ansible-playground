@@ -1,0 +1,18 @@
+---
+- name: Resolve PostgreSQL endpoint from inventory vars
+  ansible.builtin.set_fact:
+    _pg_host: "{{ hostvars[inventory_hostname][_component.host_var] | default('', true) }}"
+    _pg_port: >-
+      {{
+        hostvars[inventory_hostname][_component.port_var] | default(_component.default_port, true)
+      }}
+
+- name: TCP PostgreSQL port from service host
+  ansible.builtin.include_tasks: tcp_probe.yml
+  vars:
+    aap_connectivity_current_suite: "postgresql-{{ _component.group }}"
+    aap_connectivity_source_address: "{{ ansible_host | default(inventory_hostname) }}"
+    aap_connectivity_target_host: "{{ _pg_host }}"
+    aap_connectivity_target_address: "{{ _pg_host }}"
+    aap_connectivity_target_port: "{{ _pg_port }}"
+  when: _pg_host | length > 0

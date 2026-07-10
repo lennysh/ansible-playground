@@ -1,0 +1,3 @@
+*.log
+aap-connectivity-report.md
+vars/connectivity.yml

@@ -1,0 +1,68 @@
+---
+- name: Build PCP peer list
+  ansible.builtin.set_fact:
+    aap_connectivity_pcp_peers: >-
+      {{
+        (
+          groups.get('automationgateway', [])
+          + groups.get('automationcontroller', [])
+          + groups.get('automationhub', [])
+          + groups.get('automationeda', [])
+          + groups.get('ansiblelightspeed', [])
+          + groups.get('automationmetrics', [])
+        )
+        | unique
+        | difference([inventory_hostname] if aap_connectivity_skip_self else [])
+        | list
+      }}
+  when: >-
+    inventory_hostname in (
+      groups.get('automationgateway', [])
+      + groups.get('automationcontroller', [])
+      + groups.get('automationhub', [])
+      + groups.get('automationeda', [])
+      + groups.get('ansiblelightspeed', [])
+      + groups.get('automationmetrics', [])
+    )
+
+- name: TCP PCP pmcd port to peers
+  ansible.builtin.include_tasks: tcp_probe.yml
+  vars:
+    aap_connectivity_current_suite: pcp-pmcd
+    aap_connectivity_source_address: "{{ ansible_host | default(inventory_hostname) }}"
+    aap_connectivity_target_host: "{{ item }}"
+    aap_connectivity_target_address: "{{ hostvars[item].ansible_host | default(item) }}"
+    aap_connectivity_target_port: "{{ aap_connectivity_pcp_pmcd_port }}"
+  loop: "{{ aap_connectivity_pcp_peers | default([]) }}"
+  loop_control:
+    label: "{{ inventory_hostname }} -> {{ item }}:{{ aap_connectivity_pcp_pmcd_port }}"
+  when: >-
+    inventory_hostname in (
+      groups.get('automationgateway', [])
+      + groups.get('automationcontroller', [])
+      + groups.get('automationhub', [])
+      + groups.get('automationeda', [])
+      + groups.get('ansiblelightspeed', [])
+      + groups.get('automationmetrics', [])
+    )
+
+- name: TCP PCP pmproxy port to peers
+  ansible.builtin.include_tasks: tcp_probe.yml
+  vars:
+    aap_connectivity_current_suite: pcp-pmproxy
+    aap_connectivity_source_address: "{{ ansible_host | default(inventory_hostname) }}"
+    aap_connectivity_target_host: "{{ item }}"
+    aap_connectivity_target_address: "{{ hostvars[item].ansible_host | default(item) }}"
+    aap_connectivity_target_port: "{{ aap_connectivity_pcp_pmproxy_port }}"
+  loop: "{{ aap_connectivity_pcp_peers | default([]) }}"
+  loop_control:
+    label: "{{ inventory_hostname }} -> {{ item }}:{{ aap_connectivity_pcp_pmproxy_port }}"
+  when: >-
+    inventory_hostname in (
+      groups.get('automationgateway', [])
+      + groups.get('automationcontroller', [])
+      + groups.get('automationhub', [])
+      + groups.get('automationeda', [])
+      + groups.get('ansiblelightspeed', [])
+      + groups.get('automationmetrics', [])
+    )

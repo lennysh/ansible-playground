@@ -1,0 +1,8 @@
+---
+- name: Platform HTTPS checks per component
+  ansible.builtin.include_tasks: platform_component.yml
+  loop: "{{ aap_connectivity_platform_components }}"
+  loop_control:
+    loop_var: _component
+    label: "{{ _component.group }}"
+  when: inventory_hostname in groups.get('automationgateway', [])

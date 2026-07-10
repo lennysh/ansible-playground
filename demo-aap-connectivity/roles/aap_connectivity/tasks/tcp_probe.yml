@@ -1,0 +1,14 @@
+---
+- name: Probe TCP port
+  ansible.builtin.wait_for:
+    host: "{{ aap_connectivity_target_address }}"
+    port: "{{ aap_connectivity_target_port }}"
+    timeout: "{{ aap_connectivity_timeout }}"
+    connect_timeout: "{{ aap_connectivity_connect_timeout }}"
+    state: started
+  register: _probe
+  failed_when: false
+  no_log: true
+
+- name: Record probe outcome
+  ansible.builtin.include_tasks: record_result.yml
