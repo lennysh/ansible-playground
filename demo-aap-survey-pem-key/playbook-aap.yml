@@ -5,12 +5,12 @@
 #   survey_pem_key — Password type (masked single-line field in the UI)
 #
 # Optional extra vars:
-#   survey_pem_key_validate — validate with openssl/ssh-keygen (default true)
-#   survey_pem_key_var       — alternate survey variable name
+#   aap_survey_pem_key_validate — validate with openssl/ssh-keygen (default true)
+#   aap_survey_pem_key_var       — extra-var name for squashed survey input (default survey_pem_key)
 #
 # Paste a multi-line PEM or OpenSSH private key into the Password survey field.
 # AAP collapses newlines to spaces; this role rebuilds proper PEM line breaks
-# before downstream tasks use survey_pem_key_reconstructed.
+# before downstream tasks use aap_survey_pem_key_reconstructed.
 - name: Reconstruct squashed Password survey PEM key
   hosts: localhost
   connection: local

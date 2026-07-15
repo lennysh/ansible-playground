@@ -17,4 +17,4 @@ survey_pem_key: >-
   PRIVATE KEY-----
 
 # Set false when using a captured squashed value that is not a valid key.
-survey_pem_key_validate: true
+aap_survey_pem_key_validate: true

@@ -21,7 +21,7 @@ This demo shows the Jinja2 reconstruction pipeline and optional validation with 
 | 3 | Strip headers, whitespace, and literal `\n` sequences from the base64 body |
 | 4 | Re-wrap the body into 64-character lines and rebuild PEM headers |
 | 5 | Validate private key structure (`openssl pkey` for standard PEM, `ssh-keygen -y` for OpenSSH) |
-| 6 | Expose `survey_pem_key_reconstructed` for later tasks |
+| 6 | Expose `aap_survey_pem_key_reconstructed` for later tasks |
 
 ## Quick start (CLI)
 
@@ -58,7 +58,7 @@ ansible-playbook playbook.yml -e @vars/survey_pem_key.yml \
 
 | Variable | Type | Default | Notes |
 | :--- | :--- | :--- | :--- |
-| `survey_pem_key_validate` | boolean | `true` | Set `false` to reconstruct only (skip openssl/ssh-keygen check) |
+| `aap_survey_pem_key_validate` | boolean | `true` | Set `false` to reconstruct only (skip openssl/ssh-keygen check) |
 
 ### What to look for in AAP output
 
@@ -68,7 +68,7 @@ Before reconstruction, a debug of the raw survey var shows **spaces instead of n
 - `reconstructed_line_count` — should match a normal PEM file (typically 5+ lines)
 - `validation_rc: 0` — key structure is intact
 
-Use `survey_pem_key_reconstructed` in later job template tasks — for example `ansible.builtin.copy` with `content:`, `community.crypto` modules, or `command`/`shell` with `stdin:`.
+Use `aap_survey_pem_key_reconstructed` in later job template tasks — for example `ansible.builtin.copy` with `content:`, `community.crypto` modules, or `command`/`shell` with `stdin:`.
 
 ## CLI demo vs. AAP usage
 
@@ -83,17 +83,17 @@ See `roles/aap_survey_pem_key/defaults/main.yml`.
 
 | Variable | Purpose |
 | :--- | :--- |
-| `survey_pem_key` | Raw squashed PEM key from the Password survey |
-| `survey_pem_key_validate` | Run openssl/ssh-keygen integrity check (default `true`) |
-| `survey_pem_key_var` | Alternate survey variable name if needed |
+| `survey_pem_key` | Raw squashed PEM key from the Password survey (extra var / survey answer) |
+| `aap_survey_pem_key_validate` | Run openssl/ssh-keygen integrity check (default `true`) |
+| `aap_survey_pem_key_var` | Extra-var name to read (default `survey_pem_key`) |
 
 ### Role facts (for downstream tasks)
 
 | Fact | Purpose |
 | :--- | :--- |
-| `survey_pem_key_reconstructed` | Multi-line PEM string ready for use |
-| `survey_pem_key_type` | Detected PEM header type |
-| `survey_pem_key_validation_rc` | Exit code from validation (when enabled) |
+| `aap_survey_pem_key_reconstructed` | Multi-line PEM string ready for use |
+| `aap_survey_pem_key_type` | Detected PEM header type |
+| `aap_survey_pem_key_validation_rc` | Exit code from validation (when enabled) |
 
 Sensitive tasks use `no_log: true` so job output does not echo key material.
 
@@ -107,7 +107,7 @@ AAP **Password** survey fields mask input in the UI and job extra vars (similar 
 | :--- | :--- | :--- |
 | `OPENSSH PRIVATE KEY` | Yes | `ssh-keygen -y` |
 | `PRIVATE KEY`, `RSA PRIVATE KEY`, `EC PRIVATE KEY`, etc. | Yes | `openssl pkey -check` |
-| `CERTIFICATE`, `PUBLIC KEY` | Yes (re-wraps base64) | No — set `survey_pem_key_validate: false` |
+| `CERTIFICATE`, `PUBLIC KEY` | Yes (re-wraps base64) | No — set `aap_survey_pem_key_validate: false` |
 
 ## Limitations
 
@@ -115,7 +115,7 @@ AAP **Password** survey fields mask input in the UI and job extra vars (similar 
 - Validation requires `openssl` and `ssh-keygen` on the execution environment / controller.
 - AAP may also fold YAML-style `>-` blocks in debug output; the role strips all whitespace from the base64 body before re-wrapping, so folded survey values still reconstruct correctly.
 - Build the reconstructed string in a **single Jinja expression** (not a YAML literal `|` block) so task indentation is not copied into PEM lines.
-- Always treat `survey_pem_key_reconstructed` as sensitive — use `no_log` on tasks that handle it in production playbooks.
+- Always treat `aap_survey_pem_key_reconstructed` as sensitive — use `no_log` on tasks that handle it in production playbooks.
 
 ## Related pattern
 

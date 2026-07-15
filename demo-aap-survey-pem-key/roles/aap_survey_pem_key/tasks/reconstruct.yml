@@ -1,9 +1,9 @@
 ---
 - name: Extract PEM type from BEGIN header
   ansible.builtin.set_fact:
-    survey_pem_key_type: >-
+    aap_survey_pem_key_type: >-
       {{
-        _survey_pem_key_raw
+        aap_survey_pem_key_raw
         | regex_findall('-----BEGIN (.*?)-----')
         | first
         | default('PRIVATE KEY')
@@ -11,9 +11,9 @@
 
 - name: Sanitize squashed base64 body
   ansible.builtin.set_fact:
-    survey_pem_key_base64_body: >-
+    aap_survey_pem_key_base64_body: >-
       {{
-        _survey_pem_key_raw
+        aap_survey_pem_key_raw
         | replace('\\n', '')
         | regex_replace('-----BEGIN .*?-----', '')
         | regex_replace('-----END .*?-----', '')
@@ -21,7 +21,18 @@
       }}
   no_log: true
 
+- name: Wrap base64 body into 64-character PEM lines
+  ansible.builtin.set_fact:
+    aap_survey_pem_key_wrapped_body: "{{ aap_survey_pem_key_base64_body | regex_findall('.{1,64}') | join('\n') }}"
+  no_log: true
+
+- name: Build PEM header and footer lines
+  ansible.builtin.set_fact:
+    aap_survey_pem_key_pem_begin: "-----BEGIN {{ aap_survey_pem_key_type }}-----"
+    aap_survey_pem_key_pem_end: "-----END {{ aap_survey_pem_key_type }}-----"
+  no_log: true
+
 - name: Reconstruct standard multi-line PEM structure
   ansible.builtin.set_fact:
-    survey_pem_key_reconstructed: "{{ '-----BEGIN ' ~ survey_pem_key_type ~ '-----\n' ~ (survey_pem_key_base64_body | regex_findall('.{1,64}') | join('\n')) ~ '\n-----END ' ~ survey_pem_key_type ~ '-----\n' }}"
+    aap_survey_pem_key_reconstructed: "{{ aap_survey_pem_key_pem_begin ~ '\n' ~ aap_survey_pem_key_wrapped_body ~ '\n' ~ aap_survey_pem_key_pem_end ~ '\n' }}"
   no_log: true

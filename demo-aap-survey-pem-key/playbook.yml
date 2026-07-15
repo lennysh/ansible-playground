@@ -87,16 +87,16 @@
     - name: Example downstream task — prove reconstructed key is usable
       ansible.builtin.command:
         cmd: ssh-keygen -y -f /dev/stdin
-        stdin: "{{ survey_pem_key_reconstructed }}"
+        stdin: "{{ aap_survey_pem_key_reconstructed }}"
       register: demo_public_key_extract
       changed_when: false
-      when: "'OPENSSH' in survey_pem_key_type"
+      when: "'OPENSSH' in aap_survey_pem_key_type"
 
     - name: Show extracted public key from reconstructed PEM key
       ansible.builtin.debug:
         msg:
           public_key: "{{ demo_public_key_extract.stdout }}"
           note: >-
-            Downstream tasks can use survey_pem_key_reconstructed
+            Downstream tasks can use aap_survey_pem_key_reconstructed
             with copy/content, file modules, or crypto modules.
-      when: "'OPENSSH' in survey_pem_key_type"
+      when: "'OPENSSH' in aap_survey_pem_key_type"

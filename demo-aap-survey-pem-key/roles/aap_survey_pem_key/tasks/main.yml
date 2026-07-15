@@ -1,21 +1,24 @@
 ---
 - name: Resolve survey PEM key from configured variable name
   ansible.builtin.set_fact:
-    _survey_pem_key_raw: "{{ lookup('vars', survey_pem_key_var) }}"
+    aap_survey_pem_key_raw: "{{ lookup('vars', aap_survey_pem_key_var) }}"
   no_log: true
 
 - name: Fail early if the survey PEM key is missing or empty
   ansible.builtin.assert:
     that:
-      - _survey_pem_key_raw is defined
-      - _survey_pem_key_raw | trim | length > 0
+      - aap_survey_pem_key_raw is defined
+      - aap_survey_pem_key_raw | trim | length > 0
     fail_msg: >-
-      The survey PEM key variable '{{ survey_pem_key_var }}' is missing or empty.
+      The survey PEM key variable '{{ aap_survey_pem_key_var }}' is missing or empty.
       In AAP, add a Password survey question with that exact name.
 
-- ansible.builtin.include_tasks: reconstruct.yml
+- name: Reconstruct squashed PEM key structure
+  ansible.builtin.include_tasks: reconstruct.yml
 
-- ansible.builtin.include_tasks: validate.yml
-  when: survey_pem_key_validate | bool
+- name: Validate reconstructed PEM private key
+  ansible.builtin.include_tasks: validate.yml
+  when: aap_survey_pem_key_validate | bool
 
-- ansible.builtin.include_tasks: report.yml
+- name: Report PEM key reconstruction summary
+  ansible.builtin.include_tasks: report.yml
