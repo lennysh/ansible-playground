@@ -1,0 +1,3 @@
+*.log
+vars/survey_pem_key.yml
+/tmp/

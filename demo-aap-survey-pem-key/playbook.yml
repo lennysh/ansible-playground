@@ -1,0 +1,102 @@
+---
+# CLI demo — Play 1 simulates AAP Password survey squashing; Play 2 reconstructs.
+#
+# Self-contained round trip (generates an ephemeral Ed25519 key, squashes it):
+#   ansible-playbook playbook.yml
+#
+# Use your own squashed value from AAP (skip simulation):
+#   cp vars/survey_pem_key.example.yml vars/survey_pem_key.yml
+#   ansible-playbook playbook.yml -e @vars/survey_pem_key.yml \
+#     -e demo_simulate_aap_squash=false
+#
+# AAP job template should use playbook-aap.yml instead (no simulation play).
+
+- name: CLI — Simulate AAP Password survey squashing
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    demo_simulate_aap_squash: true
+  tasks:
+    - name: Skip simulation when a squashed PEM key is already provided
+      ansible.builtin.debug:
+        msg: >-
+          Using provided survey_pem_key
+          (demo_simulate_aap_squash=false or -e @vars/survey_pem_key.yml).
+      when: not (demo_simulate_aap_squash | default(true) | bool)
+
+    - name: Simulate AAP squashing from a real multi-line private key
+      when: demo_simulate_aap_squash | default(true) | bool
+      block:
+        - name: Create temp directory for ephemeral demo key
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: aap_survey_pem_demo_
+          register: demo_key_tmpdir
+
+        - name: Generate ephemeral Ed25519 private key
+          ansible.builtin.command:
+            cmd: ssh-keygen -t ed25519 -f {{ demo_key_tmpdir.path }}/id_ed25519 -N "" -q
+          changed_when: true
+
+        - name: Read generated private key
+          ansible.builtin.slurp:
+            src: "{{ demo_key_tmpdir.path }}/id_ed25519"
+          register: demo_key_slurp
+          no_log: true
+
+        - name: Remove ephemeral key directory
+          ansible.builtin.file:
+            path: "{{ demo_key_tmpdir.path }}"
+            state: absent
+
+        - name: Show original multi-line key shape (first lines only)
+          ansible.builtin.debug:
+            msg:
+              original_line_count: "{{ (demo_key_slurp.content | b64decode).split('\n') | length }}"
+              original_preview: "{{ (demo_key_slurp.content | b64decode).split('\n')[:3] }}"
+
+        - name: Squash key onto one line (mimics AAP Password survey behavior)
+          ansible.builtin.set_fact:
+            survey_pem_key: >-
+              {{
+                demo_key_slurp.content | b64decode
+                | regex_replace('\n', ' ')
+                | regex_replace('\s+', ' ')
+                | trim
+              }}
+          no_log: true
+
+        - name: Show squashed single-line shape (what AAP passes to the playbook)
+          ansible.builtin.debug:
+            msg:
+              squashed_length: "{{ survey_pem_key | length }}"
+              squashed_preview_start: "{{ survey_pem_key[:80] }}..."
+              squashed_contains_spaces_not_newlines: >-
+                {{ (survey_pem_key is search('\n')) == false }}
+
+- name: Reconstruct squashed Password survey PEM key
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Reconstruct and validate survey PEM key
+      ansible.builtin.include_role:
+        name: aap_survey_pem_key
+
+    - name: Example downstream task — prove reconstructed key is usable
+      ansible.builtin.command:
+        cmd: ssh-keygen -y -f /dev/stdin
+        stdin: "{{ survey_pem_key_reconstructed }}"
+      register: demo_public_key_extract
+      changed_when: false
+      when: "'OPENSSH' in survey_pem_key_type"
+
+    - name: Show extracted public key from reconstructed PEM key
+      ansible.builtin.debug:
+        msg:
+          public_key: "{{ demo_public_key_extract.stdout }}"
+          note: >-
+            Downstream tasks can use survey_pem_key_reconstructed
+            with copy/content, file modules, or crypto modules.
+      when: "'OPENSSH' in survey_pem_key_type"

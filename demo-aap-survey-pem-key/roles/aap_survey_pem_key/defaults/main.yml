@@ -1,0 +1,9 @@
+---
+# Raw squashed PEM key from an AAP Password survey question named survey_pem_key.
+survey_pem_key: ""
+
+# Validate reconstructed PEM private key structure with openssl or ssh-keygen.
+survey_pem_key_validate: true
+
+# Survey variable name — change if your AAP survey question uses a different name.
+survey_pem_key_var: survey_pem_key

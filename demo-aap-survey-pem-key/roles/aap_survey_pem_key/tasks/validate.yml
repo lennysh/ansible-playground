@@ -1,0 +1,42 @@
+---
+- name: Validate standard PEM private key structure via OpenSSL
+  ansible.builtin.command:
+    cmd: openssl pkey -check -noout
+    stdin: "{{ survey_pem_key_reconstructed }}"
+  register: survey_pem_key_openssl_check
+  changed_when: false
+  failed_when: false
+  when: "'OPENSSH' not in survey_pem_key_type"
+  no_log: true
+
+- name: Validate OpenSSH private key structure via ssh-keygen
+  ansible.builtin.command:
+    cmd: ssh-keygen -y -f /dev/stdin
+    stdin: "{{ survey_pem_key_reconstructed }}"
+  register: survey_pem_key_ssh_check
+  changed_when: false
+  failed_when: false
+  when: "'OPENSSH' in survey_pem_key_type"
+  no_log: true
+
+- name: Record OpenSSL validation result
+  ansible.builtin.set_fact:
+    survey_pem_key_validation_rc: "{{ survey_pem_key_openssl_check.rc }}"
+  when: "'OPENSSH' not in survey_pem_key_type"
+
+- name: Record OpenSSH validation result
+  ansible.builtin.set_fact:
+    survey_pem_key_validation_rc: "{{ survey_pem_key_ssh_check.rc }}"
+  when: "'OPENSSH' in survey_pem_key_type"
+
+- name: Enforce PEM private key integrity check
+  ansible.builtin.assert:
+    that:
+      - survey_pem_key_validation_rc | int == 0
+    fail_msg: |
+      PEM key validation failed. The key is corrupted, missing bytes, or formatted incorrectly.
+      Detected type: {{ survey_pem_key_type }}
+      OpenSSL stderr: {{ survey_pem_key_openssl_check.stderr | default('') }}
+      ssh-keygen stderr: {{ survey_pem_key_ssh_check.stderr | default('') }}
+    success_msg: >-
+      Success! Reconstructed a valid {{ survey_pem_key_type }}.

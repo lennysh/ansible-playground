@@ -1,0 +1,20 @@
+---
+# Example squashed value captured from AAP debug output after pasting a multi-line
+# OpenSSH private key into a Password survey question.
+#
+# Usage:
+#   ansible-playbook playbook.yml -e @vars/survey_pem_key.yml \
+#     -e demo_simulate_aap_squash=false
+#
+# Replace the value below with your own squashed survey output for testing.
+
+survey_pem_key: >-
+  -----BEGIN OPENSSH PRIVATE KEY----- b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+  QyNTUxOQAAACBkyJCHff1u13iwJkCc1EBFAHMZvxGsercI4t+4/tM7aAAAAJiLJZCwiyWQ
+  sAAAAAtzc2gtZWQyNTUxOQAAACBkyJCHff1u13iwJkCc1EBFAHMZvxGsercI4t+4/tM7aA
+  AAAEBKiMy8Rw7uGLaQQh+yHsgNsIG5vbh2f7qG5VavvijdgGTIkId9/W7XeLAmQJzUQEUA
+  cxm/Eax6twji37j+0ztoAAAAEWtleS0xNzg0MTIzMDQzNDc0AQIDBA== -----END OPENSSH
+  PRIVATE KEY-----
+
+# Set false when using a captured squashed value that is not a valid key.
+survey_pem_key_validate: true

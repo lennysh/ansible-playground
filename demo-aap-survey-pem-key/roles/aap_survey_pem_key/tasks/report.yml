@@ -1,0 +1,14 @@
+---
+- name: Report PEM key reconstruction summary (no secret material)
+  ansible.builtin.debug:
+    msg:
+      survey_variable: "{{ survey_pem_key_var }}"
+      detected_pem_type: "{{ survey_pem_key_type }}"
+      squashed_input_length: "{{ _survey_pem_key_raw | length }}"
+      reconstructed_line_count: "{{ survey_pem_key_reconstructed.split('\n') | length }}"
+      base64_body_length: "{{ survey_pem_key_base64_body | length }}"
+      validated: "{{ survey_pem_key_validate | bool }}"
+      validation_rc: "{{ survey_pem_key_validation_rc | default('skipped') }}"
+      ready_for_use: >-
+        Use fact survey_pem_key_reconstructed in later tasks
+        (for example copy/content, community.crypto modules, or command stdin).

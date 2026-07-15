@@ -7,6 +7,7 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 | Demo | Topic |
 |------|-------|
 | [demo-strategy-free](demo-strategy-free/README.md) | [`strategy: free`](demo-strategy-free/README.md) — how the free execution strategy lets hosts run tasks independently instead of waiting at task barriers |
+| [demo-ansible-forks-async](demo-ansible-forks-async/README.md) | [Forks and async jobs](demo-ansible-forks-async/README.md) — how `forks` limits parallel host work and how `async` + `poll: 0` frees controller forks while remote jobs run |
 | [demo-hosts-advanced](demo-hosts-advanced/README.md) | [Normalizing messy host limit input](demo-hosts-advanced/README.md) — parsing AAP survey-style host lists into a clean dynamic `hosts:` target |
 | [demo-when](demo-when/README.md) | [`when:` condition examples and pitfalls](demo-when/README.md) — version checks, boolean coercion, `default()` bugs, and AND/OR grouping |
 | [demo-jinja2-filters](demo-jinja2-filters/README.md) | [Jinja2 built-in filters](demo-jinja2-filters/README.md) — runnable example of every stock Jinja2 filter (54 including aliases) |
@@ -18,6 +19,8 @@ Self-contained Ansible playbooks that demonstrate specific concepts, patterns, a
 | [demo-satellite-sync-and-promote](demo-satellite-sync-and-promote/README.md) | [Satellite sync, wait, and lifecycle promote](demo-satellite-sync-and-promote/README.md) — sync/publish/DEV, then tag-driven promote to QA and PROD after validation |
 | [demo-kerberos-winrm](demo-kerberos-winrm/README.md) | [Kerberos tickets for WinRM](demo-kerberos-winrm/README.md) — EE diagnostics before/after `win_ping`; run via **ansible-navigator** or AAP only |
 | [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — manual vs managed kinit, same Windows host, per-iteration comparison via Navigator/AAP EE |
+| [demo-aap-connectivity](demo-aap-connectivity/README.md) | [AAP installer connectivity preflight](demo-aap-connectivity/README.md) — Redis cluster bus, Receptor mesh, PostgreSQL, and platform TCP checks against an installer inventory |
+| [demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md) | [AAP Password survey PEM keys](demo-aap-survey-pem-key/README.md) — paste a masked multi-line private key into a Password survey; reconstruct PEM line breaks before downstream tasks |
 
 
 ## Running a demo

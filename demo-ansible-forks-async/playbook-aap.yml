@@ -1,0 +1,263 @@
+---
+# AAP version — attach to a job template with at least 8 hosts (or lower demo_host_count).
+# Fork monitoring scripts still run on the controller via delegate_to: localhost.
+- name: Forks vs async demonstration
+  hosts: all
+  gather_facts: false
+  vars:
+    demo_samples_file: "{{ playbook_dir }}/fork-samples.json"
+    demo_phase_file: "{{ playbook_dir }}/fork-demo-phase.txt"
+    demo_snapshots_file: "{{ playbook_dir }}/fork-snapshots.json"
+    demo_report_file: "{{ playbook_dir }}/fork-report.txt"
+    demo_monitor_stop_file: "{{ playbook_dir }}/fork-monitor-stop"
+    demo_slot_dir: "{{ playbook_dir }}/active-blocking-slots"
+    demo_fork_env:
+      DEMO_PHASE_FILE: "{{ demo_phase_file }}"
+      DEMO_CONFIGURED_FORKS: "{{ demo_configured_forks | string }}"
+      DEMO_PLAYBOOK_MARKER: playbook-aap.yml
+      DEMO_SLOT_DIR: "{{ demo_slot_dir }}"
+    demo_configured_forks: 3
+    demo_sync_sleep_seconds: 12
+    demo_async_sleep_seconds: 20
+    demo_followup_sync_seconds: 6
+    demo_snapshots: []
+  tasks:
+    - name: Reset demo artifacts from prior runs
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ demo_samples_file }}"
+        - "{{ demo_phase_file }}"
+        - "{{ demo_snapshots_file }}"
+        - "{{ demo_report_file }}"
+        - "{{ demo_monitor_stop_file }}"
+        - "{{ demo_slot_dir }}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Mark phase baseline
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "baseline\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Start fork monitor in background
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/files/fork_monitor.py"
+      environment: "{{ demo_fork_env | combine({'DEMO_SAMPLES_FILE': demo_samples_file, 'DEMO_MONITOR_STOP_FILE': demo_monitor_stop_file}) }}"
+      delegate_to: localhost
+      run_once: true
+      async: 300
+      poll: 0
+      register: fork_monitor_job
+      changed_when: false
+
+    - name: Snapshot fork count before any blocking work
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/files/count_forks.py"
+          - --json
+      delegate_to: localhost
+      run_once: true
+      register: fork_snapshot_baseline
+      changed_when: false
+      environment: "{{ demo_fork_env }}"
+
+    - name: Record baseline snapshot
+      ansible.builtin.set_fact:
+        demo_snapshots: "{{ demo_snapshots + [fork_snapshot_baseline.stdout | from_json | combine({'label': 'before_blocking_work'})] }}"
+      run_once: true
+
+    - name: Show configured vs observed forks (baseline)
+      ansible.builtin.debug:
+        msg:
+          - "Configured forks (ansible.cfg): {{ demo_configured_forks }}"
+          - "Hosts in this play: {{ ansible_play_hosts_all | length }}"
+          - "Observed worker forks at baseline: {{ (fork_snapshot_baseline.stdout | from_json).worker_forks }}"
+      run_once: true
+
+    - name: Mark phase sync_blocking
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "sync_blocking\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: "Blocking sync work — each host sleeps {{ demo_sync_sleep_seconds }}s (holds a fork)"
+      ansible.builtin.shell: |
+        set -euo pipefail
+        mkdir -p "{{ demo_slot_dir }}"
+        slot="{{ demo_slot_dir }}/{{ inventory_hostname }}.slot"
+        echo "$$ {{ inventory_hostname }}" > "$slot"
+        sleep {{ demo_sync_sleep_seconds | int }}
+        rm -f "$slot"
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Mark phase sync_done
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "sync_done\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Snapshot fork count after sync work finished
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/files/count_forks.py"
+          - --json
+      delegate_to: localhost
+      run_once: true
+      register: fork_snapshot_after_sync
+      changed_when: false
+      environment: "{{ demo_fork_env }}"
+
+    - name: Record post-sync snapshot
+      ansible.builtin.set_fact:
+        demo_snapshots: "{{ demo_snapshots + [fork_snapshot_after_sync.stdout | from_json | combine({'label': 'after_sync_blocking'})] }}"
+      run_once: true
+
+    - name: Mark phase async_fire
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "async_fire\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: "Fire async jobs — sleep {{ demo_async_sleep_seconds }}s with poll 0 (should not hold forks)"
+      ansible.builtin.command: "sleep {{ demo_async_sleep_seconds | int }}"
+      async: "{{ (demo_async_sleep_seconds | int) + 30 }}"
+      poll: 0
+      register: async_sleep_jobs
+      changed_when: false
+
+    - name: Mark phase async_running
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "async_running\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Snapshot fork count while async jobs are still running
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/files/count_forks.py"
+          - --json
+      delegate_to: localhost
+      run_once: true
+      register: fork_snapshot_async_running
+      changed_when: false
+      environment: "{{ demo_fork_env }}"
+
+    - name: Record async-running snapshot
+      ansible.builtin.set_fact:
+        demo_snapshots: "{{ demo_snapshots + [fork_snapshot_async_running.stdout | from_json | combine({'label': 'while_async_jobs_running'})] }}"
+      run_once: true
+
+    - name: Highlight async vs fork usage
+      ansible.builtin.debug:
+        msg:
+          - "Async jobs launched on all {{ ansible_play_hosts_all | length }} hosts."
+          - "Remote sleeps still running, but observed worker forks now: {{ (fork_snapshot_async_running.stdout | from_json).worker_forks }}"
+          - "Compare to configured forks={{ demo_configured_forks }} and sync phase peaks in the final report."
+      run_once: true
+
+    - name: Mark phase async_with_followup_sync
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "async_with_followup_sync\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: "Follow-up blocking sync while async jobs still run (forks available again)"
+      ansible.builtin.shell: |
+        set -euo pipefail
+        mkdir -p "{{ demo_slot_dir }}"
+        slot="{{ demo_slot_dir }}/{{ inventory_hostname }}.slot"
+        echo "$$ {{ inventory_hostname }}" > "$slot"
+        sleep {{ demo_followup_sync_seconds | int }}
+        rm -f "$slot"
+      args:
+        executable: /bin/bash
+      changed_when: false
+
+    - name: Mark phase async_poll
+      ansible.builtin.copy:
+        dest: "{{ demo_phase_file }}"
+        content: "async_poll\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Wait for async jobs to finish
+      ansible.builtin.async_status:
+        jid: "{{ async_sleep_jobs.ansible_job_id }}"
+      register: async_sleep_results
+      until: async_sleep_results.finished | bool
+      retries: "{{ ((demo_async_sleep_seconds | int) + 30) // 2 }}"
+      delay: 2
+
+    - name: Persist inline snapshots for report
+      ansible.builtin.copy:
+        dest: "{{ demo_snapshots_file }}"
+        content: "{{ demo_snapshots | to_nice_json }}\n"
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Signal fork monitor to stop sampling
+      ansible.builtin.file:
+        path: "{{ demo_monitor_stop_file }}"
+        state: touch
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Wait for fork monitor async job to finish
+      ansible.builtin.async_status:
+        jid: "{{ fork_monitor_job.ansible_job_id }}"
+      delegate_to: localhost
+      run_once: true
+      register: monitor_status
+      until: monitor_status.finished | bool
+      retries: 30
+      delay: 1
+
+    - name: Build human-readable fork report
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/files/summarize_forks.py"
+          - "{{ demo_samples_file }}"
+          - "{{ demo_snapshots_file }}"
+          - "{{ demo_report_file }}"
+      delegate_to: localhost
+      run_once: true
+      register: fork_report
+      changed_when: false
+
+    - name: Display fork report
+      ansible.builtin.debug:
+        msg: "{{ fork_report.stdout_lines }}"
+      run_once: true
+
+    - name: Report file location
+      ansible.builtin.debug:
+        msg: "Full report written to {{ demo_report_file }}"
+      run_once: true
+
+...

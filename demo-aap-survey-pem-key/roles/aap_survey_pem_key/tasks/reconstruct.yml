@@ -1,0 +1,27 @@
+---
+- name: Extract PEM type from BEGIN header
+  ansible.builtin.set_fact:
+    survey_pem_key_type: >-
+      {{
+        _survey_pem_key_raw
+        | regex_findall('-----BEGIN (.*?)-----')
+        | first
+        | default('PRIVATE KEY')
+      }}
+
+- name: Sanitize squashed base64 body
+  ansible.builtin.set_fact:
+    survey_pem_key_base64_body: >-
+      {{
+        _survey_pem_key_raw
+        | replace('\\n', '')
+        | regex_replace('-----BEGIN .*?-----', '')
+        | regex_replace('-----END .*?-----', '')
+        | regex_replace('\s+', '')
+      }}
+  no_log: true
+
+- name: Reconstruct standard multi-line PEM structure
+  ansible.builtin.set_fact:
+    survey_pem_key_reconstructed: "{{ '-----BEGIN ' ~ survey_pem_key_type ~ '-----\n' ~ (survey_pem_key_base64_body | regex_findall('.{1,64}') | join('\n')) ~ '\n-----END ' ~ survey_pem_key_type ~ '-----\n' }}"
+  no_log: true
