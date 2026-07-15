@@ -32,6 +32,8 @@ ansible-playbook playbook.yml
 
 **Kerberos / Windows demos** ([demo-kerberos-winrm](demo-kerberos-winrm/README.md), [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md)) must run via **ansible-navigator** or **AAP** inside an execution environment — not bare `ansible-playbook` on your workstation (they template `/etc/krb5.conf` and run `kinit` on the controller).
 
+**PEM key survey demo** ([demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md)) requires `openssl` and `ssh-keygen` on the controller / execution environment.
+
 Each demo README includes details on what to look for in the output, things to try, and — where relevant — how to adapt the pattern for use in Ansible Automation Platform (AAP).
 
 ## Pre-commit
