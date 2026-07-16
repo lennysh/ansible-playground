@@ -279,21 +279,21 @@ controller_templates:
           variable: demo_sync_sleep_seconds
           type: integer
           required: false
-          default: "12"
+          default: 12
           min: 1
           max: 600
         - question_name: Async sleep seconds
           variable: demo_async_sleep_seconds
           type: integer
           required: false
-          default: "20"
+          default: 20
           min: 1
           max: 600
         - question_name: Follow-up sync seconds
           variable: demo_followup_sync_seconds
           type: integer
           required: false
-          default: "6"
+          default: 6
           min: 1
           max: 600
 
@@ -434,7 +434,7 @@ controller_templates:
           variable: connection_benchmark_iterations
           type: integer
           required: false
-          default: "3"
+          default: 3
           min: 1
           max: 50
         - question_name: Benchmark task
