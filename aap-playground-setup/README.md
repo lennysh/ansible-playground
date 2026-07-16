@@ -28,9 +28,14 @@ values you filled in manually.
 aap-playground-setup/
 ├── playbook.yml                 # dispatch entry point
 ├── collections/requirements.yml # infra.aap_configuration
-├── docs/CLICKOPS_GUIDE.md       # manual seed steps
-└── vars/                        # CaC definitions (edit these to extend)
+├── docs/
+│   ├── CLICKOPS_GUIDE.md        # manual seed steps
+│   └── CAC_EXAMPLES.md          # in-repo CaC sample index (copy from vars/)
+└── vars/                        # CaC definitions — canonical examples per object type
 ```
+
+When adding or changing demos, extend `vars/` using the patterns catalogued in
+**[docs/CAC_EXAMPLES.md](docs/CAC_EXAMPLES.md)**.
 
 ## CLI alternative
 

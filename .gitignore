@@ -16,6 +16,7 @@ inventory/*.local
 
 # Editor and OS noise
 .vscode/
+.cursor/
 .idea/
 *.swp
 *.swo
