@@ -20,7 +20,7 @@ Inspired by the [APD Clickops Guide](https://github.com/shadowman-lab/AAP-POC-Ac
 
 ## Step 1 — Create the Organization
 
-**Automation Execution → Infrastructure → Organizations → Create organization**
+**Access Management → Organizations → Create organization**
 
 | Field | Value |
 |---|---|
@@ -88,7 +88,7 @@ Click **Save**.
 | Source Control Type | `Git` |
 | Source Control URL | `https://github.com/lennysh/ansible-playground.git` |
 | Source Control Branch/Tag/Commit | `main` |
-| Options | Leave **Update Revision on Launch** unchecked for the seed JT (optional later) |
+| Options | Check **Update Revision on Launch** so jobs always sync latest `main` before running |
 
 Click **Save**. Wait for the project sync to finish (green status) before continuing.
 
