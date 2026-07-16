@@ -9,14 +9,18 @@
 
 - name: "{{ kerberos_diag_label }} — Kerberos environment variables"
   ansible.builtin.shell: |
+    set -o pipefail
     echo "--- Kerberos Env Variables ({{ kerberos_diag_label }}) ---" >> {{ kerberos_diag_log_path | quote }}
     env | grep -E 'KRB5|CONTAINER|HOME|USER|UID' >> {{ kerberos_diag_log_path | quote }} 2>&1 \
       || echo "(no matching env vars)" >> {{ kerberos_diag_log_path | quote }}
+  args:
+    executable: /bin/bash
   changed_when: false
   failed_when: false
 
 - name: "{{ kerberos_diag_label }} — inspect credential cache (KRB5CCNAME)"
   ansible.builtin.shell: |
+    set -o pipefail
     echo "--- Inspecting KRB5CCNAME Cache ({{ kerberos_diag_label }}) ---" >> {{ kerberos_diag_log_path | quote }}
     echo "Raw KRB5CCNAME value: $KRB5CCNAME" >> {{ kerberos_diag_log_path | quote }}
     CACHE_PATH=$(echo "$KRB5CCNAME" | sed -E 's/^(FILE:|DIR:)//')
@@ -25,6 +29,8 @@
       echo "KRB5CCNAME empty. Checking default: $CACHE_PATH" >> {{ kerberos_diag_log_path | quote }}
     fi
     ls -la "$CACHE_PATH" >> {{ kerberos_diag_log_path | quote }} 2>&1
+  args:
+    executable: /bin/bash
   changed_when: false
   failed_when: false
 
