@@ -1,0 +1,4 @@
+---
+aap_organizations:
+  - name: "{{ playground_org_name }}"
+    description: Ansible demo playground — surveyed job templates for customer demos

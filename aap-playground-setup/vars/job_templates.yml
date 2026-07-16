@@ -1,0 +1,463 @@
+---
+# Setup JT + one surveyed JT per demo that ships playbook-aap.yml.
+# Re-run "Playground | Apply CaC" after editing this file.
+controller_templates:
+  # ---------------------------------------------------------------------------
+  # Bootstrap
+  # ---------------------------------------------------------------------------
+  - name: "Playground | Apply CaC"
+    description: Create or update Lenny's Ansible Playground objects from CaC
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: aap-playground-setup/playbook.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    allow_simultaneous: true
+    ask_credential_on_launch: false
+    ask_inventory_on_launch: false
+    survey_enabled: false
+
+  # ---------------------------------------------------------------------------
+  # Localhost / teaching demos
+  # ---------------------------------------------------------------------------
+  - name: "Demo | AAP Survey PEM Key"
+    description: Reconstruct PEM private keys pasted into an AAP Password survey
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-aap-survey-pem-key/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: PEM or OpenSSH private key
+          question_description: >-
+            Paste a multi-line private key. AAP collapses newlines to spaces;
+            the playbook reconstructs PEM line breaks.
+          variable: survey_pem_key
+          type: password
+          required: true
+          default: ""
+        - question_name: Validate reconstructed key
+          question_description: Run openssl / ssh-keygen checks after reconstruct
+          variable: aap_survey_pem_key_validate
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+
+  - name: "Demo | Jinja2 Filters"
+    description: Runnable catalog of stock Jinja2 filters
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-jinja2-filters/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Value for unset_jinja_var (optional)
+          question_description: >-
+            Leave blank to demonstrate default(); set a value to compare
+          variable: unset_jinja_var
+          type: text
+          required: false
+          default: ""
+
+  - name: "Demo | Ansible Filters"
+    description: Runnable catalog of ansible.builtin filter plugins
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-ansible-filters/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: false
+
+  - name: "Demo | Download Collection Tarball"
+    description: Download a collection artifact from Automation Hub via offline token
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-download-collection-tarball/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Collection namespace
+          variable: collection_namespace
+          type: text
+          required: true
+          default: ""
+        - question_name: Collection name
+          variable: collection_name
+          type: text
+          required: true
+          default: ""
+        - question_name: Collection version
+          question_description: Leave blank for latest from Hub
+          variable: collection_version
+          type: text
+          required: false
+          default: ""
+        - question_name: Download directory
+          question_description: Optional path on the controller / EE
+          variable: download_dir
+          type: text
+          required: false
+          default: /tmp/collection-downloads
+
+  - name: "Demo | Satellite Sync and Promote"
+    description: Satellite sync/publish/DEV then survey-driven promote to QA/PROD
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-satellite-sync-and-promote/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_satellite_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Workflow step
+          variable: satellite_workflow_step
+          type: multiplechoice
+          required: true
+          default: upstream
+          choices:
+            - upstream
+            - promote
+        - question_name: Promote into environment
+          question_description: Only used when workflow is promote
+          variable: satellite_promote_target
+          type: multiplechoice
+          required: true
+          default: DEV
+          choices:
+            - DEV
+            - QA
+            - PROD
+        - question_name: Content view
+          variable: satellite_content_view
+          type: text
+          required: true
+          default: ""
+        - question_name: Product to sync
+          question_description: Required when workflow is upstream
+          variable: satellite_product
+          type: text
+          required: false
+          default: ""
+        - question_name: Repository (optional)
+          question_description: Limit sync to one repository within the product
+          variable: satellite_repository
+          type: text
+          required: false
+          default: ""
+        - question_name: Satellite organization
+          variable: satellite_organization
+          type: text
+          required: false
+          default: Default Organization
+
+  # ---------------------------------------------------------------------------
+  # Inventory-dependent teaching demos
+  # ---------------------------------------------------------------------------
+  - name: "Demo | Hosts Advanced"
+    description: Normalize messy survey host lists into a dynamic hosts target
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-hosts-advanced/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Host limit
+          question_description: >-
+            Messy host list (commas, newlines, mixed case, domains). Normalized
+            into the play hosts target.
+          variable: host_limit
+          type: textarea
+          required: true
+          default: ""
+
+  - name: "Demo | When"
+    description: "when: pitfalls — version checks, bool coercion, survey strings"
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-when/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Enforce MSDTC
+          question_description: Survey boolean — pipe through | bool in playbooks
+          variable: enforce_msdtc
+          type: multiplechoice
+          required: false
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Optional flag (string)
+          question_description: >-
+            Demonstrates Jinja truthiness — the string "false" is truthy unless
+            coerced with | bool
+          variable: optional_flag
+          type: text
+          required: false
+          default: "false"
+
+  - name: "Demo | Strategy Free"
+    description: Show strategy free interleaved host execution
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-strategy-free/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: false
+
+  - name: "Demo | Forks and Async"
+    description: Forks vs async/poll 0 with controller-side monitoring
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-ansible-forks-async/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    forks: 3
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Sync sleep seconds
+          variable: demo_sync_sleep_seconds
+          type: integer
+          required: false
+          default: "12"
+          min: 1
+          max: 600
+        - question_name: Async sleep seconds
+          variable: demo_async_sleep_seconds
+          type: integer
+          required: false
+          default: "20"
+          min: 1
+          max: 600
+        - question_name: Follow-up sync seconds
+          variable: demo_followup_sync_seconds
+          type: integer
+          required: false
+          default: "6"
+          min: 1
+          max: 600
+
+  # ---------------------------------------------------------------------------
+  # Ops / connectivity
+  # ---------------------------------------------------------------------------
+  - name: "Demo | AAP Connectivity"
+    description: Preflight TCP checks against an AAP installer inventory
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-aap-connectivity/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Connectivity suites
+          question_description: Select one or more check suites to run
+          variable: aap_connectivity_suites
+          type: multiselect
+          required: true
+          default: "redis\nreceptor\npostgresql"
+          choices:
+            - redis
+            - receptor
+            - postgresql
+            - platform
+            - pcp
+        - question_name: Fail job on connectivity errors
+          variable: aap_connectivity_fail_on_error
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+
+  # ---------------------------------------------------------------------------
+  # Windows / Kerberos (custom EE required)
+  # ---------------------------------------------------------------------------
+  - name: "Demo | Kerberos WinRM"
+    description: EE Kerberos diagnostics and optional win_ping
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-kerberos-winrm/playbook-aap.yml
+    inventory: "{{ playground_windows_inventory_name }}"
+    execution_environment: "{{ playground_ee_kerberos_winrm }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Kerberos realm
+          variable: kerberos_realm
+          type: text
+          required: true
+          default: EXAMPLE.COM
+        - question_name: DNS domain
+          variable: kerberos_domain
+          type: text
+          required: true
+          default: example.com
+        - question_name: Skip win_ping (diagnostics only)
+          variable: kerberos_skip_win_ping
+          type: multiplechoice
+          required: false
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Deploy krb5.conf from template
+          variable: kerberos_deploy_krb5_conf
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Run kinit before win_ping
+          variable: kerberos_run_kinit
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Echo report to job stdout
+          variable: kerberos_diag_display_mode
+          type: multiplechoice
+          required: false
+          default: file
+          choices:
+            - file
+            - stdout
+
+  - name: "Demo | WinRM vs PSRP"
+    description: Time WinRM vs PSRP under manual and managed Kerberos kinit
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-winrm-vs-psrp/playbook-aap.yml
+    inventory: "{{ playground_windows_inventory_name }}"
+    execution_environment: "{{ playground_ee_winrm_vs_psrp }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Kerberos realm
+          variable: kerberos_realm
+          type: text
+          required: true
+          default: EXAMPLE.COM
+        - question_name: DNS domain
+          variable: kerberos_domain
+          type: text
+          required: true
+          default: example.com
+        - question_name: Iterations
+          variable: connection_benchmark_iterations
+          type: integer
+          required: false
+          default: "3"
+          min: 1
+          max: 50
+        - question_name: Benchmark task
+          variable: connection_benchmark_task
+          type: multiplechoice
+          required: false
+          default: win_ping
+          choices:
+            - win_ping
+            - win_shell
+        - question_name: Deploy krb5.conf from template
+          variable: kerberos_deploy_krb5_conf
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Run kinit before benchmark
+          variable: kerberos_run_kinit
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"

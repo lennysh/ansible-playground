@@ -1,0 +1,11 @@
+---
+controller_inventories:
+  - name: "{{ playground_inventory_name }}"
+    description: Localhost inventory for Setup JT and localhost demos
+    organization: "{{ playground_org_name }}"
+
+  - name: "{{ playground_windows_inventory_name }}"
+    description: >-
+      Stub for Kerberos / WinRM demos. Add hosts to group 'windows' and set
+      WinRM connection vars (see demo-kerberos-winrm README).
+    organization: "{{ playground_org_name }}"

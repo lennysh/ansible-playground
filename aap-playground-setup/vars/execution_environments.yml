@@ -1,0 +1,16 @@
+---
+# EE images must be built from each demo's execution-environment.yml and
+# pushed to a registry the controller can pull. Override
+# playground_ee_registry in bootstrap.yml or as an extra var if needed.
+controller_execution_environments:
+  - name: "{{ playground_ee_kerberos_winrm }}"
+    description: Kerberos + WinRM tooling for demo-kerberos-winrm
+    image: "{{ playground_ee_kerberos_winrm_image }}"
+    pull: missing
+    organization: "{{ playground_org_name }}"
+
+  - name: "{{ playground_ee_winrm_vs_psrp }}"
+    description: Kerberos + WinRM/PSRP tooling for demo-winrm-vs-psrp
+    image: "{{ playground_ee_winrm_vs_psrp_image }}"
+    pull: missing
+    organization: "{{ playground_org_name }}"

@@ -2,6 +2,13 @@
 
 Self-contained Ansible playbooks that demonstrate specific concepts, patterns, and pitfalls. Each demo lives in its own directory with a playbook and README explaining what it shows.
 
+## AAP bootstrap
+
+To load these demos into Ansible Automation Platform as an organization with surveyed job templates, see **[aap-playground-setup/](aap-playground-setup/README.md)**.
+
+1. Follow **[aap-playground-setup/docs/CLICKOPS_GUIDE.md](aap-playground-setup/docs/CLICKOPS_GUIDE.md)** to create the seed org, inventory, AAP credential, project, and **Playground | Apply CaC** template.
+2. Launch that template anytime to create or update the remaining objects and demo job templates from Config-as-Code under `aap-playground-setup/vars/`.
+
 ## Demos
 
 | Demo | Topic |

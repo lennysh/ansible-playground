@@ -1,0 +1,39 @@
+---
+# Naming and SCM constants shared by CaC object definitions.
+playground_org_name: "Lenny's Ansible Playground"
+playground_project_name: "Lenny's Ansible Playground"
+playground_inventory_name: "Playground Inventory"
+playground_windows_inventory_name: "Playground Windows Inventory"
+playground_scm_url: "https://github.com/lennysh/ansible-playground.git"
+playground_scm_branch: "main"
+
+playground_aap_credential_name: "AAP Credential"
+playground_machine_credential_name: "Playground Machine Credential"
+playground_satellite_credential_name: "Playground Satellite Credential"
+playground_offline_token_credential_name: "Playground Hub Offline Token"
+playground_offline_token_credential_type: "Red Hat Offline Token"
+playground_satellite_credential_type: "Red Hat Satellite Server"
+
+playground_ee_kerberos_winrm: "demo-kerberos-winrm-ee"
+playground_ee_winrm_vs_psrp: "demo-winrm-vs-psrp-ee"
+# Override with a registry the controller can pull from, e.g.:
+#   playground_ee_registry: quay.io/example
+playground_ee_registry: ""
+playground_ee_kerberos_winrm_image: >-
+  {{
+    (
+      (playground_ee_registry ~ '/')
+      if playground_ee_registry | length > 0
+      else ''
+    )
+    ~ playground_ee_kerberos_winrm ~ ':latest'
+  }}
+playground_ee_winrm_vs_psrp_image: >-
+  {{
+    (
+      (playground_ee_registry ~ '/')
+      if playground_ee_registry | length > 0
+      else ''
+    )
+    ~ playground_ee_winrm_vs_psrp ~ ':latest'
+  }}

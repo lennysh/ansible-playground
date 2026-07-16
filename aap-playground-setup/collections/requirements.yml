@@ -1,0 +1,9 @@
+---
+# Collections required to apply playground CaC to AAP.
+# Install into the EE used by "Playground | Apply CaC", or on the
+# controller node when running this playbook from the CLI:
+#
+#   ansible-galaxy collection install -r collections/requirements.yml
+collections:
+  - name: infra.aap_configuration
+    version: ">=3.0.0"

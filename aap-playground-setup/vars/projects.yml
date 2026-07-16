@@ -1,0 +1,11 @@
+---
+controller_projects:
+  - name: "{{ playground_project_name }}"
+    description: Source for Lenny's Ansible Playground demos and CaC
+    organization: "{{ playground_org_name }}"
+    scm_type: git
+    scm_url: "{{ playground_scm_url }}"
+    scm_branch: "{{ playground_scm_branch }}"
+    scm_update_on_launch: false
+    update_project: true
+    wait: true

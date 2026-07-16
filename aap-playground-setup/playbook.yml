@@ -1,0 +1,64 @@
+---
+# Apply / refresh Lenny's Ansible Playground AAP objects (Config as Code).
+#
+# Run from the seeded "Playground | Apply CaC" job template (AAP Credential
+# attached), or from the CLI with auth env vars:
+#
+#   export AAP_HOSTNAME=https://aap.example.com
+#   export AAP_USERNAME=admin
+#   export AAP_PASSWORD=...
+#   # or: export AAP_TOKEN=...
+#   ansible-playbook aap-playground-setup/playbook.yml
+#
+- name: Apply Lenny's Ansible Playground CaC
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Check whether AAP / Controller auth is already available
+      ansible.builtin.set_fact:
+        playground_aap_auth_ok: >-
+          {{
+            (lookup('env', 'CONTROLLER_HOST') | default('', true) | length > 0)
+            or (lookup('env', 'AAP_HOSTNAME') | default('', true) | length > 0)
+          }}
+
+    - name: Assert AAP authentication environment variables are set
+      when: not (playground_aap_auth_ok | bool)
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'AAP_HOSTNAME') | default('', true) | length > 0
+          - >-
+            (lookup('env', 'AAP_TOKEN') | default('', true) | length > 0)
+            or (
+              (lookup('env', 'AAP_USERNAME') | default('', true) | length > 0)
+              and (lookup('env', 'AAP_PASSWORD') | default('', true) | length > 0)
+            )
+        fail_msg:
+          - "Set AAP auth for CLI runs, or attach an AAP Credential when launching from a job template:"
+          - "  export AAP_HOSTNAME=https://your-aap-server.example.com"
+          - "  export AAP_USERNAME=admin"
+          - "  export AAP_PASSWORD=<password>"
+          - "  # or: export AAP_TOKEN=<token>"
+
+    - name: Map AAP_* env vars for infra.aap_configuration when CONTROLLER_* is unset
+      when:
+        - lookup('env', 'CONTROLLER_HOST') | default('', true) | length == 0
+        - lookup('env', 'AAP_HOSTNAME') | default('', true) | length > 0
+      ansible.builtin.set_fact:
+        aap_hostname: "{{ lookup('env', 'AAP_HOSTNAME') }}"
+        aap_username: "{{ lookup('env', 'AAP_USERNAME') | default(omit, true) }}"
+        aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default(omit, true) }}"
+        aap_token: "{{ lookup('env', 'AAP_TOKEN') | default(omit, true) }}"
+        aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true) }}"
+
+    - name: Load playground CaC variable files
+      ansible.builtin.include_vars:
+        dir: "{{ playbook_dir }}/vars"
+        extensions:
+          - yml
+          - yaml
+
+    - name: Apply automation controller / platform configuration
+      ansible.builtin.include_role:
+        name: infra.aap_configuration.dispatch
