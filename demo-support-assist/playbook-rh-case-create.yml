@@ -1,0 +1,5 @@
+---
+# CLI wrapper — imports infra.support_assist.rh_case_create.
+# Omit case_id and supply create fields (see vars/rh_case_create.example.yml).
+- name: Run infra.support_assist.rh_case_create
+  ansible.builtin.import_playbook: infra.support_assist.rh_case_create

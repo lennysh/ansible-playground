@@ -1,0 +1,3 @@
+---
+# AAP version — survey / credential extra vars drive the collection playbook.
+- ansible.builtin.import_playbook: playbook-ocp-must-gather.yml

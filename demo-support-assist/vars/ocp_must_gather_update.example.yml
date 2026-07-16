@@ -1,0 +1,12 @@
+---
+# Update an existing case with OCP must-gather + upload.
+# Requires `oc` on the control/EE node. export REDHAT_OFFLINE_TOKEN=...
+case_id: "01234567"
+upload: true
+ocp_must_gather_server_url: "https://api.example.invalid:6443"
+ocp_must_gather_token: "sha256~REPLACE_ME"
+ocp_must_gather_validate_ssl: false
+ocp_must_gather_image: AAP
+ocp_must_gather_since: 1h
+ocp_must_gather_disconnected_mode: false
+# ocp_must_gather_disconnected_registry: ""

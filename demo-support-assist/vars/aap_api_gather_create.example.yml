@@ -1,0 +1,13 @@
+---
+# Create a new case with AAP API gather + upload.
+# Omit case_id. export REDHAT_OFFLINE_TOKEN=...
+case_product: Red Hat Ansible Automation Platform
+case_product_version: "2.5"
+case_summary: Automated Test Case Creation - AAP API Gather
+case_description: Automated case created via Ansible for testing purposes.
+case_type: Configuration Issue
+case_severity: "4 (Low)"
+upload: true
+aap_api_gather_components:
+  - controller
+# aap_hostname: aap.example.invalid

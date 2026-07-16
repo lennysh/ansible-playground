@@ -1,0 +1,7 @@
+---
+# Update an existing case with a comment and/or attachment.
+# export REDHAT_OFFLINE_TOKEN=...
+case_id: "01234567"
+case_comment: Adding a comment via demo-support-assist.
+# case_attachment: /tmp/diagnostic.log
+# case_attachment_description: Diagnostic log

@@ -1,0 +1,9 @@
+---
+# Update an existing case with AAP API gather + upload.
+# export REDHAT_OFFLINE_TOKEN=...
+# AAP creds via env (AAP_HOSTNAME / AAP_USERNAME / AAP_PASSWORD) or credential inject.
+case_id: "01234567"
+upload: true
+aap_api_gather_components:
+  - controller
+# aap_hostname: aap.example.invalid

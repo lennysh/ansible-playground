@@ -1,0 +1,4 @@
+---
+collections:
+  - name: infra.support_assist
+    version: ">=1.0.1"

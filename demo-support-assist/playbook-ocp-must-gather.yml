@@ -1,0 +1,5 @@
+---
+# CLI wrapper — imports infra.support_assist.ocp_must_gather.
+# Requires `oc` on the control/EE node. See vars/*.example.yml and the demo README.
+- name: Run infra.support_assist.ocp_must_gather
+  ansible.builtin.import_playbook: infra.support_assist.ocp_must_gather

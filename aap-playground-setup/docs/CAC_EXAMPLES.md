@@ -33,6 +33,9 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | No survey | `Demo \| Ansible Filters`, `Demo \| Strategy Free` |
 | Custom EE + ask inventory | `Demo \| Kerberos WinRM`, `Demo \| WinRM vs PSRP` |
 | Custom credential on JT | Download Collection (Offline Token), Satellite |
+| Offline token + create/update surveys | `Demo \| Support Assist \| …` (product/severity, case_id, OCP must-gather fields) |
+| Ask inventory + limit | `Demo \| Support Assist \| SOS Report \| …` |
+| Offline token + AAP credential | `Demo \| Support Assist \| AAP API Gather \| …` |
 
 ## Adding a new AAP demo
 

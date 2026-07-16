@@ -2,6 +2,8 @@
 # Install from Automation Hub / private automation hub (certified content), e.g.:
 #   ansible-galaxy collection install redhat.satellite --server automation_hub
 collections:
+  - name: infra.support_assist
+    version: ">=1.0.1"
   - name: infra.aap_configuration
     version: ">=3.0.0"
   - name: redhat.satellite

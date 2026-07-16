@@ -1,0 +1,5 @@
+---
+# CLI wrapper — imports infra.support_assist.sos_report.
+# Run against a real inventory (-i). See vars/*.example.yml and the demo README.
+- name: Run infra.support_assist.sos_report
+  ansible.builtin.import_playbook: infra.support_assist.sos_report

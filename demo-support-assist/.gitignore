@@ -1,0 +1,4 @@
+.offline_token
+inventories/hosts.yml
+vars/*.yml
+!vars/*.example.yml

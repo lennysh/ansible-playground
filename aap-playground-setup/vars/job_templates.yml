@@ -461,3 +461,999 @@ controller_templates:
           choices:
             - "true"
             - "false"
+
+
+  # ---------------------------------------------------------------------------
+  # Support Assist (infra.support_assist)
+  # ---------------------------------------------------------------------------
+  - name: "Demo | Support Assist | AAP API Gather | Create Case"
+    description: Gather AAP API diagnostics and create a Red Hat support case with upload
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-aap-api-gather-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: What is the Product?
+          question_description: Select the product that is experiencing the issue.
+          variable: case_product
+          type: multiplechoice
+          required: true
+          default: Red Hat Ansible Automation Platform
+          choices:
+            - Ansible Automation Analytics
+            - Ansible Automation Hub
+            - Ansible Collections
+            - Ansible Tower by Red Hat
+            - Red Hat Ansible Automation Platform
+            - Red Hat Ansible Automation Platform On Clouds
+            - Red Hat Ansible Automation Services Catalog
+            - Red Hat Ansible Engine
+            - Red Hat Ansible Engine Networking Add-on
+            - Red Hat Ansible Inside
+        - question_name: Product Version
+          question_description: >-
+            Enter the version of the product that is experiencing the issue. Must match a version
+            listed in the dropdown (for the selected product) on the Red Hat Support Portal.
+          variable: case_product_version
+          type: text
+          required: true
+          default: ""
+        - question_name: Case Summary/Title
+          question_description: >-
+            A short, descriptive summary of the issue (Max 255 characters). This serves as the public
+            title of the case.
+          variable: case_summary
+          type: text
+          required: true
+          default: Automated Test Case Creation - AAP API Gather
+        - question_name: Problem Description/Details
+          question_description: >-
+            A detailed explanation of the issue, including steps to reproduce, observed behavior, and
+            expected results. Provide as much detail as possible. (Markdown format is supported)
+          variable: case_description
+          type: textarea
+          required: true
+          default: Automated case created via Ansible Automation Platform for testing purposes.
+        - question_name: What is the Type of Issue?
+          question_description: >-
+            Select the category that best defines the issue to ensure the case is routed to the
+            correct support queue (e.g., Configuration, Bug, or Usage).
+          variable: case_type
+          type: multiplechoice
+          required: true
+          default: Configuration Issue
+          choices:
+            - Account / Customer Service Request
+            - Certification
+            - Configuration Issue
+            - Defect / Bug
+            - Feature / Enhancement Request
+            - Other
+            - RCA Only
+            - Usage / Documentation Help
+        - question_name: Case Severity
+          question_description: >-
+            Select the severity based on the immediate business impact. **1 (Urgent)** requires
+            severe, critical impact; **4 (Low)** is a non-urgent query or information request.
+          variable: case_severity
+          type: multiplechoice
+          required: true
+          default: 4 (Low)
+          choices:
+            - 1 (Urgent)
+            - 2 (High)
+            - 3 (Normal)
+            - 4 (Low)
+        - question_name: What components to gather data from?
+          question_description: Select the components to gather data from.
+          variable: aap_api_gather_components
+          type: multiselect
+          required: true
+          default: controller
+          choices:
+            - controller
+            - gateway
+            - eda
+            - hub
+
+  - name: "Demo | Support Assist | AAP API Gather | Update Case"
+    description: Gather AAP API diagnostics and upload to an existing Red Hat support case
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-aap-api-gather-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Existing Red Hat Case ID
+          question_description: >-
+            **Enter the existing Red Hat Support Case number (e.g., 00000000).** This ID is required
+            to skip case creation and proceed directly to diagnostic collection and file upload.
+          variable: case_id
+          type: text
+          required: true
+          min: 8
+          max: 8
+        - question_name: What components to gather data from?
+          question_description: Select the components to gather data from.
+          variable: aap_api_gather_components
+          type: multiselect
+          required: true
+          default: controller
+          choices:
+            - controller
+            - gateway
+            - eda
+            - hub
+
+  - name: "Demo | Support Assist | OCP Must Gather | Create Case"
+    description: "Run OpenShift must-gather, create a Red Hat support case, and upload the archive"
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-ocp-must-gather-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: What is the Product?
+          question_description: Select the product that is experiencing the issue.
+          variable: case_product
+          type: multiplechoice
+          required: true
+          default: OpenShift Container Platform
+          choices:
+            - .NET Core
+            - Ansible Automation Analytics
+            - Ansible Automation Hub
+            - Ansible Collections
+            - Ansible Tower by Red Hat
+            - Atomic Enterprise Platform
+            - Azure Red Hat OpenShift
+            - Cloud Management Services for Red Hat Enterprise Linux
+            - Convert2RHEL
+            - CoreOS Container Linux
+            - CoreOS Tectonic
+            - Enterprise Virtualization Management Suite (EVM)
+            - Fuse ESB
+            - Fuse IDE
+            - Fuse Management Console
+            - Fuse Mediation Router
+            - Fuse Message Broker
+            - Fuse Services Framework
+            - GFS
+            - Hybrid Committed Spend
+            - Inktank Ceph Enterprise
+            - JBoss A-MQ
+            - JBoss Communications Platform
+            - JBoss Enterprise Application Platform
+            - JBoss Enterprise Application Platform expansion pack
+            - JBoss Enterprise Web Platform
+            - JBoss Fuse
+            - JBoss jBPM
+            - JBoss Rules
+            - JBoss Site Publisher
+            - JBoss Web Framework Kit
+            - MetaMatrix Enterprise Data Services Platform
+            - Migration Toolkit for Applications
+            - Migration Toolkit for Containers
+            - Migration Toolkit for Runtimes
+            - Migration Toolkit for Virtualization
+            - Mirror Registry for OpenShift
+            - mirror registry for Red Hat OpenShift
+            - Open Liberty
+            - OpenJDK
+            - OpenShift
+            - OpenShift API for Data Protection
+            - OpenShift Container Platform
+            - OpenShift Dedicated
+            - OpenShift Online
+            - OpenShift Service Mesh
+            - OpenShift virtualization
+            - Other
+            - product discovery tool
+            - Quay.io
+            - Quickstart Cloud Installer
+            - Red Hat 3scale API Management
+            - Red Hat Advanced Cluster Management for Kubernetes
+            - Red Hat Advanced Cluster Security Cloud Service
+            - Red Hat Advanced Cluster Security for Kubernetes
+            - Red Hat AI Inference Server
+            - Red Hat AMQ
+            - Red Hat AMQ Clients
+            - Red Hat AMQ Interconnect
+            - Red Hat AMQ Online
+            - Red Hat Ansible Automation Platform
+            - Red Hat Ansible Automation Platform On Clouds
+            - Red Hat Ansible Automation Services Catalog
+            - Red Hat Ansible Engine
+            - Red Hat Ansible Engine Networking Add-on
+            - Red Hat Ansible Inside
+            - Red Hat Application Interconnect
+            - Red Hat Application Runtimes for Openshift
+            - Red Hat Application Stack
+            - Red Hat build of Apache Camel for Quarkus
+            - Red Hat build of Apache Camel for Spring Boot
+            - Red Hat build of Apache Camel-Camel K
+            - Red Hat build of Apicurio Registry
+            - Red Hat build of Debezium
+            - Red Hat build of Eclipse Vertx
+            - Red Hat build of Keycloak
+            - Red Hat build of Node js
+            - Red Hat build of OptaPlanner
+            - Red Hat build of Quarkus
+            - Red Hat build of Thorntail
+            - Red Hat Ceph Storage
+            - Red Hat Certificate System
+            - Red Hat Cloud Data Federation for IBM Spectrum Scale
+            - Red Hat CloudForms
+            - Red Hat Cluster Suite
+            - Red Hat CodeReady Studio - EOL
+            - Red Hat CodeReady Workspaces
+            - Red Hat Connectivity Link
+            - Red Hat Cost Management
+            - Red Hat Customer Portal
+            - Red Hat Data Grid
+            - Red Hat Decision Manager
+            - Red Hat Developer Hub
+            - Red Hat Developer Toolset
+            - Red Hat Device Edge
+            - Red Hat Directory Server
+            - Red Hat Edge Management
+            - Red Hat Enterprise IPA
+            - Red Hat Enterprise Linux
+            - Red Hat Enterprise Linux AI
+            - Red Hat Enterprise Linux Atomic Host
+            - Red Hat Enterprise Linux for ARM
+            - Red Hat Enterprise Linux for IBM System z (Structure A)
+            - Red Hat Enterprise Linux for Power LE (POWER9)
+            - Red Hat Enterprise Linux for Real Time
+            - Red Hat Enterprise Linux for SAP Applications
+            - Red Hat Enterprise Linux for SAP HANA
+            - Red Hat Enterprise Linux for SAP Solutions
+            - Red Hat Enterprise MRG Grid
+            - Red Hat Enterprise MRG Messaging
+            - Red Hat Enterprise MRG Realtime
+            - Red Hat Enterprise Virtualization
+            - Red Hat Fuse
+            - Red Hat Gluster Storage
+            - Red Hat HPC
+            - Red Hat Hyperconverged Infrastructure
+            - Red Hat Hyperconverged Infrastructure for Cloud
+            - Red Hat Infrastructure Migration Solution
+            - Red Hat Insights
+            - Red Hat Integration-Camel Kafka Connector
+            - Red Hat Integration-Camel Quarkus
+            - Red Hat Integration-Data Virtualization
+            - Red Hat Integration-Operator
+            - Red Hat JBoss AMQ 7
+            - Red Hat JBoss BPM Suite
+            - Red Hat JBoss BRMS
+            - Red Hat JBoss Data Services
+            - Red Hat JBoss Data Virtualization
+            - Red Hat JBoss Enterprise Application Platform
+            - Red Hat JBoss Fuse Service Works
+            - Red Hat JBoss Mobile Add-on
+            - Red Hat JBoss Operations Network
+            - Red Hat JBoss Portal
+            - Red Hat JBoss SOA Platform
+            - Red Hat JBoss Web Platform
+            - Red Hat JBoss Web Server
+            - Red Hat Managed Integration
+            - Red Hat Migration Analytics
+            - Red Hat Mobile Application Platform
+            - Red Hat Network
+            - Red Hat Offline Knowledge Portal
+            - Red Hat Online Learning
+            - Red Hat OpenShift AI Cloud Service
+            - Red Hat OpenShift AI Self-Managed
+            - Red Hat OpenShift API Management
+            - Red Hat OpenShift Service on AWS
+            - Red Hat OpenShift Service on AWS Hosted Control Planes
+            - Red Hat OpenShift Service Registry
+            - Red Hat OpenShift Streams for Apache Kafka
+            - Red Hat OpenShift Support for Windows Containers
+            - Red Hat OpenStack Platform
+            - Red Hat Openstack Services on OpenShift
+            - Red Hat Plug-Ins for Backstage
+            - Red Hat Process Automation Manager
+            - Red Hat Quay
+            - Red Hat Satellite
+            - Red Hat Service Interconnect
+            - Red Hat Single Sign-On
+            - Red Hat Software Collections
+            - Red Hat Storage Software Appliance
+            - Red Hat support for Spring Boot
+            - Red Hat Trusted Application Pipeline
+            - Red Hat Trusted Artifact Signer
+            - Red Hat Trusted Profile Analyzer
+            - Red Hat Update Infrastructure
+            - Red Hat Virtualization
+            - RedHat build of Apache Camel-Camel K
+            - Streams for Apache Kafka
+            - Subscription Asset Manager
+            - Subscription Watch
+        - question_name: Product Version
+          question_description: >-
+            Enter the version of the product that is experiencing the issue. Must match a version
+            listed in the dropdown (for the selected product) on the Red Hat Support Portal.
+          variable: case_product_version
+          type: text
+          required: true
+          default: ""
+        - question_name: Case Summary/Title
+          question_description: >-
+            A short, descriptive summary of the issue (Max 255 characters). This serves as the public
+            title of the case.
+          variable: case_summary
+          type: text
+          required: true
+          default: Automated Test Case Creation - OpenShift Must Gather Upload TEST
+        - question_name: Problem Description/Details
+          question_description: >-
+            A detailed explanation of the issue, including steps to reproduce, observed behavior, and
+            expected results. Provide as much detail as possible. (Markdown format is supported)
+          variable: case_description
+          type: textarea
+          required: true
+          default: Automated case created via Ansible Automation Platform for testing purposes.
+        - question_name: What is the Type of Issue?
+          question_description: >-
+            Select the category that best defines the issue to ensure the case is routed to the
+            correct support queue (e.g., Configuration, Bug, or Usage).
+          variable: case_type
+          type: multiplechoice
+          required: true
+          default: Configuration Issue
+          choices:
+            - Account / Customer Service Request
+            - Certification
+            - Configuration Issue
+            - Defect / Bug
+            - Feature / Enhancement Request
+            - Other
+            - RCA Only
+            - Usage / Documentation Help
+        - question_name: Case Severity
+          question_description: >-
+            Select the severity based on the immediate business impact. **1 (Urgent)** requires
+            severe, critical impact; **4 (Low)** is a non-urgent query or information request.
+          variable: case_severity
+          type: multiplechoice
+          required: true
+          default: 4 (Low)
+          choices:
+            - 1 (Urgent)
+            - 2 (High)
+            - 3 (Normal)
+            - 4 (Low)
+        - question_name: OpenShift Login Token
+          question_description: >-
+            The Bearer token (Service Account or OAuth token) required to log into the OpenShift
+            Cluster API and run the Must-Gather command.
+          variable: ocp_must_gather_token
+          type: password
+          required: true
+          default: ""
+        - question_name: OpenShift Cluster API URL
+          question_description: >-
+            The full URL (e.g., https://api.mycluster.domain:6443) of your OpenShift cluster's control
+            plane endpoint.
+          variable: ocp_must_gather_server_url
+          type: text
+          required: true
+          default: "https://api.example.invalid:6443"
+        - question_name: Validate SSL
+          question_description: >-
+            Set to 'true' to ensure the authenticity of the cluster's SSL certificate. Set to 'false'
+            only if using a self-signed or internal CA certificate, which is generally discouraged.
+          variable: ocp_must_gather_validate_ssl
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Must Gather Component Collection Acronym
+          question_description: >-
+            Select the must-gather image/acronym to use for data collection (e.g., DEFAULT, AAP, ODF).
+            Full list of options and descriptions available in [roles/ocp_must_gather/vars/main.yml].
+          variable: ocp_must_gather_image
+          type: multiplechoice
+          required: true
+          default: AAP
+          choices:
+            - DEFAULT
+            - AAP
+            - CNV
+            - COMPLIANCE
+            - GITOPS
+            - LOGGING
+            - LSO
+            - LVM
+            - MTC
+            - NRO
+            - OADP
+            - ODF
+            - OSSM
+            - PTP
+            - RHACM
+            - RHOAI
+            - SEC
+            - SVLS
+        - question_name: "Must Gather Time Range (blank = full history)"
+          question_description: >-
+            Defines the time window for which Must-Gather should collect logs and events, optimizing
+            file size and ensuring relevance to the issue time. Leave blank for full history.
+          variable: ocp_must_gather_since
+          type: multiplechoice
+          required: true
+          default: 1h
+          choices:
+            - ""
+            - 1h
+            - 3h
+            - 6h
+            - 12h
+            - 24h
+            - 3d
+            - 7d
+            - 14d
+            - 30d
+        - question_name: Disconnected/Air-Gapped Environment?
+          question_description: >-
+            Set to 'true' if the cluster cannot access Red Hat image registries directly (Air-Gapped
+            mode).
+          variable: ocp_must_gather_disconnected_mode
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Mirror Registry Address (required if Disconnected = true)
+          question_description: >-
+            The full path to the internal mirror registry containing the must-gather payload image
+            (e.g., registry.local/openshift4/ose-cli).
+          variable: ocp_must_gather_disconnected_registry
+          type: text
+          required: false
+
+  - name: "Demo | Support Assist | OCP Must Gather | Update Case"
+    description: >-
+      Run OpenShift must-gather and upload the archive to an existing Red Hat support case
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-ocp-must-gather-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Existing Red Hat Case ID
+          question_description: >-
+            **Enter the existing Red Hat Support Case number (e.g., 00000000).** This ID is required
+            to skip case creation and proceed directly to diagnostic collection and file upload.
+          variable: case_id
+          type: text
+          required: true
+        - question_name: OpenShift Login Token
+          question_description: >-
+            The Bearer token (Service Account or OAuth token) required to log into the OpenShift
+            Cluster API and run the Must-Gather command.
+          variable: ocp_must_gather_token
+          type: password
+          required: true
+          default: ""
+        - question_name: OpenShift Cluster API URL
+          question_description: >-
+            The full URL (e.g., https://api.mycluster.domain:6443) of your OpenShift cluster's control
+            plane endpoint.
+          variable: ocp_must_gather_server_url
+          type: text
+          required: true
+          default: "https://api.example.invalid:6443"
+        - question_name: Validate SSL
+          question_description: >-
+            Set to 'true' to ensure the authenticity of the cluster's SSL certificate. Set to 'false'
+            only if using a self-signed or internal CA certificate, which is generally discouraged.
+          variable: ocp_must_gather_validate_ssl
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Must Gather Component Collection Acronym
+          question_description: >-
+            Select the must-gather image/acronym to use for data collection (e.g., DEFAULT, AAP, ODF).
+            Full list of options and descriptions available in [roles/ocp_must_gather/vars/main.yml].
+          variable: ocp_must_gather_image
+          type: multiplechoice
+          required: true
+          default: AAP
+          choices:
+            - DEFAULT
+            - AAP
+            - CNV
+            - COMPLIANCE
+            - GITOPS
+            - LOGGING
+            - LSO
+            - LVM
+            - MTC
+            - NRO
+            - OADP
+            - ODF
+            - OSSM
+            - PTP
+            - RHACM
+            - RHOAI
+            - SEC
+            - SVLS
+        - question_name: "Must Gather Time Range (blank = full history)"
+          question_description: >-
+            Defines the time window for which Must-Gather should collect logs and events, optimizing
+            file size and ensuring relevance to the issue time. Leave blank for full history.
+          variable: ocp_must_gather_since
+          type: multiplechoice
+          required: true
+          default: 1h
+          choices:
+            - ""
+            - 1h
+            - 3h
+            - 6h
+            - 12h
+            - 24h
+            - 3d
+            - 7d
+            - 14d
+            - 30d
+        - question_name: Disconnected/Air-Gapped Environment?
+          question_description: >-
+            Set to 'true' if the cluster cannot access Red Hat image registries directly (Air-Gapped
+            mode).
+          variable: ocp_must_gather_disconnected_mode
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Mirror Registry Address (required if Disconnected = true)
+          question_description: >-
+            The full path to the internal mirror registry containing the must-gather payload image
+            (e.g., registry.local/openshift4/ose-cli).
+          variable: ocp_must_gather_disconnected_registry
+          type: text
+          required: false
+
+  - name: "Demo | Support Assist | SOS Report | Create Case"
+    description: >-
+      Collect sosreport from inventory hosts, create a Red Hat support case, and upload
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-sos-report-aap.yml
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_limit_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: What is the Product?
+          question_description: Select the product that is experiencing the issue.
+          variable: case_product
+          type: multiplechoice
+          required: true
+          default: Red Hat Enterprise Linux
+          choices:
+            - .NET Core
+            - Ansible Automation Analytics
+            - Ansible Automation Hub
+            - Ansible Collections
+            - Ansible Tower by Red Hat
+            - Atomic Enterprise Platform
+            - Azure Red Hat OpenShift
+            - Cloud Management Services for Red Hat Enterprise Linux
+            - Convert2RHEL
+            - CoreOS Container Linux
+            - CoreOS Tectonic
+            - Enterprise Virtualization Management Suite (EVM)
+            - Fuse ESB
+            - Fuse IDE
+            - Fuse Management Console
+            - Fuse Mediation Router
+            - Fuse Message Broker
+            - Fuse Services Framework
+            - GFS
+            - Hybrid Committed Spend
+            - Inktank Ceph Enterprise
+            - JBoss A-MQ
+            - JBoss Communications Platform
+            - JBoss Enterprise Application Platform
+            - JBoss Enterprise Application Platform expansion pack
+            - JBoss Enterprise Web Platform
+            - JBoss Fuse
+            - JBoss jBPM
+            - JBoss Rules
+            - JBoss Site Publisher
+            - JBoss Web Framework Kit
+            - MetaMatrix Enterprise Data Services Platform
+            - Migration Toolkit for Applications
+            - Migration Toolkit for Containers
+            - Migration Toolkit for Runtimes
+            - Migration Toolkit for Virtualization
+            - Mirror Registry for OpenShift
+            - mirror registry for Red Hat OpenShift
+            - Open Liberty
+            - OpenJDK
+            - OpenShift
+            - OpenShift API for Data Protection
+            - OpenShift Container Platform
+            - OpenShift Dedicated
+            - OpenShift Online
+            - OpenShift Service Mesh
+            - OpenShift virtualization
+            - Other
+            - product discovery tool
+            - Quay.io
+            - Quickstart Cloud Installer
+            - Red Hat 3scale API Management
+            - Red Hat Advanced Cluster Management for Kubernetes
+            - Red Hat Advanced Cluster Security Cloud Service
+            - Red Hat Advanced Cluster Security for Kubernetes
+            - Red Hat AI Inference Server
+            - Red Hat AMQ
+            - Red Hat AMQ Clients
+            - Red Hat AMQ Interconnect
+            - Red Hat AMQ Online
+            - Red Hat Ansible Automation Platform
+            - Red Hat Ansible Automation Platform On Clouds
+            - Red Hat Ansible Automation Services Catalog
+            - Red Hat Ansible Engine
+            - Red Hat Ansible Engine Networking Add-on
+            - Red Hat Ansible Inside
+            - Red Hat Application Interconnect
+            - Red Hat Application Runtimes for Openshift
+            - Red Hat Application Stack
+            - Red Hat build of Apache Camel for Quarkus
+            - Red Hat build of Apache Camel for Spring Boot
+            - Red Hat build of Apache Camel-Camel K
+            - Red Hat build of Apicurio Registry
+            - Red Hat build of Debezium
+            - Red Hat build of Eclipse Vertx
+            - Red Hat build of Keycloak
+            - Red Hat build of Node js
+            - Red Hat build of OptaPlanner
+            - Red Hat build of Quarkus
+            - Red Hat build of Thorntail
+            - Red Hat Ceph Storage
+            - Red Hat Certificate System
+            - Red Hat Cloud Data Federation for IBM Spectrum Scale
+            - Red Hat CloudForms
+            - Red Hat Cluster Suite
+            - Red Hat CodeReady Studio - EOL
+            - Red Hat CodeReady Workspaces
+            - Red Hat Connectivity Link
+            - Red Hat Cost Management
+            - Red Hat Customer Portal
+            - Red Hat Data Grid
+            - Red Hat Decision Manager
+            - Red Hat Developer Hub
+            - Red Hat Developer Toolset
+            - Red Hat Device Edge
+            - Red Hat Directory Server
+            - Red Hat Edge Management
+            - Red Hat Enterprise IPA
+            - Red Hat Enterprise Linux
+            - Red Hat Enterprise Linux AI
+            - Red Hat Enterprise Linux Atomic Host
+            - Red Hat Enterprise Linux for ARM
+            - Red Hat Enterprise Linux for IBM System z (Structure A)
+            - Red Hat Enterprise Linux for Power LE (POWER9)
+            - Red Hat Enterprise Linux for Real Time
+            - Red Hat Enterprise Linux for SAP Applications
+            - Red Hat Enterprise Linux for SAP HANA
+            - Red Hat Enterprise Linux for SAP Solutions
+            - Red Hat Enterprise MRG Grid
+            - Red Hat Enterprise MRG Messaging
+            - Red Hat Enterprise MRG Realtime
+            - Red Hat Enterprise Virtualization
+            - Red Hat Fuse
+            - Red Hat Gluster Storage
+            - Red Hat HPC
+            - Red Hat Hyperconverged Infrastructure
+            - Red Hat Hyperconverged Infrastructure for Cloud
+            - Red Hat Infrastructure Migration Solution
+            - Red Hat Insights
+            - Red Hat Integration-Camel Kafka Connector
+            - Red Hat Integration-Camel Quarkus
+            - Red Hat Integration-Data Virtualization
+            - Red Hat Integration-Operator
+            - Red Hat JBoss AMQ 7
+            - Red Hat JBoss BPM Suite
+            - Red Hat JBoss BRMS
+            - Red Hat JBoss Data Services
+            - Red Hat JBoss Data Virtualization
+            - Red Hat JBoss Enterprise Application Platform
+            - Red Hat JBoss Fuse Service Works
+            - Red Hat JBoss Mobile Add-on
+            - Red Hat JBoss Operations Network
+            - Red Hat JBoss Portal
+            - Red Hat JBoss SOA Platform
+            - Red Hat JBoss Web Platform
+            - Red Hat JBoss Web Server
+            - Red Hat Managed Integration
+            - Red Hat Migration Analytics
+            - Red Hat Mobile Application Platform
+            - Red Hat Network
+            - Red Hat Offline Knowledge Portal
+            - Red Hat Online Learning
+            - Red Hat OpenShift AI Cloud Service
+            - Red Hat OpenShift AI Self-Managed
+            - Red Hat OpenShift API Management
+            - Red Hat OpenShift Service on AWS
+            - Red Hat OpenShift Service on AWS Hosted Control Planes
+            - Red Hat OpenShift Service Registry
+            - Red Hat OpenShift Streams for Apache Kafka
+            - Red Hat OpenShift Support for Windows Containers
+            - Red Hat OpenStack Platform
+            - Red Hat Openstack Services on OpenShift
+            - Red Hat Plug-Ins for Backstage
+            - Red Hat Process Automation Manager
+            - Red Hat Quay
+            - Red Hat Satellite
+            - Red Hat Service Interconnect
+            - Red Hat Single Sign-On
+            - Red Hat Software Collections
+            - Red Hat Storage Software Appliance
+            - Red Hat support for Spring Boot
+            - Red Hat Trusted Application Pipeline
+            - Red Hat Trusted Artifact Signer
+            - Red Hat Trusted Profile Analyzer
+            - Red Hat Update Infrastructure
+            - Red Hat Virtualization
+            - RedHat build of Apache Camel-Camel K
+            - Streams for Apache Kafka
+            - Subscription Asset Manager
+            - Subscription Watch
+        - question_name: Product Version
+          question_description: >-
+            Enter the version of the product that is experiencing the issue. Must match a version
+            listed in the dropdown (for the selected product) on the Red Hat Support Portal.
+          variable: case_product_version
+          type: text
+          required: true
+          default: ""
+        - question_name: Case Summary/Title
+          question_description: >-
+            A short, descriptive summary of the issue (Max 255 characters). This serves as the public
+            title of the case.
+          variable: case_summary
+          type: text
+          required: true
+          default: Automated Test Case Creation - SOS Report Upload TEST
+        - question_name: Problem Description/Details
+          question_description: >-
+            A detailed explanation of the issue, including steps to reproduce, observed behavior, and
+            expected results. Provide as much detail as possible. (Markdown format is supported)
+          variable: case_description
+          type: textarea
+          required: true
+          default: Automated case created via Ansible Automation Platform for testing purposes.
+        - question_name: What is the Type of Issue?
+          question_description: >-
+            Select the category that best defines the issue to ensure the case is routed to the
+            correct support queue (e.g., Configuration, Bug, or Usage).
+          variable: case_type
+          type: multiplechoice
+          required: true
+          default: Configuration Issue
+          choices:
+            - Account / Customer Service Request
+            - Certification
+            - Configuration Issue
+            - Defect / Bug
+            - Feature / Enhancement Request
+            - Other
+            - RCA Only
+            - Usage / Documentation Help
+        - question_name: Case Severity
+          question_description: >-
+            Select the severity based on the immediate business impact. **1 (Urgent)** requires
+            severe, critical impact; **4 (Low)** is a non-urgent query or information request.
+          variable: case_severity
+          type: multiplechoice
+          required: true
+          default: 4 (Low)
+          choices:
+            - 1 (Urgent)
+            - 2 (High)
+            - 3 (Normal)
+            - 4 (Low)
+
+  - name: "Demo | Support Assist | SOS Report | Update Case"
+    description: >-
+      Collect sosreport from inventory hosts and upload to an existing Red Hat support case
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-sos-report-aap.yml
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_limit_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Existing Red Hat Case ID
+          question_description: >-
+            **Enter the existing Red Hat Support Case number (e.g., 00000000).** This ID is required
+            to skip case creation and proceed directly to diagnostic collection and file upload.
+          variable: case_id
+          type: text
+          required: true
+          min: 8
+          max: 8
+
+  - name: "Demo | Support Assist | RH Case | Create"
+    description: Create a Red Hat support case via the API (no diagnostic gather)
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-rh-case-create-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: What is the Product?
+          question_description: Select the product that is experiencing the issue.
+          variable: case_product
+          type: multiplechoice
+          required: true
+          default: Red Hat Ansible Automation Platform
+          choices:
+            - Ansible Automation Analytics
+            - Ansible Automation Hub
+            - Ansible Collections
+            - Ansible Tower by Red Hat
+            - Red Hat Ansible Automation Platform
+            - Red Hat Ansible Automation Platform On Clouds
+            - Red Hat Ansible Automation Services Catalog
+            - Red Hat Ansible Engine
+            - Red Hat Ansible Engine Networking Add-on
+            - Red Hat Ansible Inside
+        - question_name: Product Version
+          question_description: >-
+            Enter the version of the product that is experiencing the issue. Must match a version
+            listed in the dropdown (for the selected product) on the Red Hat Support Portal.
+          variable: case_product_version
+          type: text
+          required: true
+          default: ""
+        - question_name: Case Summary/Title
+          question_description: >-
+            A short, descriptive summary of the issue (Max 255 characters). This serves as the public
+            title of the case.
+          variable: case_summary
+          type: text
+          required: true
+          default: Automated Test Case Creation - API Only
+        - question_name: Problem Description/Details
+          question_description: >-
+            A detailed explanation of the issue, including steps to reproduce, observed behavior, and
+            expected results. Provide as much detail as possible. (Markdown format is supported)
+          variable: case_description
+          type: textarea
+          required: true
+          default: Automated case created via Ansible for testing purposes.
+        - question_name: What is the Type of Issue?
+          question_description: >-
+            Select the category that best defines the issue to ensure the case is routed to the
+            correct support queue (e.g., Configuration, Bug, or Usage).
+          variable: case_type
+          type: multiplechoice
+          required: true
+          default: Configuration Issue
+          choices:
+            - Account / Customer Service Request
+            - Certification
+            - Configuration Issue
+            - Defect / Bug
+            - Feature / Enhancement Request
+            - Other
+            - RCA Only
+            - Usage / Documentation Help
+        - question_name: Case Severity
+          question_description: >-
+            Select the severity based on the immediate business impact. **1 (Urgent)** requires
+            severe, critical impact; **4 (Low)** is a non-urgent query or information request.
+          variable: case_severity
+          type: multiplechoice
+          required: true
+          default: 4 (Low)
+          choices:
+            - 1 (Urgent)
+            - 2 (High)
+            - 3 (Normal)
+            - 4 (Low)
+
+  - name: "Demo | Support Assist | RH Case | Update"
+    description: Add a comment and/or attachment to an existing Red Hat support case
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-support-assist/playbook-rh-case-update-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Existing Red Hat Case ID
+          question_description: "Enter the existing Red Hat Support Case number (e.g., 01234567)."
+          variable: case_id
+          type: text
+          required: true
+          min: 8
+          max: 8
+        - question_name: Comment to add (optional)
+          question_description: Plaintext comment posted to the case. Leave blank to skip.
+          variable: case_comment
+          type: textarea
+          required: false
+          default: ""
+        - question_name: Attachment path on controller/EE (optional)
+          question_description: >-
+            Absolute path to a file on the execution node to upload. Leave blank to skip.
+          variable: case_attachment
+          type: text
+          required: false
+          default: ""

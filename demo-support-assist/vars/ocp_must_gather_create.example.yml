@@ -1,0 +1,16 @@
+---
+# Create a new case with OCP must-gather + upload.
+# Omit case_id. Requires `oc`. export REDHAT_OFFLINE_TOKEN=...
+case_product: OpenShift Container Platform
+case_product_version: "4.16"
+case_summary: Automated Test Case Creation - OpenShift Must Gather
+case_description: Automated case created via Ansible for testing purposes.
+case_type: Configuration Issue
+case_severity: "4 (Low)"
+upload: true
+ocp_must_gather_server_url: "https://api.example.invalid:6443"
+ocp_must_gather_token: "sha256~REPLACE_ME"
+ocp_must_gather_validate_ssl: false
+ocp_must_gather_image: AAP
+ocp_must_gather_since: 1h
+ocp_must_gather_disconnected_mode: false

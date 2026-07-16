@@ -1,0 +1,6 @@
+---
+# CLI wrapper — imports infra.support_assist.aap_api_gather.
+# Provide redhat_offline_token (or REDHAT_OFFLINE_TOKEN) and AAP connection
+# vars/creds; see vars/*.example.yml and the demo README.
+- name: Run infra.support_assist.aap_api_gather
+  ansible.builtin.import_playbook: infra.support_assist.aap_api_gather

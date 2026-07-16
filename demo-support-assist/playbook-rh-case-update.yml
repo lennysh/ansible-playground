@@ -1,0 +1,65 @@
+---
+# CLI / survey-friendly update: builds case_updates_needed from case_comment
+# and/or case_attachment, then runs the same roles as
+# infra.support_assist.rh_case_update.
+#
+# Required: case_id, redhat_offline_token (or REDHAT_OFFLINE_TOKEN)
+# Optional: case_comment, case_attachment
+# Or pass case_updates_needed directly (skips the builder).
+- name: Add comment(s) or attach file(s) to Red Hat Support Case
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Fail when case_id is missing
+      ansible.builtin.assert:
+        that:
+          - case_id is defined
+          - case_id | length > 0
+        fail_msg: Set case_id to the existing Red Hat Support Case number.
+
+    - name: Build case_updates_needed from survey-friendly vars
+      when: case_updates_needed is not defined
+      block:
+        - name: Initialize empty case_updates_needed
+          ansible.builtin.set_fact:
+            case_updates_needed: []
+
+        - name: Append comment update
+          when: case_comment | default('') | length > 0
+          ansible.builtin.set_fact:
+            case_updates_needed: >-
+              {{
+                case_updates_needed + [{
+                  'comment': case_comment,
+                  'commentType': 'plaintext'
+                }]
+              }}
+
+        - name: Append attachment update
+          when: case_attachment | default('') | length > 0
+          ansible.builtin.set_fact:
+            case_updates_needed: >-
+              {{
+                case_updates_needed + [{
+                  'attachment': case_attachment,
+                  'attachmentDescription': case_attachment_description
+                    | default('Uploaded via demo-support-assist')
+                }]
+              }}
+
+        - name: Fail when neither comment nor attachment was provided
+          ansible.builtin.assert:
+            that:
+              - case_updates_needed | length > 0
+            fail_msg: >-
+              Provide case_comment and/or case_attachment, or set
+              case_updates_needed explicitly.
+
+    - name: Call rh_token_refresh role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+
+    - name: Call rh_case role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_case

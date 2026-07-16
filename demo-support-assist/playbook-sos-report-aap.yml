@@ -1,0 +1,4 @@
+---
+# AAP version — survey / credential extra vars drive the collection playbook.
+# Ask inventory and limit on launch for target hosts.
+- ansible.builtin.import_playbook: playbook-sos-report.yml

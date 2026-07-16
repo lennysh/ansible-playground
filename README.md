@@ -28,6 +28,7 @@ To load these demos into Ansible Automation Platform as an organization with sur
 | [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — manual vs managed kinit, same Windows host, per-iteration comparison via Navigator/AAP EE |
 | [demo-aap-connectivity](demo-aap-connectivity/README.md) | [AAP installer connectivity preflight](demo-aap-connectivity/README.md) — Redis cluster bus, Receptor mesh, PostgreSQL, and platform TCP checks against an installer inventory |
 | [demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md) | [AAP Password survey PEM keys](demo-aap-survey-pem-key/README.md) — paste a masked multi-line private key into a Password survey; reconstruct PEM line breaks before downstream tasks |
+| [demo-support-assist](demo-support-assist/README.md) | [infra.support_assist](demo-support-assist/README.md) — AAP API gather, OCP must-gather, sosreport, and RH case create/update with surveyed AAP job templates |
 
 
 ## Running a demo
