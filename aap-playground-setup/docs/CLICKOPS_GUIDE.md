@@ -26,8 +26,46 @@ Inspired by the [APD Clickops Guide](https://github.com/shadowman-lab/AAP-POC-Ac
 |---|---|
 | Name | `Lenny's Ansible Playground` |
 | Description | Ansible demo playground job templates and surveys |
+| Galaxy Credentials | Attach **Ansible Galaxy** (see below) |
 
 Click **Save**.
+
+### Galaxy credential (required for project collection sync)
+
+Project updates only install collections from `collections/requirements.yml` /
+`aap-playground-setup/collections/requirements.yml` when the **organization**
+has at least one Galaxy credential. Without that, sync shows:
+
+```text
+Collection and role syncing disabled. Check the AWX_ROLES_ENABLED and
+AWX_COLLECTIONS_ENABLED settings and Galaxy credentials on the project's
+organization.
+```
+
+AAP usually ships a global **Ansible Galaxy** credential (public
+`https://galaxy.ansible.com/`, no token required). Attach it to this org:
+
+1. Open **Lenny's Ansible Playground** → **Edit**
+2. Under **Galaxy Credentials**, search for and select **Ansible Galaxy**
+3. Save
+
+If that credential is missing, create one first:
+
+**Automation Execution → Infrastructure → Credentials → Create credential**
+
+| Field | Value |
+|---|---|
+| Name | `Ansible Galaxy` |
+| Organization | *(leave blank — global — so any org can use it)* |
+| Credential Type | `Ansible Galaxy/Automation Hub API Token` |
+| Galaxy Server URL | `https://galaxy.ansible.com/` |
+| API Token | *(leave blank for anonymous public Galaxy)* |
+
+Then attach it on the organization as above. Order matters if you add multiple
+sources later (Hub before public Galaxy, etc.).
+
+`infra.aap_configuration` (used by **Playground | Apply CaC**) is published on
+Galaxy, so this step is required for the Setup job’s project sync.
 
 ---
 
@@ -91,6 +129,8 @@ Click **Save**.
 | Options | Check **Update Revision on Launch** so jobs always sync latest `main` before running |
 
 Click **Save**. Wait for the project sync to finish (green status) before continuing.
+Confirm the sync job did **not** skip collections (org Galaxy credential must be
+set — see Step 1).
 
 ---
 
@@ -136,7 +176,8 @@ Re-launch this template anytime after you pull new CaC changes into the project.
 
 ## Final checklist
 
-- [ ] Project sync completed successfully
+- [ ] Organization has a **Galaxy credential** attached (e.g. **Ansible Galaxy**)
+- [ ] Project sync completed successfully (collections not skipped)
 - [ ] `Playground | Apply CaC` completed successfully at least once
 - [ ] **Playground Machine Credential** updated with a real SSH key and/or
       Windows UPN + password for managed hosts

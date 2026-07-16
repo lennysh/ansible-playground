@@ -2,8 +2,8 @@
 # Install from Automation Hub / private automation hub (certified content), e.g.:
 #   ansible-galaxy collection install redhat.satellite --server automation_hub
 collections:
-  - name: infra.aap_configuration
-    version: ">=3.0.0"
+  # - name: infra.aap_configuration
+  #   version: ">=3.0.0"
   - name: redhat.satellite
     # wait_for_task needs 3.13.0+; pin after `ansible-galaxy collection list` in your environment
     version: ">=3.13.0"
