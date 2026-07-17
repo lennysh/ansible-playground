@@ -1551,4 +1551,4 @@ controller_templates:
           variable: case_attachment_description
           type: text
           required: false
-          default: Uploaded via Lenny's Ansible Playground support-assist DemoJT
+          default: Uploaded via Lenny's Ansible Playground support-assist Demo JT
