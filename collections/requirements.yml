@@ -3,7 +3,7 @@
 #   ansible-galaxy collection install redhat.satellite --server automation_hub
 collections:
   - name: infra.support_assist
-    version: ">=1.0.1"
+    # version: ">=1.0.1"
     type: git
     source: https://github.com/redhat-cop/infra.support_assist.git
   - name: infra.aap_configuration
