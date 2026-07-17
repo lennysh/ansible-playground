@@ -247,7 +247,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-hosts-advanced/playbook-aap.yml
-    inventory: "{{ playground_fake_hosts_nventory_name }}"
+    inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -315,7 +315,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-strategy-free/playbook-aap.yml
-    inventory: "{{ playground_fake_hosts_nventory_name }}"
+    inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -329,7 +329,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-ansible-forks-async/playbook-aap.yml
-    inventory: "{{ playground_fake_hosts_nventory_name }}"
+    inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
