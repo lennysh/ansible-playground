@@ -102,10 +102,11 @@
           attachments_per_host: "{{ case_updates_attachments }}"
 
     - name: Refresh Red Hat API token once on the controller
-      run_once: true
-      delegate_to: localhost
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
+        apply:
+          run_once: true
+          delegate_to: localhost
 
     - name: Distribute API access token to all play hosts
       ansible.builtin.set_fact:
