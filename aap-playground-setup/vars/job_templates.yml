@@ -187,7 +187,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-hosts-advanced/playbook-aap.yml
-    inventory: "{{ playground_inventory_name }}"
+    inventory: "{{ playground_fake_hosts_nventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -206,7 +206,14 @@ controller_templates:
           variable: host_limit
           type: textarea
           required: true
-          default: ""
+          default: |-
+            Fake-Host-01
+            FAKE-host-02,FAKE-HOST-03
+            fake-Host-04
+            fake-HOST-05
+            fake-host-06,Fake-Host-07.example.com,fake-HOST-08
+            fake-host-09.example.net
+            fake-host-10
 
   - name: "Demo | When"
     description: "when: pitfalls — version checks, bool coercion, survey strings"
@@ -248,7 +255,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-strategy-free/playbook-aap.yml
-    inventory: "{{ playground_inventory_name }}"
+    inventory: "{{ playground_fake_hosts_nventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -262,7 +269,7 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-ansible-forks-async/playbook-aap.yml
-    inventory: "{{ playground_inventory_name }}"
+    inventory: "{{ playground_fake_hosts_nventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -270,6 +277,7 @@ controller_templates:
     become_enabled: false
     ask_inventory_on_launch: true
     ask_credential_on_launch: true
+    ask_forks_on_launch: true
     survey_enabled: true
     survey_spec:
       name: ""
@@ -305,7 +313,6 @@ controller_templates:
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-aap-connectivity/playbook-aap.yml
-    inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run

@@ -2,7 +2,8 @@
 # Naming and SCM constants shared by CaC object definitions.
 playground_org_name: "Lenny's Ansible Playground"
 playground_project_name: "Lenny's Ansible Playground"
-playground_inventory_name: "Playground Inventory"
+playground_inventory_name: "Playground localhost Inventory"
+playground_fake_hosts_nventory_name: "Playground Fake Hosts Inventory"
 playground_windows_inventory_name: "Playground Windows Inventory"
 playground_scm_url: "https://github.com/lennysh/ansible-playground.git"
 playground_scm_branch: "main"
