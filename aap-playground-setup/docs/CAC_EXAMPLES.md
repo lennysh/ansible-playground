@@ -25,6 +25,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 
 | Pattern | Example JT |
 |---------|------------|
+| Optional seed survey (first create only) | `Playground \| Apply CaC` → Machine / Satellite / offline token / EE registry |
 | Password (masked secret) | `Demo \| AAP Survey PEM Key` → `survey_pem_key` |
 | Textarea | `Demo \| Hosts Advanced` → `host_limit` |
 | Multiple choice / true-false | `Demo \| When`, Kerberos demos |

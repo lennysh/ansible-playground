@@ -155,27 +155,27 @@ Click **Save**.
 > `infra.aap_configuration` (Galaxy / private Hub, or baked into the image).
 > See [`collections/requirements.yml`](../collections/requirements.yml).
 
-### Optional — survey to seed credential inputs
+### Optional survey — seed credential inputs on first create
 
-CaC keeps `survey_enabled: false` on this JT. You may add an optional survey
-(or job extra variables) so a launch can seed Machine / Satellite / offline-token
-inputs without editing credentials in the UI.
+After the first successful Apply (or when this survey is present on the seeded
+JT), launch prompts for optional values. All questions are optional; leave blank
+to skip.
 
-| Question (suggested) | Variable | Required | Notes |
-|---|---|---|---|
-| Machine username | `playground_machine_username` | No | e.g. `ec2-user` |
-| Satellite URL | `playground_satellite_url` | No | e.g. `https://satellite.example.com` |
-| Satellite username | `playground_satellite_username` | No | |
-| Satellite password | `playground_satellite_password` | No | Use **Password** type |
-| Red Hat offline token | `playground_offline_token` | No | Password type; from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
-| EE registry prefix | `playground_ee_registry` | No | e.g. `quay.io/your-ns` |
+| Question | Variable | Notes |
+|---|---|---|
+| Machine username | `playground_machine_username` | e.g. `ec2-user` |
+| Satellite URL | `playground_satellite_url` | e.g. `https://satellite.example.com` |
+| Satellite username | `playground_satellite_username` | |
+| Satellite password | `playground_satellite_password` | Password type |
+| Red Hat offline token | `playground_offline_token` | Password type; from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+| EE registry prefix | `playground_ee_registry` | e.g. `quay.io/your-ns` |
 
-Leave a question blank to skip that input (`|trim` → omit). Survey / `-e`
-values are applied only when the credential is **first created** (`state:
-exists` skips updates afterward). Prefer filling credentials in the UI after
-Apply, or pass overrides on the first surveyed launch.
+Blank answers are trimmed and omitted. Values apply only when the credential is
+**first created** (`state: exists` skips updates afterward). Prefer filling
+credentials in the UI after Apply, or pass overrides on the first launch.
 
 Same vars work from ansible-core via [`extra_vars.example.yml`](../extra_vars.example.yml).
+Defined in [`vars/job_templates.yml`](../vars/job_templates.yml).
 
 ---
 
@@ -208,10 +208,10 @@ secrets you set in the UI (`update_secrets: false` is belt-and-suspenders only).
 | **Playground Satellite Credential** | Satellite URL, username, password |
 | **Playground Red Hat Offline Token** | Token from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
 
-To seed on **first create**, use an optional Setup JT survey (Step 5) or
-ansible-core `-e` / [`extra_vars.example.yml`](../extra_vars.example.yml). Blank
-answers are ignored. After the credential exists, edit it in the UI (or delete
-it and re-run Apply with overrides to recreate).
+To seed on **first create**, use the Setup JT survey (Step 5) or ansible-core
+`-e` / [`extra_vars.example.yml`](../extra_vars.example.yml). Blank answers are
+ignored. After the credential exists, edit it in the UI (or delete it and
+re-run Apply with overrides to recreate).
 
 ---
 

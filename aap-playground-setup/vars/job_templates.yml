@@ -18,7 +18,57 @@ controller_templates:
     allow_simultaneous: true
     ask_credential_on_launch: false
     ask_inventory_on_launch: false
-    survey_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: >-
+        Optional seeds for credential shells and EE image prefix. Leave blank to
+        skip (applied only on first credential create; state: exists afterward).
+      spec:
+        - question_name: Machine username
+          question_description: >-
+            Playground Machine Credential username (e.g. ec2-user). Leave blank
+            to skip.
+          variable: playground_machine_username
+          type: text
+          required: false
+          default: ""
+        - question_name: Satellite URL
+          question_description: >-
+            Playground Satellite Credential host (e.g. https://satellite.example.com).
+            Leave blank to skip.
+          variable: playground_satellite_url
+          type: text
+          required: false
+          default: ""
+        - question_name: Satellite username
+          question_description: Playground Satellite Credential username. Leave blank to skip.
+          variable: playground_satellite_username
+          type: text
+          required: false
+          default: ""
+        - question_name: Satellite password
+          question_description: Playground Satellite Credential password. Leave blank to skip.
+          variable: playground_satellite_password
+          type: password
+          required: false
+          default: ""
+        - question_name: Red Hat offline token
+          question_description: >-
+            Playground Red Hat Offline Token from
+            https://access.redhat.com/management/api. Leave blank to skip.
+          variable: playground_offline_token
+          type: password
+          required: false
+          default: ""
+        - question_name: EE registry prefix
+          question_description: >-
+            Registry prefix for Kerberos / WinRM EE images (e.g. quay.io/your-ns).
+            Leave blank for unqualified image names.
+          variable: playground_ee_registry
+          type: text
+          required: false
+          default: ""
 
   # ---------------------------------------------------------------------------
   # Localhost / teaching demos

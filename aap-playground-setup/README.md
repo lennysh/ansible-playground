@@ -72,9 +72,8 @@ ansible-playbook aap-playground-setup/playbook.yml -e @/tmp/playground-cac-extra
 
 When launching **Playground | Apply CaC** from the UI, Apply creates empty
 credential shells; fill Machine / Satellite / Offline Token in the UI afterward.
-`state: exists` means later CaC runs will not overwrite those edits. An optional
-Setup JT survey (CLICKOPS Step 5) can seed inputs on **first create** only;
-blank answers are omitted.
+`state: exists` means later CaC runs will not overwrite those edits. The Setup
+JT survey can seed inputs on **first create** only; blank answers are omitted.
 
 ## What gets created
 
