@@ -1,6 +1,11 @@
 ---
 # Update an existing case with a comment and/or attachment.
 # export REDHAT_OFFLINE_TOKEN=...
+#
+# Localhost:
+#   ansible-playbook playbook-rh-case-update.yml -i localhost, -c local -e @vars/rh_case_update.yml
+# Several hosts, same attachment path on each:
+#   ansible-playbook playbook-rh-case-update.yml -i inventories/hosts.yml -l web -e @vars/rh_case_update.yml
 case_id: "01234567"
 case_comment: Adding a comment via demo-support-assist.
 case_comment_type: markdown   # or plaintext

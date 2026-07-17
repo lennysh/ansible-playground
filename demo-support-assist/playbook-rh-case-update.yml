@@ -3,16 +3,24 @@
 # and/or case_attachment, then runs the same roles as
 # infra.support_assist.rh_case_update.
 #
+# Inventory: target localhost and/or remote hosts (same as the collection
+# playbook). Use -l / AAP limit to select nodes. Attachment paths are read on
+# each targeted host (e.g. same path on three servers → three uploads).
+#
 # Required: case_id, redhat_offline_token (or REDHAT_OFFLINE_TOKEN)
 # Optional: case_comment, case_attachment (at least one required),
 #           case_comment_type (markdown|plaintext, default markdown)
 # Or pass a non-empty case_updates_needed directly (skips the builder).
+#
+# Token: refreshed once on the controller and shared to all play hosts
+# (access token ~15 minutes; role also caches under /tmp). Do not refresh
+# per host — SSO rate limits and identical credentials make that wasteful.
 - name: Add comment(s) or attach file(s) to Red Hat Support Case
-  hosts: localhost
-  connection: local
+  hosts: all
   gather_facts: false
   tasks:
     - name: Fail when case_id is missing
+      run_once: true
       ansible.builtin.assert:
         that:
           - case_id is defined
@@ -20,6 +28,7 @@
         fail_msg: Set case_id to the existing Red Hat Support Case number.
 
     - name: Build case_updates_needed from survey-friendly vars
+      run_once: true
       when: >-
         case_updates_needed is not defined
         or case_updates_needed is none
@@ -63,14 +72,68 @@
               The rh_case role does not accept case_comment/case_attachment
               directly — this playbook maps them into case_updates_needed.
 
-    - name: Show updates that will be applied
-      ansible.builtin.debug:
-        var: case_updates_needed
+    - name: Share built case_updates_needed with all play hosts
+      ansible.builtin.set_fact:
+        case_updates_needed: "{{ hostvars[ansible_play_hosts_all | first]['case_updates_needed'] }}"
 
-    - name: Call rh_token_refresh role
+    - name: Split comments vs attachments for multi-host safety
+      ansible.builtin.set_fact:
+        case_updates_comments: >-
+          {{
+            case_updates_needed
+            | selectattr('comment', 'defined')
+            | selectattr('comment', 'ne', '')
+            | list
+          }}
+        case_updates_attachments: >-
+          {{
+            case_updates_needed
+            | selectattr('attachment', 'defined')
+            | selectattr('attachment', 'ne', '')
+            | list
+          }}
+
+    - name: Show updates that will be applied
+      run_once: true
+      ansible.builtin.debug:
+        msg:
+          hosts: "{{ ansible_play_hosts_all }}"
+          comments: "{{ case_updates_comments }}"
+          attachments_per_host: "{{ case_updates_attachments }}"
+
+    - name: Refresh Red Hat API token once on the controller
+      run_once: true
+      delegate_to: localhost
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
 
-    - name: Call rh_case role
-      ansible.builtin.include_role:
-        name: infra.support_assist.rh_case
+    - name: Distribute API access token to all play hosts
+      ansible.builtin.set_fact:
+        rh_token_refresh_api_access_token: "{{ hostvars['localhost']['rh_token_refresh_api_access_token'] }}"
+
+    # Comments are identical API posts — run once for the play (rh_case's
+    # comment task is not run_once, so a bare multi-host role call would
+    # duplicate the same comment N times).
+    - name: Post case comment(s) once for the play
+      run_once: true
+      when: case_updates_comments | length > 0
+      block:
+        - name: Set comment-only updates for rh_case
+          ansible.builtin.set_fact:
+            case_updates_needed: "{{ case_updates_comments }}"
+
+        - name: Call rh_case role (comments)
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case
+
+    # Attachments are read from each targeted host's filesystem (curl -F file=@…).
+    - name: Upload attachment(s) from each targeted host
+      when: case_updates_attachments | length > 0
+      block:
+        - name: Set attachment-only updates for rh_case
+          ansible.builtin.set_fact:
+            case_updates_needed: "{{ case_updates_attachments }}"
+
+        - name: Call rh_case role (attachments)
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case

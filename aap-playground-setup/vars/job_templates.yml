@@ -1490,7 +1490,9 @@ controller_templates:
             - 4 (Low)
 
   - name: "Demo | Support Assist | RH Case | Update"
-    description: Add a comment and/or attachment to an existing Red Hat support case
+    description: >-
+      Add a comment and/or attachment to an existing Red Hat support case.
+      Target localhost and/or remote hosts (attachments read per host).
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demo-support-assist/playbook-rh-case-update-aap.yml
@@ -1516,8 +1518,8 @@ controller_templates:
           max: 8
         - question_name: Comment to add (optional)
           question_description: >-
-            Comment posted to the case. Provide this and/or an attachment path
-            below (at least one is required). Format controlled by Comment type.
+            Comment posted once to the case (not per host). Provide this and/or
+            an attachment path below (at least one is required).
           variable: case_comment
           type: textarea
           required: false
@@ -1533,10 +1535,11 @@ controller_templates:
           choices:
             - markdown
             - plaintext
-        - question_name: Attachment path on node(s)/EE (optional)
+        - question_name: Attachment path on each host (optional)
           question_description: >-
-            Absolute path to a file on the execution node to upload. Provide
-            this and/or a comment above (at least one is required).
+            Absolute path read on every inventory host in the job (e.g. same
+            path on three servers → three uploads). Provide this and/or a
+            comment above (at least one is required).
           variable: case_attachment
           type: text
           required: false
