@@ -10,7 +10,7 @@ playground_scm_branch: "main"
 playground_aap_credential_name: "AAP Credential"
 playground_machine_credential_name: "Playground Machine Credential"
 playground_satellite_credential_name: "Playground Satellite Credential"
-playground_offline_token_credential_name: "Playground Hub Offline Token"
+playground_offline_token_credential_name: "Playground Red Hat Offline Token"
 playground_offline_token_credential_type: "Red Hat Offline Token"
 playground_satellite_credential_type: "Red Hat Satellite Server"
 
