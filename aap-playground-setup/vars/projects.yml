@@ -8,4 +8,5 @@ controller_projects:
     scm_branch: "{{ playground_scm_branch }}"
     scm_update_on_launch: true
     update_project: true
-    wait: true
+    # wait: true
+    cache_timeout: 300
