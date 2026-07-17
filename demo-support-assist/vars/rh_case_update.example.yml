@@ -10,4 +10,4 @@ case_id: "01234567"
 case_comment: Adding a comment via demo-support-assist.
 case_comment_type: markdown   # or plaintext
 # case_attachment: /tmp/diagnostic.log
-# case_attachment_description: Diagnostic log
+case_attachment_description: Uploaded via demo-support-assist

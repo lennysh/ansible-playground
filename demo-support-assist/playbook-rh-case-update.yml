@@ -9,7 +9,8 @@
 #
 # Required: case_id, redhat_offline_token (or REDHAT_OFFLINE_TOKEN)
 # Optional: case_comment, case_attachment (at least one required),
-#           case_comment_type (markdown|plaintext, default markdown)
+#           case_comment_type (markdown|plaintext, default markdown),
+#           case_attachment_description (survey default when using AAP)
 # Or pass a non-empty case_updates_needed directly (skips the builder).
 #
 # Token: rh_token_refresh runs on each play host (local /tmp cache ~15m per
@@ -52,10 +53,7 @@
                 + (
                   [{
                     'attachment': case_attachment | trim,
-                    'attachmentDescription': (
-                      case_attachment_description
-                      | default('Uploaded via demo-support-assist')
-                    )
+                    'attachmentDescription': case_attachment_description | default('') | trim
                   }]
                   if (case_attachment | default('') | string | trim | length > 0)
                   else []

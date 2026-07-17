@@ -1544,3 +1544,11 @@ controller_templates:
           type: text
           required: false
           default: ""
+        - question_name: Attachment description (optional)
+          question_description: >-
+            Description stored with the uploaded file on the case. Ignored if
+            Attachment path is blank.
+          variable: case_attachment_description
+          type: text
+          required: false
+          default: Uploaded via Lenny's Ansible Playground support-assist DemoJT

@@ -1,5 +1,5 @@
 ---
 # AAP version — survey vars case_id / case_comment / case_comment_type /
-# case_attachment. Prompt for inventory/limit to target localhost and/or
-# remote hosts (attachments read on each selected host).
+# case_attachment / case_attachment_description. Prompt for inventory/limit
+# to target localhost and/or remote hosts (attachments read on each host).
 - ansible.builtin.import_playbook: playbook-rh-case-update.yml
