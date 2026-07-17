@@ -1,0 +1,30 @@
+---
+# Optional extra vars when applying CaC from ansible-core (not from the Setup JT).
+#
+#   cp aap-playground-setup/extra_vars.example.yml /tmp/playground-cac-extra.yml
+#   # edit secrets in /tmp/… (do not commit)
+#   ansible-playbook aap-playground-setup/playbook.yml -e @/tmp/playground-cac-extra.yml
+#
+# Do not place a filled copy under aap-playground-setup/vars/ — that directory is
+# loaded wholesale by playbook.yml.
+#
+# Credentials use state: exists — inputs below are applied only on initial
+# create. Later CaC runs do not modify existing credentials (UI edits are safe).
+# Blank / whitespace-only values are trimmed and omitted.
+# After create, edit secrets in the AAP UI (or delete the credential and re-run
+# Apply with overrides to recreate).
+
+# Machine credential SSH / WinRM username
+# playground_machine_username: ec2-user
+
+# Satellite API credential (Demo | Satellite Sync and Promote, etc.)
+# playground_satellite_url: https://satellite.example.com
+# playground_satellite_username: admin
+# playground_satellite_password: "changeme"
+
+# Red Hat offline token (collection-download / Hub demos)
+# From https://access.redhat.com/management/api
+# playground_offline_token: "..."
+
+# Prefix for Kerberos / WinRM EE images if not on the controller's default registry
+# playground_ee_registry: quay.io/your-ns

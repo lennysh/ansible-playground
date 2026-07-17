@@ -155,6 +155,28 @@ Click **Save**.
 > `infra.aap_configuration` (Galaxy / private Hub, or baked into the image).
 > See [`collections/requirements.yml`](../collections/requirements.yml).
 
+### Optional — survey to seed credential inputs
+
+CaC keeps `survey_enabled: false` on this JT. You may add an optional survey
+(or job extra variables) so a launch can seed Machine / Satellite / offline-token
+inputs without editing credentials in the UI.
+
+| Question (suggested) | Variable | Required | Notes |
+|---|---|---|---|
+| Machine username | `playground_machine_username` | No | e.g. `ec2-user` |
+| Satellite URL | `playground_satellite_url` | No | e.g. `https://satellite.example.com` |
+| Satellite username | `playground_satellite_username` | No | |
+| Satellite password | `playground_satellite_password` | No | Use **Password** type |
+| Red Hat offline token | `playground_offline_token` | No | Password type; from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+| EE registry prefix | `playground_ee_registry` | No | e.g. `quay.io/your-ns` |
+
+Leave a question blank to skip that input (`|trim` → omit). Survey / `-e`
+values are applied only when the credential is **first created** (`state:
+exists` skips updates afterward). Prefer filling credentials in the UI after
+Apply, or pass overrides on the first surveyed launch.
+
+Same vars work from ansible-core via [`extra_vars.example.yml`](../extra_vars.example.yml).
+
 ---
 
 ## Step 6 — Launch Setup
@@ -164,13 +186,32 @@ Open **Playground | Apply CaC** → **Launch**.
 On success, AAP will contain:
 
 - Credential types: `Red Hat Offline Token`, `Red Hat Satellite Server`
-- Placeholder credentials: Machine, Satellite, Hub Offline Token
+- Credential shells: Machine, Satellite, Red Hat Offline Token (fill in the UI)
 - Execution environments for Kerberos / WinRM demos
 - `Playground Windows Inventory` (empty stub)
 - One surveyed job template per demo that ships `playbook-aap.yml`
 - The Setup JT itself (kept in sync with CaC)
 
 Re-launch this template anytime after you pull new CaC changes into the project.
+
+---
+
+## After Apply — fill credential shells (UI)
+
+Setup creates credentials with **no placeholder input defaults**. They use
+`state: exists`, so re-running CaC will **not** overwrite username, host, or
+secrets you set in the UI (`update_secrets: false` is belt-and-suspenders only).
+
+| Credential | What to set |
+|---|---|
+| **Playground Machine Credential** | SSH key (Linux) and/or UPN + password (Windows / Kerberos) |
+| **Playground Satellite Credential** | Satellite URL, username, password |
+| **Playground Red Hat Offline Token** | Token from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+
+To seed on **first create**, use an optional Setup JT survey (Step 5) or
+ansible-core `-e` / [`extra_vars.example.yml`](../extra_vars.example.yml). Blank
+answers are ignored. After the credential exists, edit it in the UI (or delete
+it and re-run Apply with overrides to recreate).
 
 ---
 
@@ -182,14 +223,15 @@ Re-launch this template anytime after you pull new CaC changes into the project.
 - [ ] **Playground Machine Credential** updated with a real SSH key and/or
       Windows UPN + password for managed hosts
 - [ ] **Playground Satellite Credential** filled in if you use the Satellite demo
-- [ ] **Playground Hub Offline Token** filled from
+- [ ] **Playground Red Hat Offline Token** filled from
       [access.redhat.com/management/api](https://access.redhat.com/management/api)
       for the collection-download demo
 - [ ] Kerberos EE images built and pushed to a registry the controller can pull:
       - `demo-kerberos-winrm-ee:latest` (see `demo-kerberos-winrm/execution-environment.yml`)
       - `demo-winrm-vs-psrp-ee:latest` (see `demo-winrm-vs-psrp/execution-environment.yml`)
   - If images live under a registry prefix, re-run Setup with extra var
-    `playground_ee_registry: quay.io/your-ns` (or edit `vars/bootstrap.yml`)
+    `playground_ee_registry: quay.io/your-ns` (or edit `vars/bootstrap.yml` /
+    [`extra_vars.example.yml`](../extra_vars.example.yml))
 - [ ] Attach a real **Windows** inventory (group `windows`) to Kerberos / WinRM JTs
 - [ ] Attach a customer **installer inventory** to `Demo | AAP Connectivity`
 - [ ] Launch a simple localhost demo (e.g. **Demo | AAP Survey PEM Key**) to

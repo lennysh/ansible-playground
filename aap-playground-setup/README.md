@@ -19,8 +19,8 @@ sync the project and launch:
 **Templates → `Playground | Apply CaC` → Launch**
 
 The playbook is idempotent: existing objects are updated; missing ones are
-created. Credential secrets use `update_secrets: false` so re-runs do not wipe
-values you filled in manually.
+created. Playground credentials use `state: exists` so re-runs do **not**
+overwrite username, host, or secrets you set in the UI after first create.
 
 ## Layout
 
@@ -28,6 +28,7 @@ values you filled in manually.
 aap-playground-setup/
 ├── playbook.yml                 # dispatch entry point
 ├── collections/requirements.yml # infra.aap_configuration
+├── extra_vars.example.yml       # optional CLI overrides (Satellite, token, EE, …)
 ├── docs/
 │   ├── CLICKOPS_GUIDE.md        # manual seed steps
 │   └── CAC_EXAMPLES.md          # in-repo CaC sample index (copy from vars/)
@@ -50,6 +51,30 @@ export AAP_PASSWORD='...'
 ansible-galaxy collection install -r aap-playground-setup/collections/requirements.yml
 ansible-playbook aap-playground-setup/playbook.yml
 ```
+
+Optional credential / EE overrides (**initial create only** — credentials use
+`state: exists`; see [`extra_vars.example.yml`](extra_vars.example.yml)):
+
+| Extra var | Used for |
+|-----------|----------|
+| `playground_machine_username` | Machine credential username |
+| `playground_satellite_url` | Satellite credential host |
+| `playground_satellite_username` | Satellite credential username |
+| `playground_satellite_password` | Satellite credential password |
+| `playground_offline_token` | Hub / offline-token credential |
+| `playground_ee_registry` | Registry prefix for Kerberos / WinRM EE images |
+
+```bash
+cp aap-playground-setup/extra_vars.example.yml /tmp/playground-cac-extra.yml
+# edit /tmp/playground-cac-extra.yml — do not commit secrets
+ansible-playbook aap-playground-setup/playbook.yml -e @/tmp/playground-cac-extra.yml
+```
+
+When launching **Playground | Apply CaC** from the UI, Apply creates empty
+credential shells; fill Machine / Satellite / Offline Token in the UI afterward.
+`state: exists` means later CaC runs will not overwrite those edits. An optional
+Setup JT survey (CLICKOPS Step 5) can seed inputs on **first create** only;
+blank answers are omitted.
 
 ## What gets created
 

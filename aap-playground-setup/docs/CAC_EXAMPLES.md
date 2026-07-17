@@ -17,7 +17,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | `ansible_connection: local` |
 | Project | `controller_projects` | [`vars/projects.yml`](../vars/projects.yml) | `scm_update_on_launch: true` |
 | Credential type | `controller_credential_types` | [`vars/credential_types.yml`](../vars/credential_types.yml) | Offline token + Satellite; `!unsafe` injectors |
-| Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | Placeholders with `update_secrets: false` |
+| Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | `state: exists` (no input defaults); optional CLI seed in [`extra_vars.example.yml`](../extra_vars.example.yml) |
 | Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Kerberos / WinRM images |
 | Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + all `Demo \| …` surveys |
 

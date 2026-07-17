@@ -9,6 +9,7 @@
 #   export AAP_PASSWORD=...
 #   # or: export AAP_TOKEN=...
 #   ansible-playbook aap-playground-setup/playbook.yml
+#   # optional: -e @extra_vars.example.yml (see that file + README)
 #
 - name: Apply Lenny's Ansible Playground CaC
   hosts: localhost
