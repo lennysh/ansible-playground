@@ -28,3 +28,12 @@
 
 # Prefix for Kerberos / WinRM EE images if not on the controller's default registry
 # playground_ee_registry: quay.io/your-ns
+
+# Demo JT selection (same as Setup survey):
+# - Omit playground_demos → Setup JT only (no demos) — safe first run
+# - List specific Demo | … names → those demos only
+# - Or apply every demo:
+# playground_apply_all_demos: true
+# playground_demos:
+#   - "Demo | AAP Survey PEM Key"
+#   - "Demo | Jinja2 Filters"

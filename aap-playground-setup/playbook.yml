@@ -60,6 +60,54 @@
           - yml
           - yaml
 
+    - name: Resolve demo job template selection
+      ansible.builtin.set_fact:
+        # First clickops launch has no survey yet → playground_demos undefined →
+        # Setup JT only (adds the survey without creating every demo).
+        # Survey / -e with a list → those demos. playground_apply_all_demos → all.
+        playground_demos_selected: >-
+          {{
+            playground_demo_templates
+            if (playground_apply_all_demos | default(false) | bool)
+            else (
+              (
+                playground_demos
+                if (playground_demos is sequence and playground_demos is not string)
+                else (
+                  playground_demos | default('') | string
+                  | replace('\r', '') | split('\n')
+                  | map('trim') | reject('equalto', '') | list
+                )
+              )
+              if playground_demos is defined
+              else []
+            )
+          }}
+
+    - name: Filter controller_templates to Setup JT plus selected demos
+      ansible.builtin.set_fact:
+        controller_templates: >-
+          {{
+            (
+              controller_templates
+              | selectattr('name', 'equalto', 'Playground | Apply CaC')
+              | list
+            )
+            + (
+              controller_templates
+              | selectattr('name', 'in', playground_demos_selected)
+              | list
+            )
+          }}
+
+    - name: Show which demo job templates will be applied
+      ansible.builtin.debug:
+        msg: >-
+          Applying Setup JT + {{ playground_demos_selected | length }} demo(s):
+          {{ playground_demos_selected | join(', ')
+             if playground_demos_selected | length > 0
+             else '(none — Setup JT only)' }}
+
     - name: Apply automation controller / platform configuration
       ansible.builtin.include_role:
         name: infra.aap_configuration.dispatch

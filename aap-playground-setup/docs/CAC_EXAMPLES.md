@@ -11,7 +11,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 
 | Object type | Variable key | Sample file | Notes |
 |-------------|--------------|-------------|-------|
-| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names |
+| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names, `playground_demo_templates` |
 | Organization | `aap_organizations` | [`vars/organizations.yml`](../vars/organizations.yml) | |
 | Inventory | `controller_inventories` | [`vars/inventories.yml`](../vars/inventories.yml) | Localhost + Windows stub |
 | Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | `ansible_connection: local` |
@@ -26,6 +26,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Pattern | Example JT |
 |---------|------------|
 | Optional seed survey (first create only) | `Playground \| Apply CaC` → Machine / Satellite / offline token / EE registry |
+| Demo multiselect (skip unselected JTs) | `Playground \| Apply CaC` → `playground_demos` (list in `vars/bootstrap.yml`) |
 | Password (masked secret) | `Demo \| AAP Survey PEM Key` → `survey_pem_key` |
 | Textarea | `Demo \| Hosts Advanced` → `host_limit` |
 | Multiple choice / true-false | `Demo \| When`, Kerberos demos |
@@ -42,5 +43,6 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 
 1. Add `demo-<name>/playbook-aap.yml` (+ README survey docs).
 2. Append a `Demo | …` entry to `vars/job_templates.yml` (copy the closest pattern above).
-3. Extend credentials / EEs / inventories only if the demo needs new object types.
-4. Re-run **Playground | Apply CaC** after project sync.
+3. Append the same JT name to `playground_demo_templates` in `vars/bootstrap.yml`.
+4. Extend credentials / EEs / inventories only if the demo needs new object types.
+5. Re-run **Playground | Apply CaC** after project sync.

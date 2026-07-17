@@ -22,9 +22,19 @@ controller_templates:
     survey_spec:
       name: ""
       description: >-
-        Optional seeds for credential shells and EE image prefix. Leave blank to
-        skip (applied only on first credential create; state: exists afterward).
+        First clickops launch (no survey yet) updates this JT only — no demos.
+        On later launches, choose demos below (default: all). Credential and EE
+        fields are optional seeds (first credential create only).
       spec:
+        - question_name: Demo job templates
+          question_description: >-
+            Select demos to create or refresh. Unselected demos are skipped
+            (existing JTs are not deleted). Default is all demos.
+          variable: playground_demos
+          type: multiselect
+          required: false
+          default: "{{ playground_demo_templates | join('\n') }}"
+          choices: "{{ playground_demo_templates }}"
         - question_name: Machine username
           question_description: >-
             Playground Machine Credential username (e.g. ec2-user). Leave blank

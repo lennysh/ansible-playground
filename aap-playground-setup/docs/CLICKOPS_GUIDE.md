@@ -155,14 +155,16 @@ Click **Save**.
 > `infra.aap_configuration` (Galaxy / private Hub, or baked into the image).
 > See [`collections/requirements.yml`](../collections/requirements.yml).
 
-### Optional survey — seed credential inputs on first create
+### Survey — demos and optional credential seeds
 
-After the first successful Apply (or when this survey is present on the seeded
-JT), launch prompts for optional values. All questions are optional; leave blank
-to skip.
+You do **not** need to build this survey by hand on the seed JT. The first
+Apply run (Step 6a) updates **Playground | Apply CaC** from CaC and adds it.
+That first run creates **no** demo JTs (`playground_demos` is unset without a
+survey). The second launch (Step 6b) uses the survey to pick demos.
 
 | Question | Variable | Notes |
 |---|---|---|
+| Demo job templates | `playground_demos` | Multiselect of every `Demo \| …` JT (default: all) |
 | Machine username | `playground_machine_username` | e.g. `ec2-user` |
 | Satellite URL | `playground_satellite_url` | e.g. `https://satellite.example.com` |
 | Satellite username | `playground_satellite_username` | |
@@ -170,29 +172,42 @@ to skip.
 | Red Hat offline token | `playground_offline_token` | Password type; from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
 | EE registry prefix | `playground_ee_registry` | e.g. `quay.io/your-ns` |
 
-Blank answers are trimmed and omitted. Values apply only when the credential is
-**first created** (`state: exists` skips updates afterward). Prefer filling
-credentials in the UI after Apply, or pass overrides on the first launch.
-
-Same vars work from ansible-core via [`extra_vars.example.yml`](../extra_vars.example.yml).
-Defined in [`vars/job_templates.yml`](../vars/job_templates.yml).
+Canonical demo list: `playground_demo_templates` in
+[`vars/bootstrap.yml`](../vars/bootstrap.yml). Survey spec:
+[`vars/job_templates.yml`](../vars/job_templates.yml).
 
 ---
 
-## Step 6 — Launch Setup
+## Step 6 — Launch Setup (two passes)
 
-Open **Playground | Apply CaC** → **Launch**.
+### 6a — Bootstrap (add survey, no demos)
 
-On success, AAP will contain:
+Open **Playground | Apply CaC** → **Launch** (no survey yet — that is expected).
+
+This pass creates shared objects and **refreshes this job template** so the
+demo multiselect survey appears. Because `playground_demos` is unset, **no**
+`Demo | …` job templates are created.
+
+On success you should have:
 
 - Credential types: `Red Hat Offline Token`, `Red Hat Satellite Server`
 - Credential shells: Machine, Satellite, Red Hat Offline Token (fill in the UI)
 - Execution environments for Kerberos / WinRM demos
-- `Playground Windows Inventory` (empty stub)
-- One surveyed job template per demo that ships `playbook-aap.yml`
-- The Setup JT itself (kept in sync with CaC)
+- Inventories from CaC (localhost / Windows stub / etc.)
+- **Playground | Apply CaC** updated with its survey
 
-Re-launch this template anytime after you pull new CaC changes into the project.
+### 6b — Select demos
+
+Open **Playground | Apply CaC** → **Launch** again. Use **Demo job templates**
+to choose what to create (default: all selected). Unselected demos are skipped;
+existing JTs are **not** deleted.
+
+Re-launch anytime after you pull new CaC changes; pick only the demos you care
+about on each run.
+
+CLI / ansible-core: omit `playground_demos` for Setup-only; pass a list or
+`playground_apply_all_demos: true` for demos — see
+[`extra_vars.example.yml`](../extra_vars.example.yml).
 
 ---
 
@@ -219,7 +234,8 @@ re-run Apply with overrides to recreate).
 
 - [ ] Organization has a **Galaxy credential** attached (e.g. **Ansible Galaxy**)
 - [ ] Project sync completed successfully (collections not skipped)
-- [ ] `Playground | Apply CaC` completed successfully at least once
+- [ ] `Playground | Apply CaC` completed once (**6a** — survey added, no demos)
+- [ ] `Playground | Apply CaC` completed again (**6b** — selected demos created)
 - [ ] **Playground Machine Credential** updated with a real SSH key and/or
       Windows UPN + password for managed hosts
 - [ ] **Playground Satellite Credential** filled in if you use the Satellite demo

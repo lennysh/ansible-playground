@@ -57,6 +57,8 @@ Optional credential / EE overrides (**initial create only** — credentials use
 
 | Extra var | Used for |
 |-----------|----------|
+| `playground_demos` | List of `Demo \| …` JT names (`[]` / omit = Setup JT only) |
+| `playground_apply_all_demos` | `true` → apply every demo (CLI convenience) |
 | `playground_machine_username` | Machine credential username |
 | `playground_satellite_url` | Satellite credential host |
 | `playground_satellite_username` | Satellite credential username |
@@ -70,10 +72,10 @@ cp aap-playground-setup/extra_vars.example.yml /tmp/playground-cac-extra.yml
 ansible-playbook aap-playground-setup/playbook.yml -e @/tmp/playground-cac-extra.yml
 ```
 
-When launching **Playground | Apply CaC** from the UI, Apply creates empty
-credential shells; fill Machine / Satellite / Offline Token in the UI afterward.
-`state: exists` means later CaC runs will not overwrite those edits. The Setup
-JT survey can seed inputs on **first create** only; blank answers are omitted.
+First-time UI setup is two launches: **6a** (no survey yet) refreshes the Setup
+JT and shared objects without demos; **6b** uses the new multiselect to pick
+demos (default all). See [CLICKOPS_GUIDE.md](docs/CLICKOPS_GUIDE.md). Credential
+shells use `state: exists` so later runs do not overwrite UI edits.
 
 ## What gets created
 
