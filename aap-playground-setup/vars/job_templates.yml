@@ -1533,7 +1533,7 @@ controller_templates:
           choices:
             - markdown
             - plaintext
-        - question_name: Attachment path on controller/EE (optional)
+        - question_name: Attachment path on node(s)/EE (optional)
           question_description: >-
             Absolute path to a file on the execution node to upload. Provide
             this and/or a comment above (at least one is required).
