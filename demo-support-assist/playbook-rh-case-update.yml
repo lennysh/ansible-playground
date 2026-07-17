@@ -74,6 +74,3 @@
     - name: Call rh_case role
       ansible.builtin.include_role:
         name: infra.support_assist.rh_case
-      vars:
-        case_id: "{{ case_id }}"
-        case_updates_needed: "{{ case_updates_needed }}"
