@@ -1498,6 +1498,9 @@ controller_templates:
     credentials:
       - "{{ playground_offline_token_credential_name }}"
     job_type: run
+    ask_inventory_on_launch: true
+    ask_limit_on_launch: true
+    ask_credential_on_launch: true
     become_enabled: false
     survey_enabled: true
     survey_spec:
