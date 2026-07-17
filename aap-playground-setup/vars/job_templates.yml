@@ -1512,14 +1512,28 @@ controller_templates:
           min: 8
           max: 8
         - question_name: Comment to add (optional)
-          question_description: Plaintext comment posted to the case. Leave blank to skip.
+          question_description: >-
+            Comment posted to the case. Provide this and/or an attachment path
+            below (at least one is required). Format controlled by Comment type.
           variable: case_comment
           type: textarea
           required: false
           default: ""
+        - question_name: Comment type
+          question_description: >-
+            markdown (default, matches rh_case) or plaintext. Ignored if Comment
+            is blank.
+          variable: case_comment_type
+          type: multiplechoice
+          required: false
+          default: markdown
+          choices:
+            - markdown
+            - plaintext
         - question_name: Attachment path on controller/EE (optional)
           question_description: >-
-            Absolute path to a file on the execution node to upload. Leave blank to skip.
+            Absolute path to a file on the execution node to upload. Provide
+            this and/or a comment above (at least one is required).
           variable: case_attachment
           type: text
           required: false

@@ -1,3 +1,4 @@
 ---
-# AAP version — survey vars case_id / case_comment / case_attachment.
+# AAP version — survey vars case_id / case_comment / case_comment_type /
+# case_attachment.
 - ansible.builtin.import_playbook: playbook-rh-case-update.yml

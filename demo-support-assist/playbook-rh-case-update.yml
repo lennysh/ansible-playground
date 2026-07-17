@@ -4,8 +4,9 @@
 # infra.support_assist.rh_case_update.
 #
 # Required: case_id, redhat_offline_token (or REDHAT_OFFLINE_TOKEN)
-# Optional: case_comment, case_attachment
-# Or pass case_updates_needed directly (skips the builder).
+# Optional: case_comment, case_attachment (at least one required),
+#           case_comment_type (markdown|plaintext, default markdown)
+# Or pass a non-empty case_updates_needed directly (skips the builder).
 - name: Add comment(s) or attach file(s) to Red Hat Support Case
   hosts: localhost
   connection: local
@@ -15,37 +16,41 @@
       ansible.builtin.assert:
         that:
           - case_id is defined
-          - case_id | length > 0
+          - case_id | string | trim | length > 0
         fail_msg: Set case_id to the existing Red Hat Support Case number.
 
     - name: Build case_updates_needed from survey-friendly vars
-      when: case_updates_needed is not defined
+      when: >-
+        case_updates_needed is not defined
+        or case_updates_needed is none
+        or (case_updates_needed | length | int) == 0
       block:
-        - name: Initialize empty case_updates_needed
+        - name: Compose case_updates_needed from case_comment / case_attachment
           ansible.builtin.set_fact:
-            case_updates_needed: []
-
-        - name: Append comment update
-          when: case_comment | default('') | length > 0
-          ansible.builtin.set_fact:
-            case_updates_needed: >-
+            case_updates_needed: "{{ __case_updates }}"
+          vars:
+            __comment_type: "{{ case_comment_type | default('markdown') | trim }}"
+            __case_updates: >-
               {{
-                case_updates_needed + [{
-                  'comment': case_comment,
-                  'commentType': 'plaintext'
-                }]
-              }}
-
-        - name: Append attachment update
-          when: case_attachment | default('') | length > 0
-          ansible.builtin.set_fact:
-            case_updates_needed: >-
-              {{
-                case_updates_needed + [{
-                  'attachment': case_attachment,
-                  'attachmentDescription': case_attachment_description
-                    | default('Uploaded via demo-support-assist')
-                }]
+                (
+                  [{
+                    'comment': case_comment | trim,
+                    'commentType': __comment_type
+                  }]
+                  if (case_comment | default('') | string | trim | length > 0)
+                  else []
+                )
+                + (
+                  [{
+                    'attachment': case_attachment | trim,
+                    'attachmentDescription': (
+                      case_attachment_description
+                      | default('Uploaded via demo-support-assist')
+                    )
+                  }]
+                  if (case_attachment | default('') | string | trim | length > 0)
+                  else []
+                )
               }}
 
         - name: Fail when neither comment nor attachment was provided
@@ -53,8 +58,14 @@
             that:
               - case_updates_needed | length > 0
             fail_msg: >-
-              Provide case_comment and/or case_attachment, or set
-              case_updates_needed explicitly.
+              Provide case_comment and/or case_attachment in the survey (or -e),
+              or set a non-empty case_updates_needed list explicitly.
+              The rh_case role does not accept case_comment/case_attachment
+              directly — this playbook maps them into case_updates_needed.
+
+    - name: Show updates that will be applied
+      ansible.builtin.debug:
+        var: case_updates_needed
 
     - name: Call rh_token_refresh role
       ansible.builtin.include_role:
@@ -63,3 +74,6 @@
     - name: Call rh_case role
       ansible.builtin.include_role:
         name: infra.support_assist.rh_case
+      vars:
+        case_id: "{{ case_id }}"
+        case_updates_needed: "{{ case_updates_needed }}"
