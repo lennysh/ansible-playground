@@ -12,9 +12,9 @@
 #           case_comment_type (markdown|plaintext, default markdown)
 # Or pass a non-empty case_updates_needed directly (skips the builder).
 #
-# Token: refreshed once on the controller and shared to all play hosts
-# (access token ~15 minutes; role also caches under /tmp). Do not refresh
-# per host — SSO rate limits and identical credentials make that wasteful.
+# Token: rh_token_refresh runs on each play host (local /tmp cache ~15m per
+# node). Avoid delegate_to localhost — delegated set_fact does not distribute
+# cleanly to inventory hosts.
 - name: Add comment(s) or attach file(s) to Red Hat Support Case
   hosts: all
   gather_facts: false
@@ -101,16 +101,12 @@
           comments: "{{ case_updates_comments }}"
           attachments_per_host: "{{ case_updates_attachments }}"
 
-    - name: Refresh Red Hat API token once on the controller
+    # Per host: role caches under /tmp on that node (~15m). Prefer this over
+    # delegate_to localhost — set_fact from a delegated role does not land in
+    # hostvars['localhost'] reliably for later distribution.
+    - name: Refresh Red Hat API token on each play host
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
-        apply:
-          run_once: true
-          delegate_to: localhost
-
-    - name: Distribute API access token to all play hosts
-      ansible.builtin.set_fact:
-        rh_token_refresh_api_access_token: "{{ hostvars['localhost']['rh_token_refresh_api_access_token'] }}"
 
     # Comments are identical API posts — run once for the play (rh_case's
     # comment task is not run_once, so a bare multi-host role call would
