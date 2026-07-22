@@ -83,13 +83,17 @@ shells use `state: exists` so later runs do not overwrite UI edits.
 
 | Object | Notes |
 |--------|-------|
-| Organization | `Lenny's Ansible Playground` |
-| Project | This git repo |
-| Inventories | `Playground Inventory` (localhost) + `Playground Windows Inventory` (empty stub) |
-| Credentials | AAP, Machine, Satellite, Hub Offline Token, VMware vSphere (placeholders) |
-| Credential type | `Red Hat Offline Token`, `Red Hat Satellite Server`, `VMware vSphere` |
-| Execution environments | Kerberos WinRM + WinRM vs PSRP images |
-| Job templates | Setup JT + one JT per `playbook-aap.yml` demo with surveys |
+| Organization | `Lenny's Ansible Playground` (always) |
+| Project | This git repo (always) |
+| Inventories | Localhost always; fake-hosts / Windows only if selected demos need them |
+| Credentials | AAP always; Machine / Satellite / Offline Token / VMware only if selected demos need them (`state: exists`) |
+| Credential type | Custom types only when a kept credential uses them |
+| Execution environments | Kerberos / WinRM images only if those demos are selected |
+| Job templates | Setup JT always + selected `Demo \| …` surveys |
+
+Selection filtering: `playbook.yml` derives supporting objects from each
+selected JT (plus `playground_always_*` / optional `playground_demo_deps` in
+[`vars/bootstrap.yml`](vars/bootstrap.yml)).
 
 Dynamic-inventory demos, `demo-lint-noqa`, and unfinished stubs are not given
 job templates.

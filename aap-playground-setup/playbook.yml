@@ -100,6 +100,136 @@
             )
           }}
 
+    - name: Collect optional playground_demo_deps extras for selected demos
+      ansible.builtin.set_fact:
+        playground_deps_extras: >-
+          {{
+            playground_demos_selected
+            | select('in', (playground_demo_deps | default({})) | list)
+            | map('extract', playground_demo_deps | default({}))
+            | list
+          }}
+
+    - name: Resolve supporting objects needed by selected demos
+      ansible.builtin.set_fact:
+        # Union of always-on + JT refs + optional playground_demo_deps extras.
+        # Deselected demos skip create; existing objects are not deleted.
+        playground_needed_credentials: >-
+          {{
+            (
+              (playground_always_credentials | default([]))
+              + (
+                  controller_templates
+                  | selectattr('credentials', 'defined')
+                  | map(attribute='credentials')
+                  | flatten
+                  | list
+                )
+              + (
+                  playground_deps_extras
+                  | selectattr('credentials', 'defined')
+                  | map(attribute='credentials')
+                  | flatten
+                  | list
+                )
+            ) | unique | list
+          }}
+        playground_needed_inventories: >-
+          {{
+            (
+              (playground_always_inventories | default([]))
+              + (
+                  controller_templates
+                  | selectattr('inventory', 'defined')
+                  | map(attribute='inventory')
+                  | reject('equalto', none)
+                  | reject('equalto', '')
+                  | list
+                )
+              + (
+                  playground_deps_extras
+                  | selectattr('inventories', 'defined')
+                  | map(attribute='inventories')
+                  | flatten
+                  | list
+                )
+            ) | unique | list
+          }}
+        playground_needed_ees: >-
+          {{
+            (
+              (
+                  controller_templates
+                  | selectattr('execution_environment', 'defined')
+                  | map(attribute='execution_environment')
+                  | reject('equalto', none)
+                  | reject('equalto', '')
+                  | list
+                )
+              + (
+                  playground_deps_extras
+                  | selectattr('execution_environments', 'defined')
+                  | map(attribute='execution_environments')
+                  | flatten
+                  | list
+                )
+            ) | unique | list
+          }}
+        playground_needed_credential_types: >-
+          {{
+            (
+              playground_deps_extras
+              | selectattr('credential_types', 'defined')
+              | map(attribute='credential_types')
+              | flatten
+              | list
+            ) | unique | list
+          }}
+
+    - name: Filter credentials, inventories, hosts, and execution environments
+      ansible.builtin.set_fact:
+        controller_credentials: >-
+          {{
+            controller_credentials
+            | selectattr('name', 'in', playground_needed_credentials)
+            | list
+          }}
+        controller_inventories: >-
+          {{
+            controller_inventories
+            | selectattr('name', 'in', playground_needed_inventories)
+            | list
+          }}
+        controller_hosts: >-
+          {{
+            controller_hosts
+            | selectattr('inventory', 'in', playground_needed_inventories)
+            | list
+          }}
+        controller_execution_environments: >-
+          {{
+            controller_execution_environments
+            | selectattr('name', 'in', playground_needed_ees)
+            | list
+          }}
+
+    - name: Filter custom credential types to those required by kept credentials
+      ansible.builtin.set_fact:
+        # Built-in types (Machine, AAP) are not in controller_credential_types.
+        controller_credential_types: >-
+          {{
+            controller_credential_types
+            | selectattr(
+                'name',
+                'in',
+                (
+                  playground_needed_credential_types
+                  + (controller_credentials | map(attribute='credential_type') | list)
+                ) | unique | list
+              )
+            | list
+          }}
+
     - name: Show which demo job templates will be applied
       ansible.builtin.debug:
         msg: >-
@@ -107,6 +237,15 @@
           {{ playground_demos_selected | join(', ')
              if playground_demos_selected | length > 0
              else '(none — Setup JT only)' }}
+
+    - name: Show supporting objects derived from selection
+      ansible.builtin.debug:
+        msg:
+          - "Credentials: {{ controller_credentials | map(attribute='name') | list }}"
+          - "Credential types: {{ controller_credential_types | map(attribute='name') | list }}"
+          - "Inventories: {{ controller_inventories | map(attribute='name') | list }}"
+          - "Hosts: {{ controller_hosts | map(attribute='name') | list }}"
+          - "Execution environments: {{ controller_execution_environments | map(attribute='name') | list }}"
 
     - name: Apply automation controller / platform configuration
       ansible.builtin.include_role:

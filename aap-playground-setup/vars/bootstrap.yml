@@ -17,6 +17,25 @@ playground_offline_token_credential_type: "Red Hat Offline Token"
 playground_satellite_credential_type: "Red Hat Satellite Server"
 playground_vmware_credential_type: "VMware vSphere"
 
+# Always applied with Setup JT (independent of demo multiselect).
+playground_always_credentials:
+  - "{{ playground_aap_credential_name }}"
+playground_always_inventories:
+  - "{{ playground_inventory_name }}"
+
+# Optional extras not listed on the JT (credentials / credential_types /
+# inventories / execution_environments). Most demos need nothing here —
+# playbook.yml derives those from each selected JT's credentials, inventory,
+# and execution_environment fields. Keys must match playground_demo_templates.
+#
+# Example:
+#   "Demo | VMware Survey Options":
+#     credentials: []
+#     credential_types: []
+#     inventories: []
+#     execution_environments: []
+playground_demo_deps: {}
+
 # Demo job templates selectable on Playground | Apply CaC (multiselect survey).
 # Keep in sync with Demo | … entries in vars/job_templates.yml.
 playground_demo_templates:

@@ -186,23 +186,27 @@ Canonical demo list: `playground_demo_templates` in
 
 Open **Playground | Apply CaC** → **Launch** (no survey yet — that is expected).
 
-This pass creates shared objects and **refreshes this job template** so the
-demo multiselect survey appears. Because `playground_demos` is unset, **no**
-`Demo | …` job templates are created.
+This pass creates **baseline** shared objects and **refreshes this job
+template** so the demo multiselect survey appears. Because `playground_demos`
+is unset, **no** `Demo | …` job templates are created, and demo-only
+credentials / types / EEs / specialty inventories are **not** created yet.
 
 On success you should have:
 
-- Credential types: `Red Hat Offline Token`, `Red Hat Satellite Server`, `VMware vSphere`
-- Credential shells: Machine, Satellite, Red Hat Offline Token, VMware vSphere (fill in the UI)
-- Execution environments for Kerberos / WinRM demos
-- Inventories from CaC (localhost / Windows stub / etc.)
+- Organization + project
+- Localhost inventory (+ `localhost` host)
+- **AAP Credential** (shell / seed)
 - **Playground | Apply CaC** updated with its survey
 
 ### 6b — Select demos
 
 Open **Playground | Apply CaC** → **Launch** again. Use **Demo job templates**
 to choose what to create (default: all selected). Unselected demos are skipped;
-existing JTs are **not** deleted.
+existing objects are **not** deleted.
+
+Supporting objects (credentials, custom credential types, EEs, fake-hosts /
+Windows inventories) are created only when a selected demo needs them — for
+example VMware credential + type appear only if you pick a VMware demo.
 
 Re-launch anytime after you pull new CaC changes; pick only the demos you care
 about on each run.
@@ -215,15 +219,18 @@ CLI / ansible-core: omit `playground_demos` for Setup-only; pass a list or
 
 ## After Apply — fill credential shells (UI)
 
-Setup creates credentials with **no placeholder input defaults**. They use
-`state: exists`, so re-running CaC will **not** overwrite username, host, or
-secrets you set in the UI (`update_secrets: false` is belt-and-suspenders only).
+CaC creates credential shells only when a selected demo (or the always-on
+baseline) needs them. Shells use `state: exists`, so re-running CaC will
+**not** overwrite username, host, or secrets you set in the UI
+(`update_secrets: false` is belt-and-suspenders only).
 
-| Credential | What to set |
-|---|---|
-| **Playground Machine Credential** | SSH key (Linux) and/or UPN + password (Windows / Kerberos) |
-| **Playground Satellite Credential** | Satellite URL, username, password |
-| **Playground Red Hat Offline Token** | Token from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+| Credential | When created | What to set |
+|---|---|---|
+| **AAP Credential** | Always (Setup JT) | Controller host + auth (often seeded from env / survey) |
+| **Playground Machine Credential** | Machine-using demos | SSH key (Linux) and/or UPN + password (Windows / Kerberos) |
+| **Playground Satellite Credential** | Satellite demo | Satellite URL, username, password |
+| **Playground Red Hat Offline Token** | Download / Support Assist demos | Token from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+| **Playground VMware vSphere** | VMware Survey Options | Shared vCenter username / password |
 
 To seed on **first create**, use the Setup JT survey (Step 5) or ansible-core
 `-e` / [`extra_vars.example.yml`](../extra_vars.example.yml). Blank answers are
@@ -236,15 +243,11 @@ re-run Apply with overrides to recreate).
 
 - [ ] Organization has a **Galaxy credential** attached (e.g. **Ansible Galaxy**)
 - [ ] Project sync completed successfully (collections not skipped)
-- [ ] `Playground | Apply CaC` completed once (**6a** — survey added, no demos)
-- [ ] `Playground | Apply CaC` completed again (**6b** — selected demos created)
-- [ ] **Playground Machine Credential** updated with a real SSH key and/or
-      Windows UPN + password for managed hosts
-- [ ] **Playground Satellite Credential** filled in if you use the Satellite demo
-- [ ] **Playground Red Hat Offline Token** filled from
-      [access.redhat.com/management/api](https://access.redhat.com/management/api)
-      for the collection-download demo
-- [ ] Kerberos EE images built and pushed to a registry the controller can pull:
+- [ ] `Playground | Apply CaC` completed once (**6a** — survey added, baseline only)
+- [ ] `Playground | Apply CaC` completed again (**6b** — selected demos + their deps)
+- [ ] Credential shells for the demos you selected filled in the UI (Machine /
+      Satellite / Offline Token / VMware as needed)
+- [ ] Kerberos EE images built and pushed **if** you selected those demos:
       - `demo-kerberos-winrm-ee:latest` (see `demo-kerberos-winrm/execution-environment.yml`)
       - `demo-winrm-vs-psrp-ee:latest` (see `demo-winrm-vs-psrp/execution-environment.yml`)
   - If images live under a registry prefix, re-run Setup with extra var

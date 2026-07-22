@@ -11,22 +11,22 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 
 | Object type | Variable key | Sample file | Notes |
 |-------------|--------------|-------------|-------|
-| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names, `playground_demo_templates` |
-| Organization | `aap_organizations` | [`vars/organizations.yml`](../vars/organizations.yml) | |
-| Inventory | `controller_inventories` | [`vars/inventories.yml`](../vars/inventories.yml) | Localhost + Windows stub |
-| Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | `ansible_connection: local` |
-| Project | `controller_projects` | [`vars/projects.yml`](../vars/projects.yml) | `scm_update_on_launch: true` |
-| Credential type | `controller_credential_types` | [`vars/credential_types.yml`](../vars/credential_types.yml) | Offline token + Satellite + VMware; `!unsafe` injectors |
-| Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | `state: exists` (no input defaults); optional CLI seed in [`extra_vars.example.yml`](../extra_vars.example.yml) |
-| Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Kerberos / WinRM images |
-| Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + all `Demo \| …` surveys |
+| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names, `playground_demo_templates`, always-on + `playground_demo_deps` |
+| Organization | `aap_organizations` | [`vars/organizations.yml`](../vars/organizations.yml) | Always applied |
+| Inventory | `controller_inventories` | [`vars/inventories.yml`](../vars/inventories.yml) | Filtered by selected demos (localhost always) |
+| Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | Filtered with inventories; `ansible_connection: local` |
+| Project | `controller_projects` | [`vars/projects.yml`](../vars/projects.yml) | Always applied; `scm_update_on_launch: true` |
+| Credential type | `controller_credential_types` | [`vars/credential_types.yml`](../vars/credential_types.yml) | Filtered to types used by kept credentials; `!unsafe` injectors |
+| Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | Filtered by selected demos (AAP credential always); `state: exists` |
+| Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Filtered by selected demos |
+| Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + selected `Demo \| …` surveys |
 
 ## Survey patterns in `job_templates.yml`
 
 | Pattern | Example JT |
 |---------|------------|
 | Optional seed survey (first create only) | `Playground \| Apply CaC` → Machine / Satellite / offline token / EE registry |
-| Demo multiselect (skip unselected JTs) | `Playground \| Apply CaC` → `playground_demos` (list in `vars/bootstrap.yml`) |
+| Demo multiselect (skip unselected JTs + unused deps) | `Playground \| Apply CaC` → `playground_demos` (list in `vars/bootstrap.yml`) |
 | Password (masked secret) | `Demo \| AAP Survey PEM Key` → `survey_pem_key` |
 | Textarea | `Demo \| Hosts Advanced` → `host_limit` |
 | Multiple choice / true-false | `Demo \| When`, Kerberos demos |
@@ -42,10 +42,28 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
 | VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
 
+## Demo selection → supporting objects
+
+`playbook.yml` applies **org / project / Setup JT** every run, then only the
+objects needed by the selected demos:
+
+1. **Derive** from each selected JT: `credentials`, `inventory`,
+   `execution_environment`.
+2. **Always** include `playground_always_credentials` /
+   `playground_always_inventories` (AAP credential + localhost inventory).
+3. **Merge** optional extras from `playground_demo_deps` in
+   [`vars/bootstrap.yml`](../vars/bootstrap.yml) (rare — only for deps not on
+   the JT).
+4. **Credential types** follow the credentials that remain (plus any types
+   listed under `playground_demo_deps`).
+
+Unselected demos skip create; existing objects are **not** deleted.
+
 ## Adding a new AAP demo
 
 1. Add `demo-<name>/playbook-aap.yml` (+ README survey docs).
-2. Append a `Demo | …` entry to `vars/job_templates.yml` (copy the closest pattern above).
+2. Append a `Demo | …` entry to `vars/job_templates.yml` (copy the closest pattern above). Attach any credentials / inventory / EE the demo needs on that JT.
 3. Append the same JT name to `playground_demo_templates` in `vars/bootstrap.yml`.
-4. Extend credentials / EEs / inventories only if the demo needs new object types.
-5. Re-run **Playground | Apply CaC** after project sync.
+4. Extend `vars/credentials.yml` / `credential_types.yml` / inventories / EEs if the demo needs **new** object types (selection filtering picks them up from the JT).
+5. Only if something must exist but is **not** on the JT, add an entry under `playground_demo_deps`.
+6. Re-run **Playground | Apply CaC** after project sync.
