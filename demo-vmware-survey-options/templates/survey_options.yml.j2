@@ -1,0 +1,22 @@
+# Sorted unique survey choice lists gathered from vSphere.
+# Intended for later injection into AAP Job Template survey_spec choices.
+---
+vsphere_destination:
+{% for item in vsphere_destination %}
+  - {{ item | to_json }}
+{% endfor %}
+
+vsphere_datastore:
+{% for item in vsphere_datastore %}
+  - {{ item | to_json }}
+{% endfor %}
+
+vsphere_folder:
+{% for item in vsphere_folder %}
+  - {{ item | to_json }}
+{% endfor %}
+
+vsphere_portgroup:
+{% for item in vsphere_portgroup %}
+  - {{ item | to_json }}
+{% endfor %}

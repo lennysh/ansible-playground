@@ -11,9 +11,11 @@ playground_scm_branch: "main"
 playground_aap_credential_name: "AAP Credential"
 playground_machine_credential_name: "Playground Machine Credential"
 playground_satellite_credential_name: "Playground Satellite Credential"
+playground_vmware_credential_name: "Playground VMware vSphere"
 playground_offline_token_credential_name: "Playground Red Hat Offline Token"
 playground_offline_token_credential_type: "Red Hat Offline Token"
 playground_satellite_credential_type: "Red Hat Satellite Server"
+playground_vmware_credential_type: "VMware vSphere"
 
 # Demo job templates selectable on Playground | Apply CaC (multiselect survey).
 # Keep in sync with Demo | … entries in vars/job_templates.yml.
@@ -29,6 +31,8 @@ playground_demo_templates:
   - "Demo | Project Sync Collections"
   - "Demo | Satellite Sync and Promote"
   - "Demo | Strategy Free"
+  - "Demo | VMware Provision Survey"
+  - "Demo | VMware Survey Options"
   - "Demo | Support Assist | AAP API Gather | Create Case"
   - "Demo | Support Assist | AAP API Gather | Update Case"
   - "Demo | Support Assist | OCP Must Gather | Create Case"

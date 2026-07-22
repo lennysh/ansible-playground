@@ -170,6 +170,8 @@ survey). The second launch (Step 6b) uses the survey to pick demos.
 | Satellite username | `playground_satellite_username` | |
 | Satellite password | `playground_satellite_password` | Password type |
 | Red Hat offline token | `playground_offline_token` | Password type; from [access.redhat.com/management/api](https://access.redhat.com/management/api) |
+| VMware username | `playground_vmware_username` | Shared vCenter user for **Demo \| VMware Survey Options** |
+| VMware password | `playground_vmware_password` | Password type |
 | EE registry prefix | `playground_ee_registry` | e.g. `quay.io/your-ns` |
 
 Canonical demo list: `playground_demo_templates` in
@@ -190,8 +192,8 @@ demo multiselect survey appears. Because `playground_demos` is unset, **no**
 
 On success you should have:
 
-- Credential types: `Red Hat Offline Token`, `Red Hat Satellite Server`
-- Credential shells: Machine, Satellite, Red Hat Offline Token (fill in the UI)
+- Credential types: `Red Hat Offline Token`, `Red Hat Satellite Server`, `VMware vSphere`
+- Credential shells: Machine, Satellite, Red Hat Offline Token, VMware vSphere (fill in the UI)
 - Execution environments for Kerberos / WinRM demos
 - Inventories from CaC (localhost / Windows stub / etc.)
 - **Playground | Apply CaC** updated with its survey

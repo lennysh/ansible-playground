@@ -1,0 +1,38 @@
+---
+# Copy to vmware_survey.yml (gitignored) and adjust for your lab.
+# Do not commit real passwords — use Ansible Vault or AAP credential types.
+
+vmware_username: "ansible-automation@vsphere.local"
+vmware_password: "CHANGEME" # not secret
+vmware_validate_certs: false
+vmware_port: 443
+
+# Shared credentials across these vCenters (override per entry with dict form).
+vmware_vcenters:
+  - vcsa01.lab.example
+  - vcsa02.lab.example
+  # Per-vCenter override example:
+  # - hostname: vcsa03.lab.example
+  #   username: svc-other@vsphere.local
+  #   password: "OTHER"
+
+# Include nested folders under VM and Templates (vcenter/DC/parent/child).
+include_nested_vm_folders: true
+
+# vsphere_datastore choices: pods (StoragePod only), datastores, or both (default).
+vsphere_datastore_mode: both
+
+# Artifacts (CLI defaults write beside the playbook)
+export_vars_file: true
+export_json_file: true
+# report_dir: /tmp/vmware-survey-options
+
+# Optional: create/update an AAP JT survey with the gathered choices
+# update_aap_survey: true
+# aap_survey_job_template: "Demo | VMware Provision Survey"
+# aap_organization: "Lenny's Ansible Playground"
+# aap_survey_project: "Lenny's Ansible Playground"
+# aap_survey_inventory: "Playground localhost Inventory"
+# aap_hostname: https://aap.example.com
+# aap_token: "..."
+# aap_validate_certs: false

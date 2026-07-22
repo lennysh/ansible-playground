@@ -1,0 +1,48 @@
+{
+    "vsphere_datastore": [
+        "[iso-library]",
+        "[nfs-shared]",
+        "[vsan-primary]"
+    ],
+    "vcenters": [
+        {
+            "counts": {
+                "vsphere_datastore": 2,
+                "vsphere_destination": 2,
+                "vsphere_folder": 2,
+                "vsphere_portgroup": 2
+            },
+            "error": null,
+            "hostname": "vcsa01.lab.example",
+            "ok": true
+        },
+        {
+            "counts": {
+                "vsphere_datastore": 2,
+                "vsphere_destination": 2,
+                "vsphere_folder": 2,
+                "vsphere_portgroup": 2
+            },
+            "error": null,
+            "hostname": "vcsa02.lab.example",
+            "ok": true
+        }
+    ],
+    "vsphere_destination": [
+        "vcsa01.lab.example / East / compute-a",
+        "vcsa01.lab.example / East / compute-b",
+        "vcsa02.lab.example / West / compute-a",
+        "vcsa02.lab.example / West / compute-b"
+    ],
+    "vsphere_folder": [
+        "vcsa01.lab.example/East/Workloads",
+        "vcsa01.lab.example/East/Workloads/web",
+        "vcsa02.lab.example/West/Lab",
+        "vcsa02.lab.example/West/Lab/jumpboxes"
+    ],
+    "vsphere_portgroup": [
+        "app-vlan-100",
+        "db-vlan-200",
+        "mgmt"
+    ]
+}

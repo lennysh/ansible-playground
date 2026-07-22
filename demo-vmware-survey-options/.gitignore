@@ -1,0 +1,9 @@
+# Generated survey option artifacts (local CLI runs)
+vmware-survey-options.yml
+vmware-survey-options.json
+*.log
+library/__pycache__/
+
+# Local secrets / overrides (keep *.example.yml)
+vars/*
+!vars/*.example.yml

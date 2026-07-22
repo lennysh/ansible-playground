@@ -1,0 +1,20 @@
+---
+# Consumes survey choices refreshed by Demo | VMware Survey Options.
+# Launch after a gather run to pick Destination / Datastore / Folder / Portgroup.
+- name: Show selected VMware provision survey values
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    vsphere_destination: "{{ vsphere_destination | default('') }}"
+    vsphere_datastore: "{{ vsphere_datastore | default('') }}"
+    vsphere_folder: "{{ vsphere_folder | default('') }}"
+    vsphere_portgroup: "{{ vsphere_portgroup | default('') }}"
+  tasks:
+    - name: Display survey selections
+      ansible.builtin.debug:
+        msg:
+          Destination: "{{ vsphere_destination }}"
+          Datastore: "{{ vsphere_datastore }}"
+          Folder: "{{ vsphere_folder }}"
+          Portgroup: "{{ vsphere_portgroup }}"

@@ -22,6 +22,10 @@
 # playground_satellite_username: admin
 # playground_satellite_password: "changeme"
 
+# VMware vSphere credential (Demo | VMware Survey Options)
+# playground_vmware_username: ansible-automation@vsphere.local
+# playground_vmware_password: "changeme"
+
 # Red Hat offline token (collection-download / Hub demos)
 # From https://access.redhat.com/management/api
 # playground_offline_token: "..."

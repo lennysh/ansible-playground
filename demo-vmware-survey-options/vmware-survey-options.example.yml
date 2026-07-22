@@ -1,0 +1,24 @@
+# Example survey choice lists (sanitized fictional lab). Live runs write
+# vmware-survey-options.yml (gitignored).
+---
+vsphere_destination:
+  - "vcsa01.lab.example / East / compute-a"
+  - "vcsa01.lab.example / East / compute-b"
+  - "vcsa02.lab.example / West / compute-a"
+  - "vcsa02.lab.example / West / compute-b"
+
+vsphere_datastore:
+  - "[nfs-shared]"
+  - "[vsan-primary]"
+  - "[iso-library]"
+
+vsphere_folder:
+  - "vcsa01.lab.example/East/Workloads"
+  - "vcsa01.lab.example/East/Workloads/web"
+  - "vcsa02.lab.example/West/Lab"
+  - "vcsa02.lab.example/West/Lab/jumpboxes"
+
+vsphere_portgroup:
+  - "app-vlan-100"
+  - "db-vlan-200"
+  - "mgmt"

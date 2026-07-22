@@ -63,6 +63,8 @@ Optional credential / EE overrides (**initial create only** — credentials use
 | `playground_satellite_url` | Satellite credential host |
 | `playground_satellite_username` | Satellite credential username |
 | `playground_satellite_password` | Satellite credential password |
+| `playground_vmware_username` | VMware vSphere credential username |
+| `playground_vmware_password` | VMware vSphere credential password |
 | `playground_offline_token` | Hub / offline-token credential |
 | `playground_ee_registry` | Registry prefix for Kerberos / WinRM EE images |
 
@@ -84,8 +86,8 @@ shells use `state: exists` so later runs do not overwrite UI edits.
 | Organization | `Lenny's Ansible Playground` |
 | Project | This git repo |
 | Inventories | `Playground Inventory` (localhost) + `Playground Windows Inventory` (empty stub) |
-| Credentials | AAP, Machine, Satellite, Hub Offline Token (placeholders) |
-| Credential type | `Red Hat Offline Token`, `Red Hat Satellite Server` |
+| Credentials | AAP, Machine, Satellite, Hub Offline Token, VMware vSphere (placeholders) |
+| Credential type | `Red Hat Offline Token`, `Red Hat Satellite Server`, `VMware vSphere` |
 | Execution environments | Kerberos WinRM + WinRM vs PSRP images |
 | Job templates | Setup JT + one JT per `playbook-aap.yml` demo with surveys |
 

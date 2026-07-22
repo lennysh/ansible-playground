@@ -1,0 +1,7 @@
+---
+# ansible.controller is usually present on AAP execution environments.
+# For CLI (outside AAP), install from Automation Hub / PAH, e.g.:
+#   ansible-galaxy collection install ansible.controller --server automation_hub
+collections:
+  - name: ansible.controller
+    version: ">=4.5.0"

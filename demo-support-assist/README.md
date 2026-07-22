@@ -86,6 +86,12 @@ demo-support-assist/
 └── playbook-*.yml              # CLI + shared logic
 ```
 
+## Event-Driven Ansible + OpenTrashmail
+
+Email → OpenTrashmail webhook → EDA rulebook → these job templates (case create, AAP API gather + create, case update).
+
+See [eda-playground `opentrashmail_support_assist`](https://github.com/lennysh/eda-playground/blob/main/extensions/eda/rulebooks/opentrashmail_support_assist.md) for the rulebook, mailbox conventions, and demo script.
+
 ## References
 
 - [infra.support_assist README](https://github.com/redhat-cop/infra.support_assist)

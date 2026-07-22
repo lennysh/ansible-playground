@@ -1,0 +1,10 @@
+---
+# AAP version — attach:
+#   Playground VMware vSphere  → vmware_username / vmware_password
+#   AAP Credential             → CONTROLLER_* for ansible.controller.job_template
+#
+# Survey vars: vmware_vcenters_text, vmware_validate_certs, report_dir,
+# include_nested_vm_folders, vsphere_datastore_mode, update_aap_survey,
+# aap_survey_job_template (default Demo | VMware Provision Survey).
+# Prefer report_dir=/tmp/vmware-survey-options on the controller / EE.
+- ansible.builtin.import_playbook: playbook.yml

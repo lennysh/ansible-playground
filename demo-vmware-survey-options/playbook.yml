@@ -1,0 +1,210 @@
+---
+# Gather vSphere survey option lists from one or more vCenters.
+#
+# Auth (CLI -e / vars file, or AAP credential injectors):
+#   vmware_username / vmware_password / vmware_validate_certs
+#
+# Targets:
+#   vmware_vcenters         — list of hostnames (or dicts with hostname + overrides)
+#   vmware_vcenters_text    — optional survey textarea (newline/comma separated)
+#
+# Outputs (facts + optional artifacts under report_dir):
+#   vsphere_destination, vsphere_datastore, vsphere_folder, vsphere_portgroup
+#
+# Optional AAP update (ansible.controller + AAP / CONTROLLER_* auth):
+#   update_aap_survey, aap_survey_job_template, aap_organization,
+#   aap_survey_project, aap_survey_playbook, aap_survey_inventory
+#
+# CLI:
+#   cp vars/vmware_survey.example.yml vars/vmware_survey.yml
+#   ansible-playbook playbook.yml -e @vars/vmware_survey.yml
+- name: Gather VMware survey options
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    vmware_vcenters: []
+    vmware_vcenters_text: ""
+    vmware_validate_certs: true
+    vmware_port: 443
+    include_nested_vm_folders: true
+    # pods | datastores | both (default both — labs without SDRS still get [ds] names)
+    vsphere_datastore_mode: both
+    export_vars_file: true
+    export_json_file: true
+    report_dir: "{{ playbook_dir }}"
+    survey_options_yml: "{{ report_dir }}/vmware-survey-options.yml"
+    survey_options_json: "{{ report_dir }}/vmware-survey-options.json"
+    # Push choices into an AAP job template survey (create or update)
+    update_aap_survey: false
+    aap_survey_job_template: "Demo | VMware Provision Survey"
+    aap_organization: "Lenny's Ansible Playground"
+    aap_survey_project: "Lenny's Ansible Playground"
+    aap_survey_playbook: demo-vmware-survey-options/playbook-provision-survey.yml
+    aap_survey_inventory: "Playground localhost Inventory"
+  tasks:
+    - name: Normalize vCenter list from survey textarea when list is empty
+      ansible.builtin.set_fact:
+        vmware_vcenter_targets: >-
+          {{
+            (
+              vmware_vcenters
+              if (vmware_vcenters | default([]) | length) > 0
+              else (
+                vmware_vcenters_text
+                | default('')
+                | regex_replace(',', '\n')
+                | split('\n')
+                | map('trim')
+                | reject('equalto', '')
+                | list
+              )
+            )
+          }}
+
+    - name: Require at least one vCenter and credentials
+      ansible.builtin.assert:
+        that:
+          - vmware_vcenter_targets | length > 0
+          - vmware_username is defined
+          - vmware_username | length > 0
+          - vmware_password is defined
+          - vmware_password | length > 0
+        fail_msg: >-
+          Set vmware_vcenters (or vmware_vcenters_text) and
+          vmware_username / vmware_password before running.
+
+    - name: Gather survey option lists from vCenters
+      vmware_survey_options:
+        vcenters: "{{ vmware_vcenter_targets }}"
+        username: "{{ vmware_username }}"
+        password: "{{ vmware_password }}"
+        port: "{{ vmware_port | int }}"
+        validate_certs: "{{ vmware_validate_certs | bool }}"
+        include_nested_vm_folders: "{{ include_nested_vm_folders | bool }}"
+        vsphere_datastore_mode: "{{ vsphere_datastore_mode | default('both') }}"
+      register: vmware_survey_gather
+
+    - name: Store survey option lists as facts
+      ansible.builtin.set_fact:
+        vsphere_destination: "{{ vmware_survey_gather.vsphere_destination }}"
+        vsphere_datastore: "{{ vmware_survey_gather.vsphere_datastore }}"
+        vsphere_folder: "{{ vmware_survey_gather.vsphere_folder }}"
+        vsphere_portgroup: "{{ vmware_survey_gather.vsphere_portgroup }}"
+        vmware_survey_vcenter_summary: "{{ vmware_survey_gather.vcenters }}"
+
+    - name: Ensure report directory exists
+      when: (export_vars_file | bool) or (export_json_file | bool)
+      ansible.builtin.file:
+        path: "{{ report_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write survey options YAML (extra-vars / survey seed friendly)
+      when: export_vars_file | bool
+      ansible.builtin.template:
+        src: survey_options.yml.j2
+        dest: "{{ survey_options_yml }}"
+        mode: "0644"
+
+    - name: Write survey options JSON
+      when: export_json_file | bool
+      ansible.builtin.copy:
+        dest: "{{ survey_options_json }}"
+        mode: "0644"
+        content: >-
+          {{
+            {
+              'vsphere_destination': vsphere_destination,
+              'vsphere_datastore': vsphere_datastore,
+              'vsphere_folder': vsphere_folder,
+              'vsphere_portgroup': vsphere_portgroup,
+              'vcenters': vmware_survey_vcenter_summary,
+            } | to_nice_json
+          }}
+
+    - name: Build non-empty survey choice lists for AAP
+      when: update_aap_survey | bool
+      ansible.builtin.set_fact:
+        aap_choices_vsphere_destination: >-
+          {{ vsphere_destination if (vsphere_destination | length) > 0 else ['(none found)'] }}
+        aap_choices_vsphere_datastore: >-
+          {{ vsphere_datastore if (vsphere_datastore | length) > 0 else ['(none found)'] }}
+        aap_choices_vsphere_folder: >-
+          {{ vsphere_folder if (vsphere_folder | length) > 0 else ['(none found)'] }}
+        aap_choices_vsphere_portgroup: >-
+          {{ vsphere_portgroup if (vsphere_portgroup | length) > 0 else ['(none found)'] }}
+
+    - name: Create or update AAP job template survey choices
+      when: update_aap_survey | bool
+      ansible.controller.job_template:
+        name: "{{ aap_survey_job_template }}"
+        organization: "{{ aap_organization }}"
+        project: "{{ aap_survey_project }}"
+        playbook: "{{ aap_survey_playbook }}"
+        inventory: "{{ aap_survey_inventory }}"
+        job_type: run
+        become_enabled: false
+        survey_enabled: true
+        survey_spec:
+          name: ""
+          description: >-
+            Choices refreshed by Demo | VMware Survey Options from vSphere.
+          spec:
+            - question_name: Destination
+              question_description: hostname / datacenter / cluster
+              variable: vsphere_destination
+              type: multiplechoice
+              required: true
+              default: "{{ aap_choices_vsphere_destination[0] }}"
+              choices: "{{ aap_choices_vsphere_destination }}"
+            - question_name: Datastore
+              question_description: StoragePod or standalone datastore as [name]
+              variable: vsphere_datastore
+              type: multiplechoice
+              required: true
+              default: "{{ aap_choices_vsphere_datastore[0] }}"
+              choices: "{{ aap_choices_vsphere_datastore }}"
+            - question_name: Folder
+              question_description: VM and Templates path (hostname/datacenter/folder)
+              variable: vsphere_folder
+              type: multiplechoice
+              required: true
+              default: "{{ aap_choices_vsphere_folder[0] }}"
+              choices: "{{ aap_choices_vsphere_folder }}"
+            - question_name: Portgroup
+              question_description: Network portgroup name
+              variable: vsphere_portgroup
+              type: multiplechoice
+              required: true
+              default: "{{ aap_choices_vsphere_portgroup[0] }}"
+              choices: "{{ aap_choices_vsphere_portgroup }}"
+        # Prefer AAP credential inject (CONTROLLER_*). Optional explicit overrides:
+        controller_host: "{{ aap_hostname | default(omit, true) }}"
+        controller_username: "{{ aap_username | default(omit, true) }}"
+        controller_password: "{{ aap_password | default(omit, true) }}"
+        controller_oauthtoken: "{{ aap_token | default(omit, true) }}"
+        validate_certs: "{{ aap_validate_certs if (aap_validate_certs is defined) else omit }}"
+      register: aap_survey_jt_result
+
+    - name: Show gather summary
+      ansible.builtin.debug:
+        msg:
+          vcenters: "{{ vmware_survey_vcenter_summary }}"
+          counts:
+            vsphere_destination: "{{ vsphere_destination | length }}"
+            vsphere_datastore: "{{ vsphere_datastore | length }}"
+            vsphere_folder: "{{ vsphere_folder | length }}"
+            vsphere_portgroup: "{{ vsphere_portgroup | length }}"
+          sample:
+            vsphere_destination: "{{ vsphere_destination[:3] }}"
+            vsphere_datastore: "{{ vsphere_datastore[:3] }}"
+            vsphere_folder: "{{ vsphere_folder[:3] }}"
+            vsphere_portgroup: "{{ vsphere_portgroup[:3] }}"
+          artifacts:
+            yml: "{{ survey_options_yml if (export_vars_file | bool) else omit }}"
+            json: "{{ survey_options_json if (export_json_file | bool) else omit }}"
+          aap_survey:
+            updated: "{{ update_aap_survey | bool }}"
+            job_template: "{{ aap_survey_job_template if (update_aap_survey | bool) else omit }}"
+            changed: "{{ (aap_survey_jt_result.changed | default(omit)) if (update_aap_survey | bool) else omit }}"

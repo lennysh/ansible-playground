@@ -16,7 +16,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Inventory | `controller_inventories` | [`vars/inventories.yml`](../vars/inventories.yml) | Localhost + Windows stub |
 | Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | `ansible_connection: local` |
 | Project | `controller_projects` | [`vars/projects.yml`](../vars/projects.yml) | `scm_update_on_launch: true` |
-| Credential type | `controller_credential_types` | [`vars/credential_types.yml`](../vars/credential_types.yml) | Offline token + Satellite; `!unsafe` injectors |
+| Credential type | `controller_credential_types` | [`vars/credential_types.yml`](../vars/credential_types.yml) | Offline token + Satellite + VMware; `!unsafe` injectors |
 | Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | `state: exists` (no input defaults); optional CLI seed in [`extra_vars.example.yml`](../extra_vars.example.yml) |
 | Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Kerberos / WinRM images |
 | Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + all `Demo \| …` surveys |
@@ -34,11 +34,13 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Integer defaults | `Demo \| Forks and Async` — use YAML ints (`12`, not `"12"`) |
 | No survey | `Demo \| Ansible Filters`, `Demo \| Strategy Free` |
 | Custom EE + ask inventory | `Demo \| Kerberos WinRM`, `Demo \| WinRM vs PSRP` |
-| Custom credential on JT | Download Collection (Offline Token), Satellite |
+| Custom credential on JT | Download Collection (Offline Token), Satellite, VMware Survey Options |
 | Offline token + create/update surveys | `Demo \| Support Assist \| …` (product/severity, case_id, OCP must-gather fields) |
 | Ask inventory + limit | `Demo \| Support Assist \| SOS Report \| …` |
 | Offline token + AAP credential | `Demo \| Support Assist \| AAP API Gather \| …` |
 | AAP credential + textarea project list | `Demo \| Project Sync Collections` |
+| VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
+| VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
 
 ## Adding a new AAP demo
 

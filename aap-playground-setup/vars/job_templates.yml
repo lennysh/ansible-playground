@@ -71,6 +71,20 @@ controller_templates:
           type: password
           required: false
           default: ""
+        - question_name: VMware username
+          question_description: >-
+            Playground VMware vSphere username (shared across vCenters). Leave
+            blank to skip.
+          variable: playground_vmware_username
+          type: text
+          required: false
+          default: ""
+        - question_name: VMware password
+          question_description: Playground VMware vSphere password. Leave blank to skip.
+          variable: playground_vmware_password
+          type: password
+          required: false
+          default: ""
         - question_name: EE registry prefix
           question_description: >-
             Registry prefix for Kerberos / WinRM EE images (e.g. quay.io/your-ns).
@@ -238,6 +252,158 @@ controller_templates:
           type: text
           required: false
           default: Default Organization
+
+  - name: "Demo | VMware Survey Options"
+    description: >-
+      Gather sorted vSphere survey choice lists and push them into
+      Demo | VMware Provision Survey (Destination, Datastore, Folder, Portgroup)
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-vmware-survey-options/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_vmware_credential_name }}"
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_credential_on_launch: true
+    survey_enabled: true
+    extra_vars:
+      update_aap_survey: true
+      aap_survey_job_template: "Demo | VMware Provision Survey"
+      aap_organization: "{{ playground_org_name }}"
+      aap_survey_project: "{{ playground_project_name }}"
+      aap_survey_inventory: "{{ playground_inventory_name }}"
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: vCenter hostnames
+          question_description: >-
+            One vCenter hostname or IP per line (commas also accepted). Shared
+            credentials come from the VMware vSphere credential.
+          variable: vmware_vcenters_text
+          type: textarea
+          required: true
+          default: |-
+            vcsa01.lab.example
+            vcsa02.lab.example
+        - question_name: Validate TLS certificates
+          variable: vmware_validate_certs
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Include nested VM folders
+          question_description: >-
+            When true, include nested folders under VM and Templates
+            (hostname/datacenter/parent/child).
+          variable: include_nested_vm_folders
+          type: multiplechoice
+          required: true
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Datastore cluster mode
+          question_description: >-
+            pods = StoragePod/SDRS only; datastores = every Datastore;
+            both = StoragePods plus standalone datastores (default; labs without
+            SDRS still get [datastore] choices).
+          variable: vsphere_datastore_mode
+          type: multiplechoice
+          required: true
+          default: both
+          choices:
+            - both
+            - pods
+            - datastores
+        - question_name: Update AAP provision survey
+          question_description: >-
+            When true, create/update Demo | VMware Provision Survey with the
+            gathered multiple-choice choices.
+          variable: update_aap_survey
+          type: multiplechoice
+          required: true
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Target job template
+          question_description: Job template that receives the survey choices
+          variable: aap_survey_job_template
+          type: text
+          required: true
+          default: "Demo | VMware Provision Survey"
+        - question_name: Report directory
+          question_description: >-
+            Directory on the controller / EE for vmware-survey-options.yml and
+            .json artifacts.
+          variable: report_dir
+          type: text
+          required: false
+          default: /tmp/vmware-survey-options
+
+  - name: "Demo | VMware Provision Survey"
+    description: >-
+      Placeholder provision JT — survey choices (Destination, Datastore,
+      Folder, Portgroup) are refreshed by Demo | VMware Survey Options
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-vmware-survey-options/playbook-provision-survey.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: >-
+        Placeholder choices until Demo | VMware Survey Options refreshes them
+        from vSphere.
+      spec:
+        - question_name: Destination
+          question_description: hostname / datacenter / cluster
+          variable: vsphere_destination
+          type: multiplechoice
+          required: true
+          default: "vcsa01.lab.example / East / compute-a"
+          choices:
+            - "vcsa01.lab.example / East / compute-a"
+            - "vcsa01.lab.example / East / compute-b"
+            - "vcsa02.lab.example / West / compute-a"
+            - "vcsa02.lab.example / West / compute-b"
+        - question_name: Datastore
+          question_description: StoragePod or standalone datastore as [name]
+          variable: vsphere_datastore
+          type: multiplechoice
+          required: true
+          default: "[nfs-shared]"
+          choices:
+            - "[nfs-shared]"
+            - "[vsan-primary]"
+            - "[iso-library]"
+        - question_name: Folder
+          question_description: VM and Templates path (hostname/datacenter/folder)
+          variable: vsphere_folder
+          type: multiplechoice
+          required: true
+          default: "vcsa01.lab.example/East/Workloads"
+          choices:
+            - "vcsa01.lab.example/East/Workloads"
+            - "vcsa01.lab.example/East/Workloads/web"
+            - "vcsa02.lab.example/West/Lab"
+        - question_name: Portgroup
+          question_description: Network portgroup name
+          variable: vsphere_portgroup
+          type: multiplechoice
+          required: true
+          default: "app-vlan-100"
+          choices:
+            - "app-vlan-100"
+            - "db-vlan-200"
+            - "mgmt"
 
   # ---------------------------------------------------------------------------
   # Inventory-dependent teaching demos
