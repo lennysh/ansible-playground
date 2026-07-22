@@ -65,6 +65,7 @@ done
 
 if (( modified )); then
   echo "sanitize-strings: re-stage changed files and commit again" >&2
+  exit 1
 fi
 
 exit 0
