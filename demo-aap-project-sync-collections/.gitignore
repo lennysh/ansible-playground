@@ -1,0 +1,9 @@
+# Generated reports (local CLI runs)
+project-sync-collections-report.json
+project-sync-collections-report.html
+project-sync-collections-report.md
+*.log
+
+# Local secrets / overrides (keep *.example.yml)
+vars/*
+!vars/*.example.yml

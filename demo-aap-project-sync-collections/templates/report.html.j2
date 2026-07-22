@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project sync collection report</title>
+</head>
+<body style="margin:0;padding:24px;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#1a1a1a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:960px;margin:0 auto;background:#ffffff;border:1px solid #d8d8d8;">
+    <tr>
+      <td style="padding:20px 24px;border-bottom:1px solid #d8d8d8;background:#151515;">
+        <h1 style="margin:0;font-size:20px;line-height:1.3;color:#ffffff;font-weight:700;">Project sync collection report</h1>
+        <p style="margin:8px 0 0;font-size:13px;color:#c8c8c8;">demo-aap-project-sync-collections · AAP Gateway <code style="font-family:Consolas,Monaco,monospace;color:#f0f0f0;">{{ project_sync_report.api_prefix | default('/api/controller/v2') }}</code></p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:20px 24px;">
+        <h2 style="margin:0 0 12px;font-size:16px;color:#151515;">Summary</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 16px;">
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;background:#fafafa;width:55%;">Projects inspected</td>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;text-align:right;">{{ project_sync_report.summary.projects_inspected }}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;background:#fafafa;">Projects with collections</td>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;text-align:right;">{{ project_sync_report.summary.projects_with_collections }}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;background:#fafafa;">Collection installs (rows)</td>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;text-align:right;">{{ project_sync_report.summary.total_collection_installs }}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;background:#fafafa;">Unique collections</td>
+            <td style="padding:8px 10px;border:1px solid #d8d8d8;text-align:right;">{{ project_sync_report.summary.unique_collections }}</td>
+          </tr>
+        </table>
+{% if project_sync_report.summary.download_hosts %}
+        <p style="margin:0 0 20px;"><strong>Download hosts:</strong> {{ project_sync_report.summary.download_hosts | join(', ') }}</p>
+{% else %}
+        <p style="margin:0 0 20px;"><strong>Download hosts:</strong> <em>none parsed — sync may have used cache, skipped collections, or lacked download lines</em></p>
+{% endif %}
+
+        <h2 style="margin:0 0 12px;font-size:16px;color:#151515;">Unique collections across projects</h2>
+{% if project_sync_report.summary.collections %}
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;">
+          <thead>
+            <tr>
+              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Collection</th>
+              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Version</th>
+              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Source host(s)</th>
+              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Projects</th>
+            </tr>
+          </thead>
+          <tbody>
+{% for c in project_sync_report.summary.collections %}
+            <tr>
+              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;font-family:Consolas,Monaco,monospace;font-size:13px;">{{ c.name }}</td>
+              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;font-family:Consolas,Monaco,monospace;font-size:13px;">{{ c.version }}</td>
+              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;">{{ (c.source_hosts | default([]) | join(', ')) or '—' }}</td>
+              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;">
+{% if c.projects %}
+                <ul style="margin:0;padding-left:18px;">
+{% for p in c.projects %}
+                  <li style="margin:0 0 4px;">
+{% if p.id is not none and project_sync_report.aap_hostname %}
+                    <a href="{{ project_sync_report.aap_hostname }}/execution/projects/{{ p.id }}/details" style="color:#0066cc;text-decoration:underline;">{{ p.name }}</a>
+{% else %}
+                    {{ p.name }}
+{% endif %}
+                  </li>
+{% endfor %}
+                </ul>
+{% else %}
+                —
+{% endif %}
+              </td>
+            </tr>
+{% endfor %}
+          </tbody>
+        </table>
+{% else %}
+        <p style="margin:0;"><em>No collection installs parsed from matching project updates.</em></p>
+{% endif %}
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

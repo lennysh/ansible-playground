@@ -29,6 +29,7 @@ To load these demos into Ansible Automation Platform as an organization with sur
 | [demo-aap-connectivity](demo-aap-connectivity/README.md) | [AAP installer connectivity preflight](demo-aap-connectivity/README.md) — Redis cluster bus, Receptor mesh, PostgreSQL, and platform TCP checks against an installer inventory |
 | [demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md) | [AAP Password survey PEM keys](demo-aap-survey-pem-key/README.md) — paste a masked multi-line private key into a Password survey; reconstruct PEM line breaks before downstream tasks |
 | [demo-support-assist](demo-support-assist/README.md) | [infra.support_assist](demo-support-assist/README.md) — AAP API gather, OCP must-gather, sosreport, and RH case create/update with surveyed AAP job templates |
+| [demo-aap-project-sync-collections](demo-aap-project-sync-collections/README.md) | [Project sync collection inventory](demo-aap-project-sync-collections/README.md) — parse galaxy install events from project updates (versions, download hosts, requirements/deps) across all or selected projects |
 
 
 ## Running a demo

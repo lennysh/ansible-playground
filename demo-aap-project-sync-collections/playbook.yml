@@ -1,0 +1,128 @@
+---
+# Inspect collections installed during AAP project SCM syncs (AAP 2.5+ Gateway).
+#
+# Auth via extra vars, env, or Red Hat Ansible Automation Platform credential (AAP JT):
+#   aap_hostname + aap_token   (or AAP_HOSTNAME + AAP_TOKEN env)
+#   aap_username + aap_password
+# Credential inject still sets CONTROLLER_*; the module accepts those as fallbacks.
+#
+# Key vars (survey / -e):
+#   aap_hostname / aap_token / aap_username / aap_password / aap_validate_certs
+#   project_names         — list of names; empty = all projects
+#   project_names_text    — optional textarea (newline/comma separated) for AAP surveys
+#   organization          — optional org name filter when discovering all
+#   since_hours           — lookback window (0 = latest update regardless of age)
+#   updates_per_project   — how many recent successful syncs to inspect per project
+#   include_raw_stdout    — include galaxy event stdout in the JSON artifact
+#   report_dir            — where to write report files
+- name: Inspect project sync collections
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    project_names: []
+    project_names_text: ""
+    organization: ""
+    since_hours: 168
+    updates_per_project: 1
+    include_raw_stdout: false
+    report_dir: "{{ playbook_dir }}"
+    report_json: "{{ report_dir }}/project-sync-collections-report.json"
+    report_html: "{{ report_dir }}/project-sync-collections-report.html"
+  tasks:
+    - name: Normalize project name list from survey textarea when provided
+      ansible.builtin.set_fact:
+        project_sync_names: >-
+          {{
+            (
+              project_names
+              if (project_names | default([]) | length) > 0
+              else (
+                project_names_text
+                | default('')
+                | regex_replace(',', '\n')
+                | split('\n')
+                | map('trim')
+                | reject('equalto', '')
+                | list
+              )
+            )
+          }}
+
+    - name: Query AAP Gateway for collections installed during project syncs
+      aap_project_sync_collections:
+        aap_hostname: "{{ aap_hostname | default(omit, true) }}"
+        aap_token: "{{ aap_token | default(omit, true) }}"
+        aap_username: "{{ aap_username | default(omit, true) }}"
+        aap_password: "{{ aap_password | default(omit, true) }}"
+        aap_validate_certs: "{{ aap_validate_certs if (aap_validate_certs is defined) else omit }}"
+        project_names: "{{ project_sync_names }}"
+        organization: "{{ organization | default(omit, true) }}"
+        since_hours: "{{ since_hours | int }}"
+        updates_per_project: "{{ updates_per_project | int }}"
+        include_raw_stdout: "{{ include_raw_stdout | bool }}"
+      register: project_sync_report
+
+    - name: Ensure report directory exists
+      ansible.builtin.file:
+        path: "{{ report_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write JSON report
+      ansible.builtin.copy:
+        dest: "{{ report_json }}"
+        mode: "0644"
+        content: "{{ project_sync_report | to_nice_json }}\n"
+
+    - name: Write HTML report
+      ansible.builtin.template:
+        src: templates/report.html.j2
+        dest: "{{ report_html }}"
+        mode: "0644"
+
+    - name: Show summary
+      ansible.builtin.debug:
+        msg:
+          - "Projects inspected: {{ project_sync_report.summary.projects_inspected }}"
+          - "Projects with collections: {{ project_sync_report.summary.projects_with_collections }}"
+          - "Unique collections: {{ project_sync_report.summary.unique_collections }}"
+          - "Download hosts: {{ project_sync_report.summary.download_hosts | join(', ') | default('(none)', true) }}"
+          - "JSON report: {{ report_json }}"
+          - "HTML report: {{ report_html }}"
+
+    - name: Show per-project collection installs
+      ansible.builtin.debug:
+        msg: >-
+          {{
+            item.project_name ~ ': '
+            ~ (
+              (
+                item.updates
+                | map(attribute='collections')
+                | flatten
+                | map(attribute='name')
+                | zip(
+                    item.updates
+                    | map(attribute='collections')
+                    | flatten
+                    | map(attribute='version')
+                  )
+                | map('join', ' ')
+                | list
+                | join(', ')
+              )
+              if (item.updates | default([]) | length) > 0
+                 and (
+                   item.updates
+                   | map(attribute='collections')
+                   | flatten
+                   | list
+                   | length
+                 ) > 0
+              else (item.error | default('no collections in matching syncs'))
+            )
+          }}
+      loop: "{{ project_sync_report.projects }}"
+      loop_control:
+        label: "{{ item.project_name }}"

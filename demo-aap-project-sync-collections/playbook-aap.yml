@@ -1,0 +1,5 @@
+---
+# AAP version — attach Red Hat Ansible Automation Platform credential (AAP 2.5+ Gateway).
+# Survey vars: project_names_text, organization, since_hours, updates_per_project,
+# include_raw_stdout, report_dir (default /tmp/project-sync-collections).
+- ansible.builtin.import_playbook: playbook.yml

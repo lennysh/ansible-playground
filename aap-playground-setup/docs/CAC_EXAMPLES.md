@@ -38,6 +38,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Offline token + create/update surveys | `Demo \| Support Assist \| …` (product/severity, case_id, OCP must-gather fields) |
 | Ask inventory + limit | `Demo \| Support Assist \| SOS Report \| …` |
 | Offline token + AAP credential | `Demo \| Support Assist \| AAP API Gather \| …` |
+| AAP credential + textarea project list | `Demo \| Project Sync Collections` |
 
 ## Adding a new AAP demo
 

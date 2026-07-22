@@ -1552,3 +1552,75 @@ controller_templates:
           type: text
           required: false
           default: Uploaded via Lenny's Ansible Playground support-assist Demo JT
+
+  # ---------------------------------------------------------------------------
+  # Project sync collection inspection
+  # ---------------------------------------------------------------------------
+  - name: "Demo | Project Sync Collections"
+    description: >-
+      AAP 2.5+ Gateway (/api/controller/v2): inspect project SCM syncs for
+      galaxy collections installed (versions, download hosts, requirements/deps)
+      across all or selected projects
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-aap-project-sync-collections/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Project names (blank = all)
+          question_description: >-
+            Leave blank to discover every project. Otherwise list project names,
+            one per line (commas also accepted).
+          variable: project_names_text
+          type: textarea
+          required: false
+          default: ""
+        - question_name: Organization filter
+          question_description: >-
+            Optional. When discovering all projects, only include this
+            organization name. Leave blank for every org.
+          variable: organization
+          type: text
+          required: false
+          default: ""
+        - question_name: Lookback hours
+          question_description: >-
+            Only inspect successful syncs created within this many hours.
+            Use 0 for the latest successful sync regardless of age.
+          variable: since_hours
+          type: integer
+          required: false
+          default: 168
+          min: 0
+          max: 8760
+        - question_name: Updates per project
+          question_description: How many recent successful syncs to inspect per project
+          variable: updates_per_project
+          type: integer
+          required: false
+          default: 1
+          min: 1
+          max: 20
+        - question_name: Include raw galaxy stdout
+          question_description: Attach concatenated galaxy/collection event stdout to the JSON report
+          variable: include_raw_stdout
+          type: multiplechoice
+          required: false
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Report directory
+          question_description: Writable path on the execution node for JSON/HTML artifacts
+          variable: report_dir
+          type: text
+          required: false
+          default: /tmp/project-sync-collections

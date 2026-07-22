@@ -1,0 +1,39 @@
+---
+# Copy to a local vars file (gitignored) or pass with -e @vars/...
+#
+# Auth via extra vars (preferred for CLI) or env — AAP 2.5+ Platform Gateway:
+#   aap_hostname: https://aap.example.com
+#   aap_token: '...'
+# or:
+#   aap_username: admin
+#   aap_password: '...'
+# or env:
+#   export AAP_HOSTNAME=https://aap.example.com
+#   export AAP_TOKEN='...'
+#
+# AAP job templates: attach the Red Hat Ansible Automation Platform credential
+# (injects CONTROLLER_*; module maps them to aap_*). No secrets required here.
+
+# aap_hostname: https://aap.example.com
+# aap_token: ""
+# aap_validate_certs: true
+
+# Empty list = discover every project (optionally limit with organization).
+project_names: []
+# project_names:
+#   - Lenny's Ansible Playground
+#   - Network Automation
+
+# organization: "Lenny's Ansible Playground"
+
+# Look back this many hours for successful syncs. 0 = latest regardless of age.
+since_hours: 168
+
+# How many recent successful updates to inspect per project.
+updates_per_project: 1
+
+# Include raw galaxy/collection event stdout in the JSON report.
+include_raw_stdout: false
+
+# Write artifacts under the demo directory (CLI). On AAP prefer /tmp.
+report_dir: "{{ playbook_dir }}"
