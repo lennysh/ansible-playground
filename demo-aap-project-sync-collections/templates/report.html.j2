@@ -47,7 +47,7 @@
             <tr>
               <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Collection</th>
               <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Version</th>
-              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Source host(s)</th>
+              <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Source(s)</th>
               <th align="left" style="padding:8px 10px;border:1px solid #d8d8d8;background:#151515;color:#ffffff;font-size:13px;">Projects</th>
             </tr>
           </thead>
@@ -56,7 +56,21 @@
             <tr>
               <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;font-family:Consolas,Monaco,monospace;font-size:13px;">{{ c.name }}</td>
               <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;font-family:Consolas,Monaco,monospace;font-size:13px;">{{ c.version }}</td>
-              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;">{{ (c.source_hosts | default([]) | join(', ')) or '—' }}</td>
+              <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;">
+{% if c.sources %}
+{% for s in c.sources %}
+{% if s.url %}
+                <a href="{{ s.url }}" style="color:#0066cc;text-decoration:underline;">{{ s.label }}</a>{% if not loop.last %}, {% endif %}
+{% else %}
+                {{ s.label }}{% if not loop.last %}, {% endif %}
+{% endif %}
+{% endfor %}
+{% elif c.source_hosts %}
+                {{ c.source_hosts | join(', ') }}
+{% else %}
+                —
+{% endif %}
+              </td>
               <td valign="top" style="padding:8px 10px;border:1px solid #d8d8d8;">
 {% if c.projects %}
                 <ul style="margin:0;padding-left:18px;">

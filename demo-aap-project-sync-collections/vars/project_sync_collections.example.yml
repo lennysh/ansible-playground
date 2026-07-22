@@ -35,5 +35,11 @@ updates_per_project: 1
 # Include raw galaxy/collection event stdout in the JSON report.
 include_raw_stdout: false
 
+# Which report artifacts to write (all default true).
+# If all are false, the playbook prints a full multi-line DEBUG report instead.
+export_report_json: true
+export_report_html: true
+export_report_md: true
+
 # Write artifacts under the demo directory (CLI). On AAP prefer /tmp.
 report_dir: "{{ playbook_dir }}"

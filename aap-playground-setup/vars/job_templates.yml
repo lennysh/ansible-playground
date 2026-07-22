@@ -1618,8 +1618,38 @@ controller_templates:
           choices:
             - "true"
             - "false"
+        - question_name: Export JSON report
+          question_description: Write project-sync-collections-report.json
+          variable: export_report_json
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Export HTML report
+          question_description: >-
+            Write project-sync-collections-report.html (email-friendly). If JSON,
+            HTML, and Markdown are all false, the full report is printed in the
+            job output instead.
+          variable: export_report_html
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Export Markdown report
+          question_description: Write project-sync-collections-report.md (GitHub-friendly)
+          variable: export_report_md
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
         - question_name: Report directory
-          question_description: Writable path on the execution node for JSON/HTML artifacts
+          question_description: Writable path on the execution node for selected report artifacts
           variable: report_dir
           type: text
           required: false

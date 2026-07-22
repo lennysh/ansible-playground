@@ -1,0 +1,24 @@
+=== Project sync collection report ===
+API: {{ project_sync_report.api_prefix | default('/api/controller/v2') }}
+{% if project_sync_report.aap_hostname %}Gateway: {{ project_sync_report.aap_hostname }}
+{% endif %}
+Projects inspected: {{ project_sync_report.summary.projects_inspected }}
+Projects with collections: {{ project_sync_report.summary.projects_with_collections }}
+Collection installs (rows): {{ project_sync_report.summary.total_collection_installs }}
+Unique collections: {{ project_sync_report.summary.unique_collections }}
+Download hosts: {{ (project_sync_report.summary.download_hosts | join(', ')) if project_sync_report.summary.download_hosts else '(none)' }}
+
+Unique collections across projects
+----------------------------------
+{% if project_sync_report.summary.collections %}
+{% for c in project_sync_report.summary.collections %}
+{{ c.name }} {{ c.version }}
+  source: {% if c.sources %}{% for s in c.sources %}{% if s.url %}{{ s.label }} <{{ s.url }}>{% else %}{{ s.label }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% elif c.source_hosts %}{{ c.source_hosts | join(', ') }}{% else %}—{% endif %}
+{% for p in c.projects | default([]) %}
+  - {% if p.id is not none and project_sync_report.aap_hostname %}{{ p.name }} ({{ project_sync_report.aap_hostname }}/execution/projects/{{ p.id }}/details){% else %}{{ p.name }}{% endif %}
+
+{% endfor %}
+{% endfor %}
+{% else %}
+(no collection installs parsed from matching project updates)
+{% endif %}

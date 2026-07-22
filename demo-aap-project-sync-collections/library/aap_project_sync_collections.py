@@ -143,6 +143,17 @@ RE_TARBALL = re.compile(
     r"/([a-zA-Z0-9_]+)-([a-zA-Z0-9_]+)-([0-9][^/]*?)\.tar\.gz"
 )
 RE_DEP_MAP = re.compile(r"Process install dependency map", re.IGNORECASE)
+# ansible-galaxy git installs: mkdtemp(prefix=repo_basename) then "Cloning into '...'"
+RE_CLONING = re.compile(
+    r"Cloning into '[^']*?/([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+)[^'/]*'"
+)
+RE_CREATED_COLLECTION = re.compile(
+    r"Created collection for ([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+)(?::(\S+))?\s+at\s+"
+)
+RE_GIT_URL = re.compile(
+    r"(?:git\+)?(https?://[^\s'\"<>]+?\.git)|"
+    r"(git@[^\s'\"<>]+?\.git)"
+)
 
 # AAP 2.5+ Platform Gateway path for Automation Controller resources.
 GATEWAY_CONTROLLER_API = "/api/controller/v2"
@@ -311,8 +322,47 @@ def fqcn_version_from_tarball_url(url: str) -> Optional[Tuple[str, str]]:
     return "%s.%s" % (namespace, name), version
 
 
+def normalize_git_url(url: str) -> str:
+    """Normalize git+https / ssh git URLs to an https URL when possible."""
+    text = to_text(url or "").strip()
+    if text.startswith("git+"):
+        text = text[4:]
+    if text.startswith("git@"):
+        # git@github.com:org/repo.git → https://github.com/org/repo.git
+        rest = text[4:]
+        if ":" in rest:
+            host, path = rest.split(":", 1)
+            text = "https://%s/%s" % (host, path)
+    return text.rstrip("/")
+
+
+def git_short_label(url: str) -> str:
+    """Shorten https://github.com/org/repo.git → org/repo."""
+    normalized = normalize_git_url(url)
+    try:
+        path = urlparse(normalized).path.strip("/")
+    except Exception:  # noqa: BLE001
+        path = normalized
+    if path.endswith(".git"):
+        path = path[:-4]
+    parts = [p for p in path.split("/") if p]
+    if len(parts) >= 2:
+        return "%s/%s" % (parts[-2], parts[-1])
+    return parts[-1] if parts else normalized
+
+
+def repo_basename_from_git_url(url: str) -> str:
+    label = git_short_label(url)
+    return label.split("/")[-1] if label else ""
+
+
 def parse_installed_collections(stdout: str) -> Dict[str, Any]:
-    """Parse ansible-galaxy collection install stdout into structured data."""
+    """Parse ansible-galaxy collection install stdout into structured data.
+
+    Git installs usually only leave ``Cloning into`` / ``Created collection for``
+    lines (no download URL). Label those as ``Git repo`` unless a concrete
+    ``.git`` URL also appears in the captured output.
+    """
     by_key: Dict[Tuple[str, str], Dict[str, Any]] = {}
 
     def upsert(name: str, version: str) -> Dict[str, Any]:
@@ -324,8 +374,15 @@ def parse_installed_collections(stdout: str) -> Dict[str, Any]:
                 "download_url": None,
                 "source_host": None,
                 "source_server": None,
+                "source_type": None,
+                "git_url": None,
             }
         return by_key[key]
+
+    def apply_git_url(entry: Dict[str, Any], url: str) -> None:
+        entry["source_type"] = "git"
+        entry["git_url"] = url
+        entry["source_host"] = source_host_from_url(url) or entry.get("source_host")
 
     for name, version in RE_INSTALLING.findall(stdout):
         upsert(name, version)
@@ -335,6 +392,7 @@ def parse_installed_collections(stdout: str) -> Dict[str, Any]:
     for name, version, server in RE_OBTAINED.findall(stdout):
         entry = upsert(name, version)
         entry["source_server"] = server
+        entry["source_type"] = entry.get("source_type") or "galaxy"
 
     for url in RE_DOWNLOADING.findall(stdout):
         parsed = fqcn_version_from_tarball_url(url)
@@ -344,9 +402,33 @@ def parse_installed_collections(stdout: str) -> Dict[str, Any]:
             entry = upsert(name, version)
             entry["download_url"] = url
             entry["source_host"] = host or entry.get("source_host")
+            entry["source_type"] = "http"
+
+    cloned = set(RE_CLONING.findall(stdout))
+    for name, version in RE_CREATED_COLLECTION.findall(stdout):
+        if version:
+            upsert(name, version)["source_type"] = "git"
         else:
-            # Keep orphan download lines attached via summary later.
-            pass
+            for (n, _v), entry in by_key.items():
+                if n == name:
+                    entry["source_type"] = "git"
+
+    for name in cloned:
+        for (n, _v), entry in by_key.items():
+            if n == name:
+                entry["source_type"] = "git"
+
+    # Only link when the git URL itself appears in galaxy stdout/stderr.
+    for match in RE_GIT_URL.finditer(stdout):
+        url = normalize_git_url(match.group(1) or match.group(2))
+        basename = repo_basename_from_git_url(url)
+        for (n, _v), entry in by_key.items():
+            if n == basename:
+                apply_git_url(entry, url)
+
+    for (n, _v), entry in by_key.items():
+        if entry.get("source_type") == "git" or n in cloned:
+            entry["source_type"] = "git"
 
     orphan_downloads = []
     matched_urls = {
@@ -375,7 +457,7 @@ def parse_installed_collections(stdout: str) -> Dict[str, Any]:
 
 
 def fetch_galaxy_install_output(client: ApiClient, update_id: int) -> str:
-    """Galaxy install lines live in runner_on_ok event stdout, not job stdout."""
+    """Galaxy install lines live in runner_on_ok event stdout/stderr, not job stdout."""
     events = client.paginate(client.api("/project_updates/%s/events/" % update_id))
     parts: List[str] = []
     for event in events:
@@ -384,21 +466,22 @@ def fetch_galaxy_install_output(client: ApiClient, update_id: int) -> str:
         event_data = event.get("event_data") or {}
         task = to_text(event_data.get("task") or "")
         task_l = task.lower()
+        res = event_data.get("res") or {}
+        stdout = to_text(res.get("stdout") or "")
+        stderr = to_text(res.get("stderr") or "")
+        blob = "\n".join(x for x in (stdout, stderr) if x.strip())
+        if not blob.strip():
+            continue
         if "galaxy" not in task_l and "collection" not in task_l and "role" not in task_l:
-            # Still capture stdout that clearly looks like galaxy install output.
-            res = event_data.get("res") or {}
-            stdout = to_text(res.get("stdout") or "")
             if not (
-                "Installing '" in stdout
-                or "Downloading http" in stdout
-                or "Starting galaxy collection" in stdout
+                "Installing '" in blob
+                or "Downloading http" in blob
+                or "Starting galaxy collection" in blob
+                or "Cloning into" in blob
+                or "Created collection for" in blob
             ):
                 continue
-        else:
-            res = event_data.get("res") or {}
-            stdout = to_text(res.get("stdout") or "")
-        if stdout.strip():
-            parts.append(stdout)
+        parts.append(blob)
     return "\n".join(parts)
 
 
@@ -443,6 +526,34 @@ def latest_updates_for_project(
     return updates[: max(updates_per_project, 1)]
 
 
+def _add_source_ref(sources: List[Dict[str, Any]], coll: Dict[str, Any]) -> None:
+    """Append a displayable source ref (http host or git repo) once."""
+    if coll.get("git_url"):
+        ref = {
+            "type": "git",
+            "label": git_short_label(coll["git_url"]),
+            "url": coll["git_url"],
+        }
+    elif coll.get("source_type") == "git":
+        ref = {"type": "git", "label": "Git repo", "url": None}
+    elif coll.get("source_host"):
+        ref = {
+            "type": "host",
+            "label": coll["source_host"],
+            "url": coll.get("download_url"),
+        }
+    else:
+        return
+    for existing in sources:
+        if (
+            existing.get("type") == ref["type"]
+            and existing.get("label") == ref["label"]
+            and existing.get("url") == ref["url"]
+        ):
+            return
+    sources.append(ref)
+
+
 def build_summary(project_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     unique: Dict[str, Dict[str, Any]] = {}
     total_collections = 0
@@ -466,9 +577,11 @@ def build_summary(project_results: List[Dict[str, Any]]) -> Dict[str, Any]:
                         "projects": [],
                         "source_hosts": [],
                         "source_servers": [],
+                        "sources": [],
                     },
                 )
                 _add_project_ref(bucket["projects"], pid, pname)
+                _add_source_ref(bucket["sources"], coll)
                 host = coll.get("source_host")
                 if host:
                     download_hosts.add(host)
@@ -486,6 +599,10 @@ def build_summary(project_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         bucket["projects"] = sorted(
             bucket["projects"],
             key=lambda p: (p.get("name") or "").lower(),
+        )
+        bucket["sources"] = sorted(
+            bucket["sources"],
+            key=lambda s: (s.get("type") or "", s.get("label") or ""),
         )
 
     return {
@@ -647,7 +764,8 @@ def run_module() -> None:
                 "scm_revision": (update.get("summary_fields") or {})
                 .get("project", {})
                 .get("scm_revision")
-                or update.get("scm_revision"),
+                or update.get("scm_revision")
+                or project.get("scm_revision"),
                 "collections": parsed["collections"],
                 "dependency_map_processed": parsed["dependency_map_processed"],
                 "orphan_downloads": parsed["orphan_downloads"],

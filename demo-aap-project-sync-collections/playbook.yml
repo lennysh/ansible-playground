@@ -14,6 +14,9 @@
 #   since_hours           — lookback window (0 = latest update regardless of age)
 #   updates_per_project   — how many recent successful syncs to inspect per project
 #   include_raw_stdout    — include galaxy event stdout in the JSON artifact
+#   export_report_json    — write JSON report (default true)
+#   export_report_html    — write HTML report (default true)
+#   export_report_md      — write Markdown report (default true)
 #   report_dir            — where to write report files
 - name: Inspect project sync collections
   hosts: localhost
@@ -26,9 +29,13 @@
     since_hours: 168
     updates_per_project: 1
     include_raw_stdout: false
+    export_report_json: true
+    export_report_html: true
+    export_report_md: true
     report_dir: "{{ playbook_dir }}"
     report_json: "{{ report_dir }}/project-sync-collections-report.json"
     report_html: "{{ report_dir }}/project-sync-collections-report.html"
+    report_md: "{{ report_dir }}/project-sync-collections-report.md"
   tasks:
     - name: Normalize project name list from survey textarea when provided
       ansible.builtin.set_fact:
@@ -68,28 +75,68 @@
         path: "{{ report_dir }}"
         state: directory
         mode: "0755"
+      when: >-
+        (export_report_json | bool)
+        or (export_report_html | bool)
+        or (export_report_md | bool)
 
     - name: Write JSON report
       ansible.builtin.copy:
         dest: "{{ report_json }}"
         mode: "0644"
         content: "{{ project_sync_report | to_nice_json }}\n"
+      when: export_report_json | bool
 
     - name: Write HTML report
       ansible.builtin.template:
         src: templates/report.html.j2
         dest: "{{ report_html }}"
         mode: "0644"
+      when: export_report_html | bool
+
+    - name: Write Markdown report
+      ansible.builtin.template:
+        src: templates/report.md.j2
+        dest: "{{ report_md }}"
+        mode: "0644"
+      when: export_report_md | bool
 
     - name: Show summary
       ansible.builtin.debug:
-        msg:
-          - "Projects inspected: {{ project_sync_report.summary.projects_inspected }}"
-          - "Projects with collections: {{ project_sync_report.summary.projects_with_collections }}"
-          - "Unique collections: {{ project_sync_report.summary.unique_collections }}"
-          - "Download hosts: {{ project_sync_report.summary.download_hosts | join(', ') | default('(none)', true) }}"
-          - "JSON report: {{ report_json }}"
-          - "HTML report: {{ report_html }}"
+        msg: >-
+          {{
+            [
+              'Projects inspected: ' ~ project_sync_report.summary.projects_inspected,
+              'Projects with collections: ' ~ project_sync_report.summary.projects_with_collections,
+              'Unique collections: ' ~ project_sync_report.summary.unique_collections,
+              'Download hosts: ' ~ (
+                project_sync_report.summary.download_hosts | join(', ')
+                | default('(none)', true)
+              )
+            ]
+            + (['JSON report: ' ~ report_json] if (export_report_json | bool) else [])
+            + (['HTML report: ' ~ report_html] if (export_report_html | bool) else [])
+            + (['Markdown report: ' ~ report_md] if (export_report_md | bool) else [])
+            + (
+              ['No file exports selected — full report follows in the next task.']
+              if not (
+                (export_report_json | bool)
+                or (export_report_html | bool)
+                or (export_report_md | bool)
+              )
+              else []
+            )
+          }}
+
+    - name: Show full report in job output (no file exports selected)
+      ansible.builtin.debug:
+        msg: "{{ lookup('template', 'templates/report_console.txt.j2').splitlines() }}"
+      when: >-
+        not (
+          (export_report_json | bool)
+          or (export_report_html | bool)
+          or (export_report_md | bool)
+        )
 
     - name: Show per-project collection installs
       ansible.builtin.debug:
@@ -126,3 +173,7 @@
       loop: "{{ project_sync_report.projects }}"
       loop_control:
         label: "{{ item.project_name }}"
+      when: >-
+        (export_report_json | bool)
+        or (export_report_html | bool)
+        or (export_report_md | bool)

@@ -15,7 +15,7 @@ flowchart LR
   API --> U[/project_updates/]
   API --> E[/project_updates/id/events/]
   E --> PARSE[Parse Installing / Downloading lines]
-  PARSE --> R[JSON + HTML report]
+  PARSE --> R[JSON + HTML + Markdown reports]
 ```
 
 ## What you get
@@ -26,6 +26,7 @@ For each inspected project sync:
 |-------|-------------------------|
 | Collection FQCN + version | `Installing 'ns.name:1.2.3'…` |
 | Download URL + host | `Downloading https://…/ns-name-1.2.3.tar.gz to …` |
+| Git source | Detected via `Cloning into` / `Created collection for` → shown as **Git repo** (linked only if a `.git` URL also appears in the galaxy output) |
 | Configured Galaxy server label | `'ns.name:1.2.3' obtained from server my_galaxy` (when present, often needs higher verbosity on the sync) |
 | Dependency resolution | Presence of `Process install dependency map` |
 
@@ -77,10 +78,13 @@ cp vars/project_sync_collections.example.yml vars/project_sync_collections.yml
 ansible-playbook playbook.yml -e @vars/project_sync_collections.yml
 ```
 
-Artifacts (gitignored):
+Artifacts (gitignored unless you commit an `*.example.*` sample):
 
-- `project-sync-collections-report.json`
-- `project-sync-collections-report.html` (inline-styled, email-friendly; project names are linked bullets)
+- `project-sync-collections-report.json` — when `export_report_json=true`
+- `project-sync-collections-report.html` — when `export_report_html=true` (email-friendly; linked project bullets)
+- `project-sync-collections-report.md` — when `export_report_md=true` (GitHub-friendly)
+
+If **all three** export flags are `false`, no files are written and the playbook prints a full multi-line **DEBUG** report in the job output instead.
 
 ## Ansible Automation Platform
 
@@ -93,6 +97,9 @@ After project sync, run **Playground | Apply CaC** to create **Demo | Project Sy
 | `since_hours` | Integer lookback (`0` = latest any age) |
 | `updates_per_project` | Integer, default `1` |
 | `include_raw_stdout` | `true` / `false` |
+| `export_report_json` | Write JSON artifact (default `true`) |
+| `export_report_html` | Write HTML artifact (default `true`) |
+| `export_report_md` | Write Markdown artifact (default `true`) |
 | `report_dir` | Default `/tmp/project-sync-collections` on the EE |
 
 Attach the playground **AAP Credential**. The job targets the localhost inventory.
@@ -115,7 +122,9 @@ demo-aap-project-sync-collections/
 ├── library/
 │   └── aap_project_sync_collections.py
 ├── templates/
-│   └── report.html.j2
+│   ├── report.html.j2
+│   ├── report.md.j2
+│   └── report_console.txt.j2
 └── vars/
     └── project_sync_collections.example.yml
 ```
