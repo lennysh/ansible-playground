@@ -1,0 +1,74 @@
+---
+# vmware.vmware.vms — VMware guest inventory (recommended)
+#
+# Filename must end with: vms.yml | vms.yaml | vmware_vms.yml | vmware_vms.yaml
+# Replaces community.vmware.vmware_vm_inventory (deprecated).
+#
+# AAP: attach a VMware vCenter credential (VMWARE_HOST / VMWARE_USER / VMWARE_PASSWORD).
+
+plugin: vmware.vmware.vms
+
+# hostname: vcsa.vmware.lab.example.com
+# username: inventory@vsphere.local
+# password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+validate_certs: false
+
+strict: false
+gather_tags: true
+gather_compute_objects: false
+set_ansible_host: false
+
+# Narrow the search for large vCenters (faster than client-side filters alone)
+# search_paths:
+#   - /East/vm/Workloads
+#   - /East/vm/Lab
+
+properties:
+  - name
+  - config
+  - guest
+  - summary.runtime.powerState
+
+hostnames:
+  - name | lower | trim
+
+# Expressions that evaluate true EXCLUDE the host (opposite of community.vmware filters)
+filter_expressions:
+  - 'config is not defined or guest is not defined'
+  - 'guest is defined and guest.guestId == "vmwarePhoton64Guest"'
+  - 'config is defined and (config.template | default(false))'
+  # - 'summary.runtime.powerState == "poweredOff"'
+
+keyed_groups:
+  - key: guest.guestId
+    prefix: ""
+    separator: ""
+  - key: guest.guestFamily
+    prefix: ""
+    separator: ""
+  - key: '"rhel" if (guest.guestFullName | default("")) is search("Red Hat")'
+    prefix: "os_"
+    separator: ""
+  - key: tags_by_category.status | default([]) | map('regex_replace', '.*:', '') | list
+    prefix: "status_"
+    separator: ""
+
+compose:
+  infrastructure_provider: "'VMware'"
+  vcenter_datacenter: "'East'"
+  vcenter_host: "'vcsa.vmware.lab.example.com'"
+
+  ansible_host: >-
+    guest.net
+    | selectattr('ipAddress')
+    | map(attribute='ipAddress')
+    | flatten
+    | select('match', '^10\.')
+    | list
+    | first
+
+  ansible_connection: '"psrp" if (guest.guestId | default("")) is match("windows.*") else omit'
+  ansible_winrm_transport: '"kerberos" if (guest.guestId | default("")) is match("windows.*") else omit'
+  ansible_port: 5985 if (guest.guestId | default("")) is match("windows.*") else omit
+  ansible_psrp_cert_validation: '"ignore" if (guest.guestId | default("")) is match("windows.*") else omit'
+  ansible_winrm_server_cert_validation: '"ignore" if (guest.guestId | default("")) is match("windows.*") else omit'

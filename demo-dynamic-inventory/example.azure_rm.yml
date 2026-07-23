@@ -1,0 +1,44 @@
+---
+# azure.azcollection.azure_rm — Azure Resource Manager inventory
+#
+# Filename must end with: azure_rm.yml | azure_rm.yaml
+#
+# AAP: attach a Microsoft Azure Resource Manager credential.
+# CLI: az login, or set AZURE_CLIENT_ID / AZURE_SECRET / AZURE_TENANT / AZURE_SUBSCRIPTION_ID.
+
+plugin: azure.azcollection.azure_rm
+
+auth_source: auto
+plain_host_names: true
+
+# Empty list = all resource groups in the subscription (can be slow)
+include_vm_resource_groups:
+  - "*"
+  # - rg-app-prod
+  # - rg-app-lab
+
+# include_vmss_resource_groups:
+#   - rg-app-prod
+
+exclude_host_filters:
+  # Skip deallocated / stopped VMs
+  - powerstate != 'running'
+  # - "'lab' in name"
+
+keyed_groups:
+  - prefix: azure_loc
+    key: location
+  - prefix: azure_os
+    key: os_profile.system | default("unknown")
+  - prefix: tag_env
+    key: tags.Environment | default("unknown")
+  - prefix: tag_role
+    key: tags.Role | default("unknown")
+
+conditional_groups:
+  windows: "os_profile.system == 'windows'"
+  linux: "os_profile.system == 'linux'"
+
+hostvar_expressions:
+  ansible_host: (private_ipv4_addresses + public_ipv4_addresses) | first
+  infrastructure_provider: "'Azure'"

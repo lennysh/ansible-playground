@@ -1,0 +1,30 @@
+---
+# ansible.builtin.constructed — derive groups/vars from an existing inventory
+#
+# Use as a second inventory source (CLI: -i primary.yml -i example.constructed.yml)
+# or add as an additional AAP inventory source after a cloud/Satellite source.
+#
+# Does not discover hosts by itself — it only reshapes hosts already in inventory.
+
+plugin: ansible.builtin.constructed
+
+strict: false
+use_vars_plugins: false
+
+# Create groups from hostvar values
+keyed_groups:
+  - key: infrastructure_provider | default("unknown")
+    prefix: provider
+  - key: ansible_connection | default("ssh")
+    prefix: conn
+
+# Conditional groups (Jinja expressions against hostvars)
+groups:
+  windows: ansible_connection in ['winrm', 'psrp']
+  linux: ansible_connection | default('ssh') not in ['winrm', 'psrp']
+  # needs_patching: "'prod' in (group_names | join(','))"
+
+compose:
+  # Example: normalize a connection hint for reporting
+  inventory_os_family: >-
+    'windows' if ansible_connection | default('ssh') in ['winrm', 'psrp'] else 'linux'

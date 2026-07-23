@@ -3,9 +3,20 @@
 # Format:  oldstring:newstring
 # Split on the FIRST colon only — newstring may contain colons.
 #
-# Examples:
-#   your-hostname.example.com:lennysh-laptop
-#   10.0.0.50:192.0.2.1
-#   your.email@company.com:user@example.com
+# Put longer / more specific strings first so partial replacements do not
+# leave fragments of internal names behind.
+#
+# Do NOT put real internal hostnames on active (non-comment) lines in this
+# example file — pre-commit would rewrite them. Keep live pairs only in
+# sanitize-strings.conf (gitignored).
+#
+# Suggested categories for a local sanitize-strings.conf:
+#   <full-vcenter-fqdn>:vcsa.vmware.lab.example.com
+#   <lab-dns-suffix>:lab.example.com
+#   <aap-route-fqdn>:aap.example.com
+#   <ocp-apps-suffix>:.apps.cluster.example.com
+#   <cluster-dns-suffix>:cluster.example.com
+#   <lab-shortname>:demolab
+#   <local-username>:operator
 
 your-hostname.example.com:lennysh-laptop

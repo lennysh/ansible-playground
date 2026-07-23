@@ -1,0 +1,37 @@
+---
+# openstack.cloud.openstack — OpenStack inventory
+#
+# Filename must end with: openstack.yml | openstack.yaml
+#
+# AAP: attach an OpenStack credential, or point clouds_yaml_path at clouds.yaml.
+# CLI: clouds.yaml in ~/.config/openstack/ or OS_* environment variables.
+
+plugin: openstack.cloud.openstack
+
+# cloud: mycloud
+# clouds_yaml_path:
+#   - /runner/env/clouds.yaml
+
+expand_hostvars: true
+fail_on_errors: false
+all_projects: false
+only_clouds:
+  - mycloud
+
+inventory_hostname: name
+# Use private address when controllers sit on the tenant network
+private: true
+
+keyed_groups:
+  - prefix: os_region
+    key: region
+  - prefix: os_az
+    key: az
+  - prefix: os_flavor
+    key: flavor.name | default("unknown")
+  - prefix: meta
+    key: metadata.role | default("unknown")
+
+compose:
+  ansible_host: private_v4 | default(public_v4) | default(name)
+  infrastructure_provider: "'OpenStack'"

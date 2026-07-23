@@ -1,0 +1,47 @@
+---
+# redhat.satellite.foreman — Red Hat Satellite / Foreman inventory
+#
+# Filename must end with: foreman.yml | foreman.yaml
+# Community equivalent: theforeman.foreman.foreman (same options).
+#
+# AAP: attach a Red Hat Satellite credential (or set url/user/password via env).
+# Reports API (default) needs the foreman_ansible plugin on Satellite.
+
+plugin: redhat.satellite.foreman
+
+# Prefer AAP credential injectors; uncomment for CLI:
+# url: https://satellite.lab.example.com
+# user: inventory
+# password: "{{ lookup('env', 'FOREMAN_PASSWORD') }}"
+validate_certs: true
+
+want_facts: true
+want_params: true
+want_hostcollections: true
+want_organization: true
+want_location: true
+want_host_group: true
+want_content_facet_attributes: true
+
+# host_filters: 'hostgroup_fullname = "App/Web"'
+# host_filters: 'organization = "Default Organization" and location = "Lab"'
+
+keyed_groups:
+  - key: organization.name | default("unknown")
+    prefix: org
+  - key: location.name | default("unknown")
+    prefix: loc
+  - key: hostgroup_title | default(hostgroup | default("ungrouped"))
+    prefix: hg
+  - key: content_facet_attributes.lifecycle_environment_name | default("Library")
+    prefix: env
+  - key: content_facet_attributes.content_view_name | default("unknown")
+    prefix: cv
+
+groups:
+  # Example: hosts whose OS name mentions RHEL 9
+  rhel9: "'RedHat 9' in (operatingsystem_name | default('')) or 'RHEL 9' in (operatingsystem_name | default(''))"
+
+compose:
+  ansible_host: foreman_ip_address | default(ip) | default(name)
+  infrastructure_provider: "'Satellite'"

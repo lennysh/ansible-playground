@@ -1,0 +1,84 @@
+---
+# community.vmware.vmware_vm_inventory — VMware guest inventory (legacy)
+#
+# Filename must end with: vmware.yml | vmware.yaml | vmware_vm_inventory.yml | vmware_vm_inventory.yaml
+# Preferred successor: vmware.vmware.vms (see example.vmware_vms.yml)
+#
+# AAP: Inventory → Sources → Sourced from a Project → this file.
+# Attach a VMware vCenter credential (injects VMWARE_HOST / VMWARE_USER / VMWARE_PASSWORD).
+# Optional: set hostname/username/password here for CLI testing only — never commit secrets.
+
+plugin: community.vmware.vmware_vm_inventory
+
+# Uncomment for CLI; prefer AAP credential / env vars in production.
+# hostname: vcsa.vmware.lab.example.com
+# username: inventory@vsphere.local
+# password: "{{ lookup('env', 'VMWARE_PASSWORD') }}"
+validate_certs: false
+
+strict: false
+with_nested_properties: false
+with_tags: true
+
+properties:
+  # - all   # slow; only when you need every attribute
+  - guest
+  - config
+
+hostnames:
+  - config.name | lower | trim
+
+filters:
+  - config is defined
+  - guest is defined
+  - guest.guestId != "vmwarePhoton64Guest"
+  - config.template != true
+  # - guest.hostName is search("operator")
+  # - runtime.powerState == "poweredOn"
+
+keyed_groups:
+  - key: guest.guestId
+    prefix: ""
+    separator: ""
+  - key: guest.guestFamily
+    prefix: ""
+    separator: ""
+  - key: '"rhel" if guest.guestFullName is search("Red Hat")'
+    prefix: "os_"
+    separator: ""
+  - key: tag_category['status'] | lower
+    prefix: "status_"
+    separator: ""
+  # - key: tag_category['application-name'] | upper
+  #   prefix: "APP_"
+  #   separator: ""
+  # - key: tag_category['Environment'] | upper
+  #   prefix: "ENV_"
+  #   separator: ""
+  # - key: '"templates" if config.template else "guests"'
+  #   prefix: ""
+  #   separator: ""
+
+compose:
+  # Static hostvars (compose values are Jinja — quote string literals)
+  infrastructure_provider: "'VMware'"
+  vcenter_datacenter: "'East'"
+  vcenter_host: "'vcsa.vmware.lab.example.com'"
+
+  # Prefer a management-network IP (adjust the regex for your lab)
+  ansible_host: >-
+    guest.net | selectattr('ipAddress') | map(attribute='ipAddress') | flatten |
+    select('match', '^10\.') | list | first
+
+  # Windows guests → PSRP / WinRM; Linux → leave connection defaults
+  ansible_connection: '"psrp" if guest.guestId is match(''windows.*'') else omit'
+  ansible_winrm_transport: '"kerberos" if guest.guestId is match(''windows.*'') else omit'
+  ansible_port: 5985 if guest.guestId is match('windows.*') else omit
+  ansible_psrp_cert_validation: '"ignore" if guest.guestId is match(''windows.*'') else omit'
+  ansible_winrm_server_cert_validation: '"ignore" if guest.guestId is match(''windows.*'') else omit'
+  ansible_become_method: '"runas" if guest.guestId is match(''windows.*'') else omit'
+  ansible_winrm_kerberos_delegation: true if guest.guestId is match('windows.*') else omit
+  ansible_winrm_connection_timeout: 120 if guest.guestId is match('windows.*') else omit
+  ansible_winrm_operation_timeout_sec: 120 if guest.guestId is match('windows.*') else omit
+  ansible_winrm_read_timeout_sec: 120 if guest.guestId is match('windows.*') else omit
+  ansible_psrp_connection_timeout: 120 if guest.guestId is match('windows.*') else omit

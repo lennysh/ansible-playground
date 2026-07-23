@@ -1,0 +1,41 @@
+---
+# google.cloud.gcp_compute — Google Cloud Compute Engine inventory
+#
+# Filename must end with: gcp_compute.yml | gcp_compute.yaml | gcp.yml | gcp.yaml
+#
+# AAP: attach a Google Compute Engine credential (service account JSON).
+# CLI: GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json or gcloud auth application-default login.
+
+plugin: google.cloud.gcp_compute
+
+projects:
+  - my-gcp-project
+# auth_kind: serviceaccount
+# service_account_file: /path/to/sa.json
+
+zones:
+  - us-central1-a
+  # - us-east1-b
+
+filters:
+  - status = RUNNING
+  # - labels.environment = production
+
+hostnames:
+  - name
+  - private_ip
+  - public_ip
+
+keyed_groups:
+  - key: zone
+    prefix: gcp_zone
+  - key: labels.environment | default("unknown")
+    prefix: env
+  - key: labels.role | default("unknown")
+    prefix: role
+  - key: machineType
+    prefix: gcp_machine
+
+compose:
+  ansible_host: networkInterfaces[0].networkIP | default(networkInterfaces[0].accessConfigs[0].natIP)
+  infrastructure_provider: "'GCP'"

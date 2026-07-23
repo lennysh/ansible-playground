@@ -1,0 +1,49 @@
+---
+# amazon.aws.aws_ec2 — Amazon EC2 inventory
+#
+# Filename must end with: aws_ec2.yml | aws_ec2.yaml
+#
+# AAP: attach an Amazon Web Services credential (or IAM role on the EE / instance).
+# CLI: export AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN (or use a profile).
+
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - us-east-1
+  # - us-east-2
+
+# Prefer private IP for Ansible when instances are reachable on the VPC
+hostnames:
+  - private-ip-address
+  - ip-address
+  - tag:Name
+  - dns-name
+
+filters:
+  instance-state-name:
+    - running
+  # tag:Environment:
+  #   - production
+
+# include_filters / exclude_filters are AND/OR compositions of describe-instances filters
+# include_filters:
+#   - tag:Role:
+#       - web
+# exclude_filters:
+#   - tag:SkipInventory:
+#       - "true"
+
+keyed_groups:
+  - key: placement.region
+    prefix: aws_region
+  - key: tags.Environment | default("unknown")
+    prefix: env
+  - key: tags.Role | default("unknown")
+    prefix: role
+  - prefix: os
+    key: platform | default("linux")
+
+compose:
+  ansible_host: private_ip_address
+  # ansible_user: "'ec2-user'"
+  infrastructure_provider: "'AWS'"

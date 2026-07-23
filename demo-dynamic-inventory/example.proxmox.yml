@@ -1,0 +1,53 @@
+---
+# community.proxmox.proxmox — Proxmox VE inventory
+#
+# Filename must end with: .proxmox.yml | .proxmox.yaml
+#
+# AAP: use a custom credential type (or Machine + extra vars) that sets
+# PROXMOX_URL / PROXMOX_USER / PROXMOX_PASSWORD (or token id/secret).
+
+plugin: community.proxmox.proxmox
+
+# url: https://pve.lab.example.com:8006
+# user: ansible@pve
+# password: "{{ lookup('env', 'PROXMOX_PASSWORD') }}"
+# token_id: inventory
+# token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+validate_certs: false
+
+exclude_nodes: true
+want_facts: false
+want_post_filter_facts: true
+want_proxmox_nodes_ansible_host: false
+
+keyed_groups:
+  - key: proxmox_tags_parsed
+    separator: ""
+    prefix: ""
+
+filters:
+  # - proxmox_vmtype in ['qemu', 'lxc']
+  - proxmox_tags_parsed is defined and 'aap-inventory' in proxmox_tags_parsed
+
+compose:
+  infrastructure_provider: "'Proxmox'"
+  # Prefer a lab management subnet; adjust the regex for your environment
+  ansible_host: >-
+    {{
+      proxmox_agent_interfaces
+      | map(attribute='ip-addresses')
+      | flatten
+      | select('match', '^10\.')
+      | first
+      | regex_replace('/.*$', '')
+      if proxmox_vmtype == 'qemu'
+      else (
+        proxmox_lxc_interfaces
+        | selectattr('inet', 'defined')
+        | selectattr('inet', 'match', '^10\.')
+        | map(attribute='inet')
+        | flatten
+        | first
+        | regex_replace('/.*$', '')
+      )
+    }}
