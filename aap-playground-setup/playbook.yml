@@ -230,6 +230,29 @@
             | list
           }}
 
+    - name: Sanitize credential inputs — drop blank survey seeds
+      ansible.builtin.set_fact:
+        _playground_sanitized_credentials: "{{ _playground_sanitized_credentials | default([]) + [_playground_sanitized_cred] }}"
+      loop: "{{ controller_credentials }}"
+      loop_control:
+        loop_var: _playground_cred_item
+        label: "{{ _playground_cred_item.name }}"
+      vars:
+        _playground_clean_inputs: "{{ _playground_cred_item.inputs | default({}) | playground_sanitize_credential_inputs }}"
+        _playground_sanitized_cred: >-
+          {{
+            _playground_cred_item | combine({'inputs': omit}, recursive=True)
+            if _playground_clean_inputs is none
+            else _playground_cred_item | combine(
+              {'inputs': _playground_clean_inputs},
+              recursive=True
+            )
+          }}
+
+    - name: Apply sanitized credential definitions
+      ansible.builtin.set_fact:
+        controller_credentials: "{{ _playground_sanitized_credentials }}"
+
     - name: Resolve workflow job templates for selected demos
       ansible.builtin.set_fact:
         playground_workflows_selected: >-

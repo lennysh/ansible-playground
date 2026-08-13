@@ -10,7 +10,7 @@
 #
 # Credentials use state: exists — inputs below are applied only on initial
 # create. Later CaC runs do not modify existing credentials (UI edits are safe).
-# Blank / whitespace-only values are trimmed and omitted.
+# Blank / whitespace-only values are trimmed and omitted (not sent as "").
 # After create, edit secrets in the AAP UI (or delete the credential and re-run
 # Apply with overrides to recreate).
 

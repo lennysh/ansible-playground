@@ -221,8 +221,9 @@ CLI / ansible-core: omit `playground_demos` for Setup-only; pass a list or
 
 CaC creates credential shells only when a selected demo (or the always-on
 baseline) needs them. Shells use `state: exists`, so re-running CaC will
-**not** overwrite username, host, or secrets you set in the UI
-(`update_secrets: false` is belt-and-suspenders only).
+**not** overwrite username, host, or secrets you set in the UI. Custom
+credential **types** also use `state: exists`. Blank Setup survey answers are
+stripped before the API call (empty strings are not sent as password overrides).
 
 | Credential | When created | What to set |
 |---|---|---|
