@@ -17,6 +17,15 @@ playground_offline_token_credential_type: "Red Hat Offline Token"
 playground_satellite_credential_type: "Red Hat Satellite Server"
 playground_vmware_credential_type: "VMware vSphere"
 
+# WJT verbosity survey — labels match Job Template verbosity dropdown in AAP.
+playground_wjt_verbosity_survey_choices:
+  - "0 (Normal)"
+  - "1 (Verbose)"
+  - "2 (More Verbose)"
+  - "3 (Debug)"
+  - "4 (Connection Debug)"
+  - "5 (WinRM Debug)"
+
 # Always applied with Setup JT (independent of demo multiselect).
 playground_always_credentials:
   - "{{ playground_aap_credential_name }}"

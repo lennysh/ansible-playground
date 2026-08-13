@@ -4,7 +4,8 @@ Ansible Automation Platform workflow job templates (WJTs) cannot prompt for
 **verbosity** on the child job templates they run. This demo shows a reusable
 pattern:
 
-1. **Survey** on the WJT for verbosity (0–5, same scale as a job template).
+1. **Survey** on the WJT for verbosity (labels match the Job Template verbosity
+   dropdown: `0 (Normal)` … `5 (WinRM Debug)`).
 2. **Set** job — updates the controller `verbosity` field on a configured list
    of job templates via the API (skipped when the survey value is the default).
 3. **Sample steps** — child job templates that run at the updated verbosity.
@@ -18,20 +19,40 @@ across multiple WJTs by changing only the target list on each workflow’s nodes
 
 ## Architecture
 
+Survey `wjt_verbosity_level` is on the **workflow** launch form (not a node in
+the visualizer). Node **identifiers** match CaC / the Workflow Visualizer:
+
 ```mermaid
-flowchart TD
-  survey["Survey: wjt_verbosity_level"]
-  set["Set Verbosity JT"]
-  stepA["Sample Step A"]
-  stepB["Sample Step B"]
-  reset["Reset Verbosity JT"]
-  survey --> set
-  set -->|success| stepA
-  set -->|failure| reset
-  stepA -->|success| stepB
-  stepA -->|failure| reset
-  stepB -->|success or failure| reset
+flowchart LR
+  start((Start))
+  set["wjt-verbosity-set<br/>Set Verbosity"]
+  stepA["wjt-verbosity-step-a<br/>Sample Step A"]
+  stepB["wjt-verbosity-step-b<br/>Sample Step B"]
+  reset["wjt-verbosity-reset<br/>Reset Verbosity"]
+
+  start --> set
+  set -->|On success| stepA
+  set -->|On fail| reset
+  stepA -->|On success| stepB
+  stepA -->|On fail| reset
+  stepB -->|Always| reset
+
+  linkStyle 0 stroke:#2b9af3,stroke-width:2px
+  linkStyle 1 stroke:#3e8635,stroke-width:2px
+  linkStyle 2 stroke:#f0ab00,stroke-width:2px
+  linkStyle 3 stroke:#3e8635,stroke-width:2px
+  linkStyle 4 stroke:#f0ab00,stroke-width:2px
+  linkStyle 5 stroke:#2b9af3,stroke-width:2px
 ```
+
+| Visualizer edge | CaC field | Meaning |
+|-----------------|-----------|---------|
+| Green **On success** | `success_nodes` | Run the next sample step |
+| Amber **On fail** | `failure_nodes` | Skip remaining samples; run Reset |
+| Blue **Always** | `always_nodes` | Run Reset whether Step B succeeds or fails |
+
+Reset still skips API calls when survey verbosity is the default (`0`). Set uses
+the same skip rule.
 
 | Object | CaC name |
 |--------|----------|
@@ -80,9 +101,9 @@ To use Set/Reset in another WJT:
 3. Either keep the default `extra_vars` target list on the Set/Reset JTs, or
    override `wjt_verbosity_target_job_templates` on the workflow node / JT for
    that workflow only.
-4. Add a WJT survey question `wjt_verbosity_level` (integer 0–5) — the Set
-   step receives it when **Prompt for extra variables** propagates workflow
-   survey answers.
+4. Add a WJT survey question `wjt_verbosity_level` (multiple choice, same labels
+   as Job Template verbosity) — the Set step receives it when **Prompt for
+   extra variables** propagates workflow survey answers.
 
 Only list job templates that should run at the elevated verbosity — omit the Set
 and Reset templates themselves.
@@ -91,7 +112,20 @@ and Reset templates themselves.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `wjt_verbosity_level` | integer | `0` | Controller JT verbosity (0–5) applied to targets before sample steps |
+| `wjt_verbosity_level` | multiple choice | `0 (Normal)` | Controller JT verbosity applied to targets before sample steps |
+
+Choices (searchable dropdown in AAP, same as JT verbosity):
+
+| Value |
+|-------|
+| `0 (Normal)` |
+| `1 (Verbose)` |
+| `2 (More Verbose)` |
+| `3 (Debug)` |
+| `4 (Connection Debug)` |
+| `5 (WinRM Debug)` |
+
+The Set/Reset playbooks parse the leading integer from the survey answer.
 
 ## CLI (API helper only)
 

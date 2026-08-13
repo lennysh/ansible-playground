@@ -2,7 +2,7 @@
 # set — apply wjt_verbosity_level to targets; reset — restore wjt_verbosity_default.
 wjt_verbosity_mode: set
 
-# Survey / workflow extra var when mode is set (integer 0–5).
+# Survey / workflow extra var when mode is set (label like "2 (More Verbose)" or int).
 wjt_verbosity_level: "{{ wjt_verbosity_default }}"
 
 # Restored verbosity after workflow sample steps and skip threshold for set mode.

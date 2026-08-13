@@ -19,16 +19,15 @@ controller_workflows:
       spec:
         - question_name: Verbosity
           question_description: >-
-            Ansible verbosity for sample job templates (0 = Normal, 1 = -v,
-            2 = -vv, 3 = -vvv, 4 = -vvvv, 5 = -vvvvv). Default 0 skips Set
-            and Reset API calls. Non-zero values are restored after sample
-            steps even when a sample step fails.
+            Ansible verbosity for sample job templates (same labels as Job
+            Template verbosity). Default skips Set and Reset API calls.
+            Non-zero values are restored after sample steps even when a sample
+            step fails.
           variable: wjt_verbosity_level
-          type: integer
+          type: multiplechoice
           required: true
-          default: 0
-          min: 0
-          max: 5
+          default: "0 (Normal)"
+          choices: "{{ playground_wjt_verbosity_survey_choices }}"
     simplified_workflow_nodes:
       - identifier: wjt-verbosity-set
         unified_job_template: "Demo | WJT Verbosity | Set Verbosity"

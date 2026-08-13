@@ -2,7 +2,7 @@
 # AAP entry — raise Job Template verbosity before workflow sample steps.
 #
 # Workflow survey / extra vars:
-#   wjt_verbosity_level — integer 0–5 (from WJT survey when launched in a workflow)
+#   wjt_verbosity_level — survey label (e.g. "2 (More Verbose)") or integer for CLI
 #
 # Job template extra_vars (configure per workflow):
 #   wjt_verbosity_target_job_templates — list of JT names to update

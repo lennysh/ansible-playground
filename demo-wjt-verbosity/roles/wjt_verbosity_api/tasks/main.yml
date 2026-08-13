@@ -29,13 +29,24 @@
       wjt_verbosity_target_job_templates is empty. Configure the list on the
       Set/Reset job template extra_vars (or pass -e for CLI runs).
 
+- name: Normalize survey verbosity to controller integer
+  ansible.builtin.set_fact:
+    wjt_verbosity_level_resolved: >-
+      {{
+        (
+          (wjt_verbosity_level | default(wjt_verbosity_default) | string)
+          .split('(') | first | trim
+        )
+        | int
+      }}
+
 - name: Resolve desired controller verbosity
   ansible.builtin.set_fact:
     wjt_verbosity_desired: >-
       {{
         (wjt_verbosity_default | int)
         if wjt_verbosity_mode == 'reset'
-        else (wjt_verbosity_level | int)
+        else (wjt_verbosity_level_resolved | int)
       }}
 
 - name: Resolve whether controller API updates are needed
@@ -44,7 +55,7 @@
       {{
         not (
           (
-            (wjt_verbosity_level | default(wjt_verbosity_default) | int)
+            (wjt_verbosity_level_resolved | int)
             == (wjt_verbosity_default | int)
           )
           and (
