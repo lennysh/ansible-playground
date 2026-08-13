@@ -1,0 +1,67 @@
+---
+# Full gMSA WinRM demo — LDAP retrieval, connectivity, and summary report.
+#
+#   cp vars/gmsa.example.yml vars/gmsa.yml
+#   cp inventories/hosts.example.yml inventories/hosts.yml
+#   ansible-navigator run playbook.yml -e @vars/gmsa.yml
+
+- name: gMSA WinRM — fetch managed password and authenticate over WinRM
+  hosts: windows
+  gather_facts: false
+  tasks:
+    - name: Fetch gMSA password and configure WinRM credentials
+      ansible.builtin.include_role:
+        name: gmsa_winrm
+
+    - name: win_ping as gMSA
+      ansible.windows.win_ping:
+      register: gmsa_win_ping
+      when: not gmsa_skip_win_ping | default(false) | bool
+
+    - name: whoami as gMSA
+      ansible.windows.win_shell:
+        cmd: whoami /all
+      register: gmsa_whoami
+      when: not gmsa_skip_win_ping | default(false) | bool
+
+    - name: Build gMSA demo summary
+      ansible.builtin.copy:
+        dest: "{{ gmsa_diag_report_path }}"
+        mode: "0644"
+        content: |
+          gMSA WinRM demo summary
+          =======================
+
+          LDAP server:     {{ gmsa_ldap_server }}
+          Search base:     {{ gmsa_ldap_search_base }}
+          gMSA SAM:        {{ gmsa_resolved_sam }}
+          gMSA UPN:        {{ gmsa_resolved_upn }}
+          WinRM transport: {{ gmsa_winrm_transport }}
+
+          Results
+          -------
+          win_ping:        {{ 'OK' if (gmsa_win_ping is defined and not gmsa_win_ping.failed | default(false)) else 'skipped or failed' }}
+          whoami:          {{ gmsa_whoami.stdout | default('n/a') | trim }}
+      delegate_to: localhost
+      run_once: true
+
+    - name: Report location
+      ansible.builtin.debug:
+        msg: "Summary written to {{ gmsa_diag_report_path }}"
+      delegate_to: localhost
+      run_once: true
+      when: gmsa_diag_display_mode | default('file') == 'file'
+
+    - name: Display summary on stdout
+      ansible.builtin.command:
+        cmd: cat {{ gmsa_diag_report_path | quote }}
+      register: gmsa_report_cat
+      changed_when: false
+      delegate_to: localhost
+      run_once: true
+      when: gmsa_diag_display_mode | default('file') == 'stdout'
+
+    - name: Echo summary
+      ansible.builtin.debug:
+        msg: "{{ gmsa_report_cat.stdout_lines }}"
+      when: gmsa_diag_display_mode | default('file') == 'stdout'

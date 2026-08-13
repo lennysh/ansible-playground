@@ -1,0 +1,48 @@
+---
+# AAP entry point — surveyed provider settings + fake-host inventory friendly defaults.
+#
+# Attach Machine credential only if you are targeting real SSH hosts after preflight.
+# For the default mock provider against fake/local hosts, no Machine credential is required.
+
+- name: Preflight — resolve per-host credentials from external secrets providers
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Resolve host connection variables before target plays  # noqa: run-once[task]
+      run_once: true
+      delegate_to: localhost
+      block:
+        - name: Resolve per-host secrets from external providers
+          ansible.builtin.include_role:
+            name: host_secrets_preflight
+          vars:
+            host_secrets_preflight_target_hosts: "{{ groups['all'] }}"
+
+- name: Workload — connect using per-host credentials set during preflight
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Show resolved connection identity (no secrets)
+      ansible.builtin.debug:
+        msg:
+          inventory_hostname: "{{ inventory_hostname }}"
+          provider: "{{ host_secret_provider | default(host_secrets_preflight_default_provider) }}"
+          lookup_id: "{{ host_secret_lookup_id | default('n/a') }}"
+          ansible_user: "{{ ansible_user | default('not set') }}"
+          ansible_connection: "{{ ansible_connection | default('ssh') }}"
+
+    - name: Verify SSH connectivity when not using local connection
+      ansible.builtin.ping:
+      when: ansible_connection | default('ssh') != 'local'
+
+    - name: Simulate post-preflight task on local demo hosts
+      ansible.builtin.command:
+        cmd: "echo connected-as-{{ ansible_user | default('unknown') }}"
+      register: host_secrets_preflight_local_echo
+      changed_when: false
+      when: ansible_connection | default('ssh') == 'local'
+
+    - name: Show local demo command output
+      ansible.builtin.debug:
+        var: host_secrets_preflight_local_echo.stdout
+      when: ansible_connection | default('ssh') == 'local'

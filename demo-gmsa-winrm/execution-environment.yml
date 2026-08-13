@@ -1,0 +1,29 @@
+---
+# Build: ansible-builder build -f execution-environment.yml -t demo-gmsa-winrm-ee:latest
+#
+# Base: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.16
+# Adds: ldap3, bind-utils, ansible.windows, stub krb5.conf
+# Prerequisite: podman login registry.redhat.io
+
+version: 3
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.16
+
+dependencies:
+  galaxy: collections/requirements.yml
+  system: context/bindep.txt
+  python: context/requirements.txt
+
+additional_build_files:
+  - src: _build/files/krb5.conf.stub
+    dest: files
+
+options:
+  package_manager_path: /usr/bin/microdnf
+
+additional_build_steps:
+  append_final:
+    - RUN mkdir -p /etc/krb5.conf.d
+    - COPY _build/files/krb5.conf.stub /etc/krb5.conf

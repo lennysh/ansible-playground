@@ -1,0 +1,26 @@
+---
+# CLI helper — exercise set or reset without launching the full workflow.
+#
+#   cp vars/wjt_verbosity.example.yml vars/wjt_verbosity.yml
+#   ansible-playbook playbook.yml -e @vars/wjt_verbosity.yml
+#
+# Requires controller auth env vars (AAP_HOSTNAME + token or user/pass) and
+# ansible.controller collection for local runs.
+
+- name: WJT verbosity API helper (CLI)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Map AAP_* env vars when CONTROLLER_* is unset
+      when: lookup('env', 'CONTROLLER_HOST') | default('', true) | length == 0
+      ansible.builtin.set_fact:
+        aap_hostname: "{{ lookup('env', 'AAP_HOSTNAME') | default(omit, true) }}"
+        aap_username: "{{ lookup('env', 'AAP_USERNAME') | default(omit, true) }}"
+        aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default(omit, true) }}"
+        aap_token: "{{ lookup('env', 'AAP_TOKEN') | default(omit, true) }}"
+        aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true) }}"
+
+    - name: Run verbosity API role
+      ansible.builtin.include_role:
+        name: wjt_verbosity_api

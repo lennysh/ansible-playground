@@ -1,0 +1,4 @@
+vars/migrate.yml
+vars/*.local.yml
+*.vault.yml
+_extracted/

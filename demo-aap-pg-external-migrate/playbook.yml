@@ -1,0 +1,242 @@
+---
+# External PostgreSQL → external PostgreSQL data migration.
+#
+# Reverse-engineered from the Automation Controller operator's
+# roles/installer/tasks/migrate_data.yml (AAP 2.4 operator). The operator
+# version always k8s_exec's into a *managed* postgres pod because that is
+# where pg_dump/pg_restore live and where POSTGRES_PASSWORD /
+# PGPASSWORD_OLD are injected. This playbook runs the same dump|restore
+# pipe on any host/EE that already has the PostgreSQL client tools.
+#
+# See EXTRACTION.md for provenance and README.md for usage/caveats.
+#
+# WARNING: Destructive. Stop Automation Controller (and anything else
+# writing to either database) before running. Prefer a dry connectivity
+# check first (migrate_check_only: true).
+
+- name: Migrate AAP/Controller PostgreSQL data (external → external)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Safety gate — must set migrate_confirm: true (or disable require_confirm)
+    require_confirm: true
+    migrate_confirm: false
+    migrate_check_only: false
+
+    # Source (old) database
+    source_pg_host: ""
+    source_pg_port: 5432
+    source_pg_user: ""
+    source_pg_password: ""
+    source_pg_database: ""
+    source_pg_sslmode: prefer
+
+    # Destination (new) database
+    dest_pg_host: ""
+    dest_pg_port: 5432
+    dest_pg_user: ""
+    dest_pg_password: ""
+    dest_pg_database: ""
+    dest_pg_sslmode: prefer
+
+    # Match operator migrate_data.yml defaults
+    pg_dump_suffix: ""
+    pg_restore_extra_args: "--clean --if-exists"
+
+    # Operator managed-postgres path does GRANT/REVOKE postgres around restore.
+    # External DBs usually already have a privileged restore user — leave off.
+    grant_postgres_role: false
+    dest_pg_admin_user: postgres
+    dest_pg_admin_password: ""
+    dest_pg_app_user: "{{ dest_pg_user }}"
+
+    keepalive_interval_seconds: 60
+    # Avoid naming a var `no_log` (Ansible reserved); still apply no_log on tasks.
+    hide_secrets: true
+
+  tasks:
+    - name: Require confirmation for destructive migrate
+      ansible.builtin.assert:
+        that:
+          - (not (require_confirm | bool)) or (migrate_confirm | bool)
+        fail_msg: >-
+          Set migrate_confirm=true (and ideally migrate_check_only=true first).
+          This streams a full pg_dump | pg_restore between two databases.
+
+    - name: Validate required connection variables
+      ansible.builtin.assert:
+        that:
+          - source_pg_host | length > 0
+          - source_pg_user | length > 0
+          - source_pg_password | length > 0
+          - source_pg_database | length > 0
+          - dest_pg_host | length > 0
+          - dest_pg_user | length > 0
+          - dest_pg_password | length > 0
+          - dest_pg_database | length > 0
+        fail_msg: >-
+          Provide source_pg_* and dest_pg_* host/user/password/database
+          (see vars/migrate.example.yml).
+      no_log: "{{ hide_secrets }}"
+
+    - name: Validate admin credentials when grant_postgres_role is enabled
+      ansible.builtin.assert:
+        that:
+          - dest_pg_admin_password | length > 0
+          - dest_pg_app_user | length > 0
+        fail_msg: >-
+          grant_postgres_role=true requires dest_pg_admin_password and
+          dest_pg_app_user (the role that receives GRANT postgres).
+      when: grant_postgres_role | bool
+      no_log: "{{ hide_secrets }}"
+
+    - name: Ensure PostgreSQL client tools are on PATH
+      ansible.builtin.shell: command -v {{ item }}
+      args:
+        executable: /bin/bash
+      changed_when: false
+      loop:
+        - pg_dump
+        - pg_restore
+        - psql
+      register: _pg_tools
+
+    - name: Build pg_dump command (custom format, mirrors operator)
+      ansible.builtin.set_fact:
+        pgdump_cmd: >-
+          pg_dump
+          -h {{ source_pg_host }}
+          -U {{ source_pg_user }}
+          -d {{ source_pg_database }}
+          -p {{ source_pg_port }}
+          -F custom
+          {{ pg_dump_suffix }}
+      no_log: "{{ hide_secrets }}"
+
+    - name: Build pg_restore command (mirrors operator; adds -h/-p for external dest)
+      ansible.builtin.set_fact:
+        pg_restore_cmd: >-
+          pg_restore {{ pg_restore_extra_args }}
+          -h {{ dest_pg_host }}
+          -U {{ dest_pg_user }}
+          -d {{ dest_pg_database }}
+          -p {{ dest_pg_port }}
+      no_log: "{{ hide_secrets }}"
+
+    - name: Connectivity check — source
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -h
+          - "{{ source_pg_host }}"
+          - -p
+          - "{{ source_pg_port | string }}"
+          - -U
+          - "{{ source_pg_user }}"
+          - -d
+          - "{{ source_pg_database }}"
+          - -c
+          - "SELECT current_database(), current_user, version();"
+      environment:
+        PGPASSWORD: "{{ source_pg_password }}"
+        PGSSLMODE: "{{ source_pg_sslmode }}"
+      changed_when: false
+      no_log: "{{ hide_secrets }}"
+      register: _src_check
+
+    - name: Connectivity check — destination
+      ansible.builtin.command:
+        argv:
+          - psql
+          - -h
+          - "{{ dest_pg_host }}"
+          - -p
+          - "{{ dest_pg_port | string }}"
+          - -U
+          - "{{ dest_pg_user }}"
+          - -d
+          - "{{ dest_pg_database }}"
+          - -c
+          - "SELECT current_database(), current_user, version();"
+      environment:
+        PGPASSWORD: "{{ dest_pg_password }}"
+        PGSSLMODE: "{{ dest_pg_sslmode }}"
+      changed_when: false
+      no_log: "{{ hide_secrets }}"
+      register: _dst_check
+
+    - name: Show connectivity check results
+      ansible.builtin.debug:
+        msg:
+          - "source OK: {{ _src_check.stdout_lines | default([]) | first | default(_src_check.stdout) }}"
+          - "dest OK:   {{ _dst_check.stdout_lines | default([]) | first | default(_dst_check.stdout) }}"
+
+    - name: Stop after connectivity checks
+      ansible.builtin.meta: end_play
+      when: migrate_check_only | bool
+
+    - name: Refuse identical source and destination endpoints
+      ansible.builtin.assert:
+        that:
+          - >-
+            not (
+              source_pg_host == dest_pg_host
+              and (source_pg_port | string) == (dest_pg_port | string)
+              and source_pg_database == dest_pg_database
+            )
+        fail_msg: >-
+          source and dest resolve to the same host:port/database — aborting.
+
+    - name: Stream pg_dump → pg_restore (external → external)
+      ansible.builtin.shell: |
+        set -euo pipefail
+
+        end_keepalive() {
+          rc=$?
+          rm -f "$1"
+          kill $(cat /proc/$2/task/$2/children 2>/dev/null) 2>/dev/null || true
+          wait $2 || true
+          exit $rc
+        }
+
+        keepalive_file="$(mktemp)"
+        while [[ -f "$keepalive_file" ]]; do
+          echo "Migrating data from old database..."
+          sleep {{ keepalive_interval_seconds | int }}
+        done &
+        keepalive_pid=$!
+        trap 'end_keepalive "$keepalive_file" "$keepalive_pid"' EXIT SIGINT SIGTERM
+        echo "keepalive_pid: $keepalive_pid"
+
+        {% if grant_postgres_role | bool %}
+        PGPASSWORD="{{ dest_pg_admin_password }}" PGSSLMODE="{{ dest_pg_sslmode }}" \
+          psql -h "{{ dest_pg_host }}" -p "{{ dest_pg_port }}" -U "{{ dest_pg_admin_user }}" -d "{{ dest_pg_database }}" \
+          -c "GRANT postgres TO {{ dest_pg_app_user }}"
+        {% endif %}
+
+        PGPASSWORD="{{ source_pg_password }}" PGSSLMODE="{{ source_pg_sslmode }}" \
+          {{ pgdump_cmd }} \
+        | PGPASSWORD="{{ dest_pg_password }}" PGSSLMODE="{{ dest_pg_sslmode }}" \
+          {{ pg_restore_cmd }}
+
+        {% if grant_postgres_role | bool %}
+        PGPASSWORD="{{ dest_pg_admin_password }}" PGSSLMODE="{{ dest_pg_sslmode }}" \
+          psql -h "{{ dest_pg_host }}" -p "{{ dest_pg_port }}" -U "{{ dest_pg_admin_user }}" -d "{{ dest_pg_database }}" \
+          -c "REVOKE postgres FROM {{ dest_pg_app_user }}"
+        {% endif %}
+
+        echo "Successful"
+      args:
+        executable: /bin/bash
+      no_log: "{{ hide_secrets }}"
+      register: data_migration
+      failed_when: "'Successful' not in (data_migration.stdout | default(''))"
+      changed_when: "'Successful' in (data_migration.stdout | default(''))"
+
+    - name: Report migration finished
+      ansible.builtin.debug:
+        msg: >-
+          Migration stream completed (pg_dump custom format → pg_restore
+          {{ pg_restore_extra_args }}). Point Automation Controller at the
+          destination postgres configuration secret / settings and scale
+          controllers back up.

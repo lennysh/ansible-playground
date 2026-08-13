@@ -1,0 +1,84 @@
+---
+# AAP job template entry point — gMSA password fetch + WinRM auth.
+#
+# Attach:
+#   - Inventory with hosts in group `windows`
+#   - Machine credential: LDAP *lookup* account (NOT the gMSA)
+#   - Custom EE (demo-gmsa-winrm-ee:latest)
+#
+# Survey supplies realm, LDAP, and gMSA names. Lookup password comes from the
+# Machine credential (injected as gmsa_ldap_lookup_password).
+
+- name: gMSA WinRM — fetch managed password and authenticate over WinRM (AAP)
+  hosts: windows
+  gather_facts: false
+  vars:
+    gmsa_realm: "{{ gmsa_realm | default('EXAMPLE.COM') }}"
+    gmsa_domain: "{{ gmsa_domain | default('example.com') }}"
+    gmsa_kdc_hosts: "{{ gmsa_kdc_hosts | default([]) }}"
+    gmsa_deploy_krb5_conf: "{{ gmsa_deploy_krb5_conf | default(true) | bool }}"
+    gmsa_skip_win_ping: "{{ gmsa_skip_win_ping | default(false) | bool }}"
+    gmsa_ldap_server: "{{ gmsa_ldap_server }}"
+    gmsa_ldap_search_base: "{{ gmsa_ldap_search_base }}"
+    gmsa_sam_account_name: "{{ gmsa_sam_account_name }}"
+    gmsa_ldap_lookup_user: "{{ gmsa_ldap_lookup_user | default(ansible_user) }}"
+    gmsa_ldap_lookup_password: "{{ gmsa_ldap_lookup_password | default(ansible_password) }}"
+    gmsa_ldap_port: "{{ gmsa_ldap_port | default(389) | int }}"
+    gmsa_ldap_use_ssl: "{{ gmsa_ldap_use_ssl | default(false) | bool }}"
+    gmsa_ldap_start_tls: "{{ gmsa_ldap_start_tls | default(false) | bool }}"
+    gmsa_ldap_bind_type: "{{ gmsa_ldap_bind_type | default('ntlm') }}"
+    gmsa_winrm_transport: "{{ gmsa_winrm_transport | default('ntlm') }}"
+    gmsa_diag_display_mode: "{{ gmsa_diag_display_mode | default('file') }}"
+  tasks:
+    - name: Fetch gMSA password and configure WinRM credentials
+      ansible.builtin.include_role:
+        name: gmsa_winrm
+
+    - name: win_ping as gMSA
+      ansible.windows.win_ping:
+      register: gmsa_win_ping
+      when: not gmsa_skip_win_ping | bool
+
+    - name: whoami as gMSA
+      ansible.windows.win_shell:
+        cmd: whoami
+      register: gmsa_whoami
+      when: not gmsa_skip_win_ping | bool
+
+    - name: Build gMSA demo summary
+      ansible.builtin.copy:
+        dest: "{{ gmsa_diag_report_path }}"
+        mode: "0644"
+        content: |
+          gMSA WinRM demo summary (AAP)
+          =============================
+
+          LDAP server:     {{ gmsa_ldap_server }}
+          gMSA SAM:        {{ gmsa_resolved_sam }}
+          gMSA UPN:        {{ gmsa_resolved_upn }}
+
+          win_ping:        {{ 'OK' if (gmsa_win_ping is defined and not gmsa_win_ping.failed | default(false)) else 'skipped or failed' }}
+          whoami:          {{ gmsa_whoami.stdout | default('n/a') | trim }}
+      delegate_to: localhost
+      run_once: true
+
+    - name: Report location
+      ansible.builtin.debug:
+        msg: "Summary written to {{ gmsa_diag_report_path }}"
+      delegate_to: localhost
+      run_once: true
+      when: gmsa_diag_display_mode == 'file'
+
+    - name: Display summary on stdout
+      ansible.builtin.command:
+        cmd: cat {{ gmsa_diag_report_path | quote }}
+      register: gmsa_report_cat
+      changed_when: false
+      delegate_to: localhost
+      run_once: true
+      when: gmsa_diag_display_mode == 'stdout'
+
+    - name: Echo summary
+      ansible.builtin.debug:
+        msg: "{{ gmsa_report_cat.stdout_lines }}"
+      when: gmsa_diag_display_mode == 'stdout'

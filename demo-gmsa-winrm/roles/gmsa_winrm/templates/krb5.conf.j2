@@ -1,0 +1,27 @@
+# Managed by demo-gmsa-winrm (gmsa_winrm role).
+# Realm/KDC settings come from vars/gmsa.yml — rebuilding the EE is NOT required.
+
+[libdefaults]
+    default_realm = {{ gmsa_realm }}
+    dns_lookup_kdc = {{ gmsa_dns_lookup_kdc | default(true) | bool | lower }}
+    dns_lookup_realm = false
+    rdns = false
+    ticket_lifetime = 24h
+    renew_lifetime = 7d
+    forwardable = true
+
+[realms]
+    {{ gmsa_realm }} = {
+{% if gmsa_kdc_hosts | default([]) | length > 0 %}
+{% for kdc in gmsa_kdc_hosts %}
+        kdc = {{ kdc }}
+{% endfor %}
+        admin_server = {{ gmsa_kdc_hosts[0] }}
+{% else %}
+        # No static KDCs — dns_lookup_kdc resolves _kerberos._tcp / _kerberos._udp SRV records
+{% endif %}
+    }
+
+[domain_realm]
+    .{{ gmsa_domain }} = {{ gmsa_realm }}
+    {{ gmsa_domain }} = {{ gmsa_realm }}

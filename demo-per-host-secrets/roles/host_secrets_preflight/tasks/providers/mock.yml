@@ -1,0 +1,17 @@
+---
+# Offline/demo provider — deterministic credentials without external APIs.
+# Useful for CI, AAP fake-host inventory runs, and learning the flow.
+
+- name: Build mock credential payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_payload:
+      username: "{{ hostvars[target_host].host_secret_mock_username | default(host_secret_lookup_id) }}"
+      password: >-
+        {{
+          hostvars[target_host].host_secret_mock_password
+          | default('demo-' ~ host_secret_lookup_id ~ '-password')
+        }}
+      ssh_private_key: "{{ hostvars[target_host].host_secret_mock_ssh_private_key | default('') }}"
+
+- name: Map mock payload to connection fields
+  ansible.builtin.include_tasks: map_payload.yml

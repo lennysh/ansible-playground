@@ -1,0 +1,4 @@
+---
+# Demo directory — not a Galaxy role; skip role-name on the folder itself.
+skip_list:
+  - role-name

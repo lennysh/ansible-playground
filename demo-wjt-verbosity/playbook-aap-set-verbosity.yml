@@ -1,0 +1,22 @@
+---
+# AAP entry — raise Job Template verbosity before workflow sample steps.
+#
+# Workflow survey / extra vars:
+#   wjt_verbosity_level — integer 0–5 (from WJT survey when launched in a workflow)
+#
+# Job template extra_vars (configure per workflow):
+#   wjt_verbosity_target_job_templates — list of JT names to update
+#   wjt_verbosity_default — skip set when level equals this (default 0)
+#
+# Requires AAP Credential on the job template.
+
+- name: Set job template verbosity for workflow sample steps
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Apply survey verbosity to target job templates
+      ansible.builtin.include_role:
+        name: wjt_verbosity_api
+      vars:
+        wjt_verbosity_mode: set

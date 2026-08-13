@@ -1,0 +1,11 @@
+# Local secrets provider config (copy from *.example.yml)
+vars/*.yml
+!vars/*.example.yml
+inventories/*.yml
+!inventories/*.example.yml
+
+# Cached SSH private keys written during preflight
+.host-secrets-cache/
+
+# Local ansible temp (optional override for sandboxed runs)
+.ansible-tmp/

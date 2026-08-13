@@ -1,0 +1,48 @@
+---
+- name: Resolve username field from provider payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_username: >-
+      {{
+        _host_secrets_preflight_payload[
+          hostvars[target_host].host_secret_username_field
+          | default(host_secrets_preflight_username_field)
+        ]
+        | default('')
+      }}
+
+- name: Resolve password field from provider payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_password: >-
+      {{
+        _host_secrets_preflight_payload[
+          hostvars[target_host].host_secret_password_field
+          | default(host_secrets_preflight_password_field)
+        ]
+        | default('')
+      }}
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Resolve SSH private key field from provider payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_ssh_private_key: >-
+      {{
+        _host_secrets_preflight_payload[
+          hostvars[target_host].host_secret_ssh_private_key_field
+          | default(host_secrets_preflight_ssh_private_key_field)
+        ]
+        | default('')
+      }}
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Fail when required credential fields are empty
+  ansible.builtin.assert:
+    that:
+      - >-
+        not host_secrets_preflight_set_ansible_user | bool
+        or _host_secrets_preflight_username | length > 0
+      - >-
+        not host_secrets_preflight_set_ansible_password | bool
+        or _host_secrets_preflight_password | length > 0
+    fail_msg: >-
+      Provider '{{ host_secret_provider_effective }}' returned empty username/password
+      for lookup_id={{ host_secret_lookup_id }}.

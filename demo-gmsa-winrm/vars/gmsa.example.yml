@@ -1,0 +1,38 @@
+---
+# Copy to gmsa.yml and edit for your lab:
+#   cp vars/gmsa.example.yml vars/gmsa.yml
+#
+# Navigator (EE container):
+#   ansible-navigator run playbook.yml -e @vars/gmsa.yml
+#   ansible-navigator run playbook-simple.yml -e @vars/gmsa.yml
+
+# --- Realm / krb5.conf (templated at runtime) ---
+gmsa_realm: EXAMPLE.COM
+gmsa_domain: example.com
+gmsa_kdc_hosts: []
+# gmsa_kdc_hosts:
+#   - dc01.example.com
+gmsa_deploy_krb5_conf: true
+
+# --- Demo behavior ---
+gmsa_skip_win_ping: false
+# gmsa_diag_display_mode: stdout
+
+# --- LDAP: lookup account (must be in PrincipalsAllowedToRetrieveManagedPassword) ---
+gmsa_ldap_server: dc01.example.com
+gmsa_ldap_search_base: DC=example,DC=com
+gmsa_ldap_lookup_user: svc-gmsa-lookup
+gmsa_ldap_lookup_password: CHANGEME
+gmsa_ldap_port: 389
+gmsa_ldap_use_ssl: false
+gmsa_ldap_start_tls: false
+gmsa_ldap_bind_type: ntlm
+# gmsa_ldap_netbios_domain: EXAMPLE   # auto-derived from gmsa_domain if omitted
+
+# --- gMSA identity (created in lab-setup) ---
+gmsa_sam_account_name: gmsa-ansible
+gmsa_dns_host_name: gmsa-ansible.example.com
+
+# --- WinRM transport after password derivation ---
+# ntlm: NT hash derived from msDS-ManagedPassword (gist default; works in most labs)
+gmsa_winrm_transport: ntlm

@@ -230,6 +230,35 @@
             | list
           }}
 
+    - name: Resolve workflow job templates for selected demos
+      ansible.builtin.set_fact:
+        playground_workflows_selected: >-
+          {{
+            (
+              playground_demo_workflow_map | default({})
+              | dict2items
+              | selectattr('key', 'in', playground_demos_selected)
+              | map(attribute='value')
+              | flatten
+              | unique
+              | list
+            )
+          }}
+
+    - name: Filter controller_workflows to workflows for selected demos
+      when: controller_workflows is defined
+      ansible.builtin.set_fact:
+        controller_workflows: >-
+          {{
+            (
+              controller_workflows
+              | selectattr('name', 'in', playground_workflows_selected)
+              | list
+            )
+            if playground_workflows_selected | length > 0
+            else []
+          }}
+
     - name: Show which demo job templates will be applied
       ansible.builtin.debug:
         msg: >-
@@ -237,6 +266,12 @@
           {{ playground_demos_selected | join(', ')
              if playground_demos_selected | length > 0
              else '(none — Setup JT only)' }}
+
+    - name: Show which workflow job templates will be applied
+      when: playground_workflows_selected | default([]) | length > 0
+      ansible.builtin.debug:
+        msg: >-
+          Workflows: {{ playground_workflows_selected | join(', ') }}
 
     - name: Show supporting objects derived from selection
       ansible.builtin.debug:

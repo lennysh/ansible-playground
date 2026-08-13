@@ -1,0 +1,55 @@
+---
+- name: Validate CyberArk CCP settings
+  ansible.builtin.assert:
+    that:
+      - host_secrets_preflight_cyberark_ccp_url | length > 0
+      - host_secrets_preflight_cyberark_app_id | length > 0
+      - host_secrets_preflight_cyberark_safe | length > 0
+    fail_msg: >-
+      host_secrets_preflight_cyberark_ccp_url, host_secrets_preflight_cyberark_app_id, and
+      host_secrets_preflight_cyberark_safe are required for cyberark lookups.
+
+- name: Fetch account from CyberArk Central Credential Provider
+  ansible.builtin.uri:
+    url: >-
+      {{
+        host_secrets_preflight_cyberark_ccp_url | regex_replace('/$', '')
+        ~ '/AIMWebService/api/Accounts?'
+        ~ (
+            'AppID=' ~ host_secrets_preflight_cyberark_app_id | urlencode
+            ~ '&Safe=' ~ host_secrets_preflight_cyberark_safe | urlencode
+            ~ '&Folder=' ~ (
+                hostvars[target_host].host_secret_cyberark_folder
+                | default(host_secrets_preflight_cyberark_folder)
+              ) | urlencode
+            ~ '&' ~ (
+                hostvars[target_host].host_secret_cyberark_query_format
+                | default(host_secrets_preflight_cyberark_query_format)
+              ) | urlencode
+            ~ '=' ~ host_secret_lookup_id | urlencode
+          )
+      }}
+    method: GET
+    return_content: true
+    status_code: [200, 404]
+    validate_certs: true
+  register: host_secrets_preflight_cyberark_response
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Fail when CyberArk account is missing
+  ansible.builtin.fail:
+    msg: >-
+      CyberArk account not found ({{ host_secrets_preflight_cyberark_query_format }}={{
+      host_secret_lookup_id }}, safe={{ host_secrets_preflight_cyberark_safe }}).
+  when: host_secrets_preflight_cyberark_response.status != 200
+
+- name: Capture CyberArk account payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_payload:
+      username: "{{ host_secrets_preflight_cyberark_response.json.UserName }}"
+      password: "{{ host_secrets_preflight_cyberark_response.json.Content }}"
+      ssh_private_key: "{{ host_secrets_preflight_cyberark_response.json.PrivateKey | default('') }}"
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Map CyberArk payload to connection fields
+  ansible.builtin.include_tasks: map_payload.yml

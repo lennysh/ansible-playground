@@ -1,0 +1,50 @@
+---
+- name: Validate HashiCorp Vault connection settings
+  ansible.builtin.assert:
+    that:
+      - host_secrets_preflight_vault_url | length > 0
+      - host_secrets_preflight_vault_token | length > 0
+    fail_msg: >-
+      host_secrets_preflight_vault_url and host_secrets_preflight_vault_token are required for
+      hashicorp_vault lookups.
+
+- name: Fetch secret from HashiCorp Vault KV v2
+  ansible.builtin.uri:
+    url: >-
+      {{
+        host_secrets_preflight_vault_url | regex_replace('/$', '')
+        ~ '/v1/'
+        ~ (host_secrets_preflight_vault_mount | regex_replace('^/', '') | regex_replace('/$', ''))
+        ~ '/data/'
+        ~ (host_secret_lookup_id | urlencode)
+      }}
+    method: GET
+    headers: >-
+      {{
+        {'X-Vault-Token': host_secrets_preflight_vault_token}
+        | combine(
+            {'X-Vault-Namespace': host_secrets_preflight_vault_namespace}
+            if host_secrets_preflight_vault_namespace | length > 0
+            else {}
+          )
+      }}
+    validate_certs: "{{ host_secrets_preflight_vault_validate_certs | bool }}"
+    return_content: true
+    status_code: [200, 404]
+  register: host_secrets_preflight_vault_response
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Fail when Vault secret is missing
+  ansible.builtin.fail:
+    msg: >-
+      Vault secret not found at mount={{ host_secrets_preflight_vault_mount }},
+      path={{ host_secret_lookup_id }} (HTTP {{ host_secrets_preflight_vault_response.status }}).
+  when: host_secrets_preflight_vault_response.status != 200
+
+- name: Capture Vault KV v2 payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_payload: "{{ host_secrets_preflight_vault_response.json.data.data }}"
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Map Vault payload to connection fields
+  ansible.builtin.include_tasks: map_payload.yml

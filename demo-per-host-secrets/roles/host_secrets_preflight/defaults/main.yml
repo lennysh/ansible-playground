@@ -1,0 +1,76 @@
+---
+# Enable or skip the entire preflight role.
+host_secrets_preflight_enabled: true
+
+# Hosts to resolve. Override in the play when calling the role.
+host_secrets_preflight_target_hosts: []
+
+# Provider used when a host does not set host_secret_provider.
+host_secrets_preflight_default_provider: mock
+
+host_secrets_preflight_supported_providers:
+  - mock
+  - hashicorp_vault
+  - cyberark
+  - bitwarden
+
+# Shared path decoration around each host lookup id (host_secret_id or inventory_hostname).
+host_secrets_preflight_path_prefix: ""
+host_secrets_preflight_path_suffix: ""
+
+# Field names inside provider payloads (override per host with host_secret_*_field).
+host_secrets_preflight_username_field: username
+host_secrets_preflight_password_field: password
+host_secrets_preflight_ssh_private_key_field: ssh_private_key
+
+# Ansible connection variable names to populate on each target host.
+host_secrets_preflight_set_ansible_user: true
+host_secrets_preflight_set_ansible_password: true
+host_secrets_preflight_set_ansible_ssh_private_key: true
+host_secrets_preflight_set_ansible_become_password: false
+
+# Suppress secret-bearing task output.
+host_secrets_preflight_no_log: true
+
+# Where to write fetched SSH keys (mode 0600). Relative paths are under the role path.
+host_secrets_preflight_key_cache_dir: "{{ playbook_dir }}/.host-secrets-cache"
+
+# Fail the play when a host has no provider or lookup fails.
+host_secrets_preflight_fail_on_missing: true
+
+# ---------------------------------------------------------------------------
+# HashiCorp Vault (KV v2)
+# ---------------------------------------------------------------------------
+host_secrets_preflight_vault_url: ""
+host_secrets_preflight_vault_token: ""
+host_secrets_preflight_vault_mount: secret
+host_secrets_preflight_vault_namespace: ""
+host_secrets_preflight_vault_validate_certs: true
+
+# ---------------------------------------------------------------------------
+# CyberArk PAS Central Credential Provider (AIM Web Service)
+# ---------------------------------------------------------------------------
+host_secrets_preflight_cyberark_ccp_url: ""
+host_secrets_preflight_cyberark_app_id: ""
+host_secrets_preflight_cyberark_safe: ""
+host_secrets_preflight_cyberark_folder: Root
+host_secrets_preflight_cyberark_query_format: Object
+
+# ---------------------------------------------------------------------------
+# Bitwarden (cloud or self-hosted)
+# ---------------------------------------------------------------------------
+host_secrets_preflight_bitwarden_identity_url: https://identity.bitwarden.com
+host_secrets_preflight_bitwarden_api_url: https://api.bitwarden.com
+host_secrets_preflight_bitwarden_client_id: ""
+host_secrets_preflight_bitwarden_client_secret: ""
+host_secrets_preflight_bitwarden_collection_id: ""
+# Bitwarden Login cipher type (API type 1).
+host_secrets_preflight_bitwarden_cipher_type_login: 1
+# Personal API keys (user.* client_id) require device metadata on /connect/token.
+host_secrets_preflight_bitwarden_device_identifier: 00000000-0000-4000-8000-0000aappreflt
+host_secrets_preflight_bitwarden_device_name: ansible-host-secrets-preflight
+host_secrets_preflight_bitwarden_device_type: 14
+# Custom hidden field name on Login ciphers (Bitwarden field type 1).
+host_secrets_preflight_bitwarden_ssh_private_key_field: ssh_private_key
+# Require the SSH key custom field to be type 1 (hidden) — not notes or plain text fields.
+host_secrets_preflight_bitwarden_ssh_private_key_require_hidden: true

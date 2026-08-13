@@ -20,6 +20,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | Filtered by selected demos (AAP credential always); `state: exists` |
 | Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Filtered by selected demos |
 | Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + selected `Demo \| …` surveys |
+| Workflow job template + survey | `controller_workflows` | [`vars/workflow_job_templates.yml`](../vars/workflow_job_templates.yml) | Selected when a demo JT is listed in `playground_demo_workflow_map` |
 
 ## Survey patterns in `job_templates.yml`
 
@@ -33,7 +34,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Multiselect | `Demo \| AAP Connectivity` → suites |
 | Integer defaults | `Demo \| Forks and Async` — use YAML ints (`12`, not `"12"`) |
 | No survey | `Demo \| Ansible Filters`, `Demo \| Strategy Free` |
-| Custom EE + ask inventory | `Demo \| Kerberos WinRM`, `Demo \| WinRM vs PSRP` |
+| Custom EE + ask inventory | `Demo \| GMSA WinRM`, `Demo \| Kerberos WinRM`, `Demo \| WinRM vs PSRP` |
 | Custom credential on JT | Download Collection (Offline Token), Satellite, VMware Survey Options |
 | Offline token + create/update surveys | `Demo \| Support Assist \| …` (product/severity, case_id, OCP must-gather fields) |
 | Ask inventory + limit | `Demo \| Support Assist \| SOS Report \| …` |
@@ -41,6 +42,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | AAP credential + textarea project list | `Demo \| Project Sync Collections` |
 | VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
 | VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
+| WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` workflow + Set/Reset/Sample JTs in [`demo-wjt-verbosity/`](../../demo-wjt-verbosity/README.md) |
 
 ## Demo selection → supporting objects
 

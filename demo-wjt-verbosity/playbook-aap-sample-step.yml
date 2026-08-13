@@ -1,0 +1,43 @@
+---
+# Sample workflow child — tasks use Ansible task verbosity so JT verbosity is visible.
+#
+# Extra vars (from JT extra_vars or workflow):
+#   wjt_verbosity_step_label — banner prefix in debug output
+
+- name: Sample workflow step — demonstrate job template verbosity
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    wjt_verbosity_step_label: "{{ wjt_verbosity_step_label | default('Sample step') }}"
+  tasks:
+    - name: "Always visible — {{ wjt_verbosity_step_label }}"
+      ansible.builtin.debug:
+        msg: >-
+          {{ wjt_verbosity_step_label }}: baseline task (visible at verbosity 0).
+          Controller job template verbosity controls ansible-playbook -v flags.
+
+    - name: "Verbose (-v) — {{ wjt_verbosity_step_label }}"
+      ansible.builtin.debug:
+        msg: "{{ wjt_verbosity_step_label }}: task with verbosity 1 — needs JT verbosity ≥ 1."
+      when: ansible_verbosity | default(0) | int >= 1
+
+    - name: "More verbose (-vv) — {{ wjt_verbosity_step_label }}"
+      ansible.builtin.debug:
+        msg: "{{ wjt_verbosity_step_label }}: task with verbosity 2 — needs JT verbosity ≥ 2."
+      when: ansible_verbosity | default(0) | int >= 2
+
+    - name: "Very verbose (-vvv) — {{ wjt_verbosity_step_label }}"
+      ansible.builtin.debug:
+        msg: "{{ wjt_verbosity_step_label }}: task with verbosity 3 — needs JT verbosity ≥ 3."
+      when: ansible_verbosity | default(0) | int >= 3
+
+    - name: Simulate module-level detail at -vv
+      ansible.builtin.command:
+        cmd: "echo {{ wjt_verbosity_step_label }} module output"
+      register: wjt_verbosity_sample_cmd
+      changed_when: false
+
+    - name: Show command stdout
+      ansible.builtin.debug:
+        var: wjt_verbosity_sample_cmd.stdout

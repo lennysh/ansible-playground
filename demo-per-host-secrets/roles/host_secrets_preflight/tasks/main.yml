@@ -1,0 +1,42 @@
+---
+- name: Skip host secrets preflight when disabled
+  ansible.builtin.meta: end_role
+  when: not host_secrets_preflight_enabled | bool
+
+- name: Validate target host list
+  ansible.builtin.assert:
+    that:
+      - host_secrets_preflight_target_hosts | length > 0
+    fail_msg: >-
+      host_secrets_preflight_target_hosts is empty. Pass the inventory group or host list
+      from the preflight play (for example groups['managed']).
+
+- name: Ensure SSH key cache directory exists
+  ansible.builtin.file:
+    path: "{{ host_secrets_preflight_key_cache_dir }}"
+    state: directory
+    mode: "0700"
+  when: host_secrets_preflight_set_ansible_ssh_private_key | bool
+
+- name: Resolve per-host credentials from external secrets providers
+  ansible.builtin.include_tasks: resolve_host.yml
+  loop: "{{ host_secrets_preflight_target_hosts }}"
+  loop_control:
+    loop_var: target_host
+    label: "{{ target_host }}"
+
+- name: Summarize resolved hosts (no secrets)
+  ansible.builtin.debug:
+    msg:
+      host: "{{ item }}"
+      provider: >-
+        {{
+          hostvars[item].host_secret_provider
+          | default(host_secrets_preflight_default_provider)
+        }}
+      lookup_id: "{{ hostvars[item].host_secret_lookup_id | default('n/a') }}"
+      ansible_user: "{{ hostvars[item].ansible_user | default('not set') }}"
+      ssh_key_cached: "{{ hostvars[item].host_secrets_preflight_ssh_key_cached | default(false) | bool }}"
+  loop: "{{ host_secrets_preflight_target_hosts }}"
+  loop_control:
+    label: "{{ item }}"

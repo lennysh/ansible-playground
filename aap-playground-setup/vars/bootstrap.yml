@@ -45,7 +45,9 @@ playground_demo_templates:
   - "Demo | Download Collection Tarball"
   - "Demo | Forks and Async"
   - "Demo | Hosts Advanced"
+  - "Demo | Per-Host Secrets"
   - "Demo | Jinja2 Filters"
+  - "Demo | GMSA WinRM"
   - "Demo | Kerberos WinRM"
   - "Demo | Project Sync Collections"
   - "Demo | Satellite Sync and Promote"
@@ -62,8 +64,24 @@ playground_demo_templates:
   - "Demo | Support Assist | SOS Report | Update Case"
   - "Demo | When"
   - "Demo | WinRM vs PSRP"
+  - "Demo | WJT Verbosity | Set Verbosity"
+  - "Demo | WJT Verbosity | Reset Verbosity"
+  - "Demo | WJT Verbosity | Sample Step A"
+  - "Demo | WJT Verbosity | Sample Step B"
+
+# When any listed demo JT is selected on Apply CaC, also create these workflows.
+playground_demo_workflow_map:
+  "Demo | WJT Verbosity | Set Verbosity":
+    - "Demo | WJT Verbosity"
+  "Demo | WJT Verbosity | Reset Verbosity":
+    - "Demo | WJT Verbosity"
+  "Demo | WJT Verbosity | Sample Step A":
+    - "Demo | WJT Verbosity"
+  "Demo | WJT Verbosity | Sample Step B":
+    - "Demo | WJT Verbosity"
 
 playground_ee_kerberos_winrm: "demo-kerberos-winrm-ee"
+playground_ee_gmsa_winrm: "demo-gmsa-winrm-ee"
 playground_ee_winrm_vs_psrp: "demo-winrm-vs-psrp-ee"
 # Override with a registry the controller can pull from, e.g.:
 #   playground_ee_registry: quay.io/example
@@ -76,6 +94,15 @@ playground_ee_kerberos_winrm_image: >-
       else ''
     )
     ~ playground_ee_kerberos_winrm ~ ':latest'
+  }}
+playground_ee_gmsa_winrm_image: >-
+  {{
+    (
+      (playground_ee_registry ~ '/')
+      if playground_ee_registry | length > 0
+      else ''
+    )
+    ~ playground_ee_gmsa_winrm ~ ':latest'
   }}
 playground_ee_winrm_vs_psrp_image: >-
   {{

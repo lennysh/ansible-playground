@@ -1,0 +1,11 @@
+---
+gmsa_deploy_krb5_conf: true
+gmsa_skip_win_ping: false
+gmsa_winrm_transport: ntlm
+gmsa_ldap_port: 389
+gmsa_ldap_use_ssl: false
+gmsa_ldap_start_tls: false
+gmsa_ldap_bind_type: ntlm
+gmsa_ldap_netbios_domain: "{{ gmsa_domain | split('.') | first | upper }}"
+gmsa_diag_display_mode: file
+gmsa_diag_report_path: "{{ playbook_dir }}/gmsa-diag-report.txt"

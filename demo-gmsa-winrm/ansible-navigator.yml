@@ -1,0 +1,19 @@
+---
+ansible-navigator:
+  mode: stdout
+  ansible:
+    config:
+      path: ./ansible.cfg
+    cmdline: playbook.yml -e @vars/gmsa.yml
+    inventory:
+      entries:
+        - inventories/hosts.yml
+  execution-environment:
+    image: localhost/demo-gmsa-winrm-ee:latest
+    pull:
+      policy: missing
+  playbook-artifact:
+    enable: false
+    replay: demo-gmsa-winrm_artifact.zip
+  logging:
+    level: warning

@@ -441,6 +441,88 @@ controller_templates:
             fake-host-09.example.net
             fake-host-10
 
+  - name: "Demo | Per-Host Secrets"
+    description: >-
+      Preflight role — fetch per-host credentials from CyberArk, Vault, or Bitwarden
+      and set ansible_user/password before workload plays
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-per-host-secrets/playbook-aap.yml
+    inventory: "{{ playground_fake_hosts_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Default secrets provider
+          question_description: >-
+            Used when a host does not set host_secret_provider in inventory host_vars.
+            Use mock for offline fake-host runs.
+          variable: host_secrets_preflight_default_provider
+          type: multiplechoice
+          required: true
+          default: mock
+          choices:
+            - mock
+            - hashicorp_vault
+            - cyberark
+            - bitwarden
+        - question_name: Shared lookup path prefix
+          variable: host_secrets_preflight_path_prefix
+          type: text
+          required: false
+          default: ""
+        - question_name: Shared lookup path suffix
+          variable: host_secrets_preflight_path_suffix
+          type: text
+          required: false
+          default: ""
+        - question_name: Vault URL
+          question_description: Required when using hashicorp_vault provider
+          variable: host_secrets_preflight_vault_url
+          type: text
+          required: false
+          default: ""
+        - question_name: Vault token
+          question_description: Required when using hashicorp_vault provider
+          variable: host_secrets_preflight_vault_token
+          type: password
+          required: false
+          default: ""
+        - question_name: Vault KV mount
+          variable: host_secrets_preflight_vault_mount
+          type: text
+          required: false
+          default: secret
+        - question_name: CyberArk CCP URL
+          variable: host_secrets_preflight_cyberark_ccp_url
+          type: text
+          required: false
+          default: ""
+        - question_name: CyberArk App ID
+          variable: host_secrets_preflight_cyberark_app_id
+          type: text
+          required: false
+          default: ""
+        - question_name: CyberArk Safe
+          variable: host_secrets_preflight_cyberark_safe
+          type: text
+          required: false
+          default: ""
+        - question_name: Bitwarden client ID
+          variable: host_secrets_preflight_bitwarden_client_id
+          type: text
+          required: false
+          default: ""
+        - question_name: Bitwarden client secret
+          variable: host_secrets_preflight_bitwarden_client_secret
+          type: password
+          required: false
+          default: ""
+
   - name: "Demo | When"
     description: "when: pitfalls — version checks, bool coercion, survey strings"
     organization: "{{ playground_org_name }}"
@@ -574,6 +656,79 @@ controller_templates:
   # ---------------------------------------------------------------------------
   # Windows / Kerberos (custom EE required)
   # ---------------------------------------------------------------------------
+  - name: "Demo | GMSA WinRM"
+    description: Fetch gMSA password from AD and authenticate over WinRM
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-gmsa-winrm/playbook-aap.yml
+    inventory: "{{ playground_windows_inventory_name }}"
+    execution_environment: "{{ playground_ee_gmsa_winrm }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Kerberos realm
+          variable: gmsa_realm
+          type: text
+          required: true
+          default: EXAMPLE.COM
+        - question_name: DNS domain
+          variable: gmsa_domain
+          type: text
+          required: true
+          default: example.com
+        - question_name: LDAP server (DC hostname)
+          variable: gmsa_ldap_server
+          type: text
+          required: true
+          default: dc01.example.com
+        - question_name: LDAP search base
+          variable: gmsa_ldap_search_base
+          type: text
+          required: true
+          default: DC=example,DC=com
+        - question_name: gMSA sAMAccountName (no $)
+          variable: gmsa_sam_account_name
+          type: text
+          required: true
+          default: gmsa-ansible
+        - question_name: LDAP lookup username
+          variable: gmsa_ldap_lookup_user
+          type: text
+          required: false
+          default: svc-gmsa-lookup
+        - question_name: Skip win_ping (LDAP only)
+          variable: gmsa_skip_win_ping
+          type: multiplechoice
+          required: false
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Deploy krb5.conf from template
+          variable: gmsa_deploy_krb5_conf
+          type: multiplechoice
+          required: false
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Echo report to job stdout
+          variable: gmsa_diag_display_mode
+          type: multiplechoice
+          required: false
+          default: file
+          choices:
+            - file
+            - stdout
+
   - name: "Demo | Kerberos WinRM"
     description: EE Kerberos diagnostics and optional win_ping
     organization: "{{ playground_org_name }}"
@@ -1820,3 +1975,70 @@ controller_templates:
           type: text
           required: false
           default: /tmp/project-sync-collections
+
+  # ---------------------------------------------------------------------------
+  # Workflow verbosity override (API set / sample steps / API reset)
+  # ---------------------------------------------------------------------------
+  - name: "Demo | WJT Verbosity | Set Verbosity"
+    description: >-
+      Update controller verbosity on target job templates before workflow sample
+      steps (skips API when wjt_verbosity_level equals default).
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-wjt-verbosity/playbook-aap-set-verbosity.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_variables_on_launch: true
+    extra_vars:
+      wjt_verbosity_default: 0
+      wjt_verbosity_organization: "{{ playground_org_name }}"
+      wjt_verbosity_target_job_templates:
+        - "Demo | WJT Verbosity | Sample Step A"
+        - "Demo | WJT Verbosity | Sample Step B"
+
+  - name: "Demo | WJT Verbosity | Reset Verbosity"
+    description: >-
+      Restore default controller verbosity on target job templates after workflow
+      sample steps.
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-wjt-verbosity/playbook-aap-reset-verbosity.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_aap_credential_name }}"
+    job_type: run
+    become_enabled: false
+    ask_variables_on_launch: true
+    extra_vars:
+      wjt_verbosity_default: 0
+      wjt_verbosity_organization: "{{ playground_org_name }}"
+      wjt_verbosity_target_job_templates:
+        - "Demo | WJT Verbosity | Sample Step A"
+        - "Demo | WJT Verbosity | Sample Step B"
+
+  - name: "Demo | WJT Verbosity | Sample Step A"
+    description: Sample workflow child — demonstrates verbosity on debug tasks
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-wjt-verbosity/playbook-aap-sample-step.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    verbosity: 0
+    extra_vars:
+      wjt_verbosity_step_label: "Sample Step A"
+
+  - name: "Demo | WJT Verbosity | Sample Step B"
+    description: Second sample workflow child — same playbook, different label
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demo-wjt-verbosity/playbook-aap-sample-step.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    verbosity: 0
+    extra_vars:
+      wjt_verbosity_step_label: "Sample Step B"

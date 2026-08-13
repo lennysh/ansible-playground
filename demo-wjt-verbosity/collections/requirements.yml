@@ -1,0 +1,5 @@
+---
+# ansible.controller is usually present on AAP execution environments.
+collections:
+  - name: ansible.controller
+    version: ">=4.5.0"

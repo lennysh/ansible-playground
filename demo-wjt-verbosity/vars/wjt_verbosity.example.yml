@@ -1,0 +1,17 @@
+---
+# Copy to vars/wjt_verbosity.yml for local CLI runs (optional).
+#
+# Target job templates whose controller verbosity field will be updated.
+wjt_verbosity_target_job_templates:
+  - "Demo | WJT Verbosity | Sample Step A"
+  - "Demo | WJT Verbosity | Sample Step B"
+
+# Verbosity restored after the workflow sample steps (controller JT field, 0–5).
+wjt_verbosity_default: 0
+
+# set — apply wjt_verbosity_level; reset — restore wjt_verbosity_default.
+wjt_verbosity_mode: set
+wjt_verbosity_level: 2
+
+# Organization scope for job template lookups (defaults to playground org in AAP).
+# wjt_verbosity_organization: "Lenny's Ansible Playground"

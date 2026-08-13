@@ -1,0 +1,54 @@
+---
+# Workflow job templates — created when any Demo | WJT Verbosity | … JT is selected
+# on Playground | Apply CaC (see playground_demo_workflow_map in bootstrap.yml).
+controller_workflows:
+  - name: "Demo | WJT Verbosity"
+    description: >-
+      Survey-driven workflow verbosity: Set JT updates target template verbosity
+      via API, sample steps run, Reset JT restores default for manual launches.
+    organization: "{{ playground_org_name }}"
+    survey_enabled: true
+    allow_simultaneous: false
+    ask_variables_on_launch: false
+    destroy_current_nodes: true
+    survey_spec:
+      name: ""
+      description: >-
+        Verbosity applies to the sample job templates configured on the Set/Reset
+        job templates (not to the Set/Reset steps themselves).
+      spec:
+        - question_name: Verbosity
+          question_description: >-
+            Ansible verbosity for sample job templates (0 = Normal, 1 = -v,
+            2 = -vv, 3 = -vvv, 4 = -vvvv, 5 = -vvvvv). Default 0 skips Set
+            and Reset API calls. Non-zero values are restored after sample
+            steps even when a sample step fails.
+          variable: wjt_verbosity_level
+          type: integer
+          required: true
+          default: 0
+          min: 0
+          max: 5
+    simplified_workflow_nodes:
+      - identifier: wjt-verbosity-set
+        unified_job_template: "Demo | WJT Verbosity | Set Verbosity"
+        lookup_organization: "{{ playground_org_name }}"
+        success_nodes:
+          - wjt-verbosity-step-a
+        failure_nodes:
+          - wjt-verbosity-reset
+      - identifier: wjt-verbosity-step-a
+        unified_job_template: "Demo | WJT Verbosity | Sample Step A"
+        lookup_organization: "{{ playground_org_name }}"
+        success_nodes:
+          - wjt-verbosity-step-b
+        failure_nodes:
+          - wjt-verbosity-reset
+      - identifier: wjt-verbosity-step-b
+        unified_job_template: "Demo | WJT Verbosity | Sample Step B"
+        lookup_organization: "{{ playground_org_name }}"
+        always_nodes:
+          - wjt-verbosity-reset
+      - identifier: wjt-verbosity-reset
+        unified_job_template: "Demo | WJT Verbosity | Reset Verbosity"
+        lookup_organization: "{{ playground_org_name }}"

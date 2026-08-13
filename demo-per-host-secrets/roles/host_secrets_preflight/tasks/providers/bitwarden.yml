@@ -1,0 +1,143 @@
+---
+- name: Validate Bitwarden API settings
+  ansible.builtin.assert:
+    that:
+      - host_secrets_preflight_bitwarden_client_id | length > 0
+      - host_secrets_preflight_bitwarden_client_secret | length > 0
+    fail_msg: >-
+      host_secrets_preflight_bitwarden_client_id and host_secrets_preflight_bitwarden_client_secret
+      are required for bitwarden lookups.
+
+- name: Authenticate to Bitwarden API
+  ansible.builtin.uri:
+    url: "{{ host_secrets_preflight_bitwarden_identity_url | regex_replace('/$', '') }}/connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: client_credentials
+      scope: api
+      client_id: "{{ host_secrets_preflight_bitwarden_client_id }}"
+      client_secret: "{{ host_secrets_preflight_bitwarden_client_secret }}"
+      deviceIdentifier: "{{ host_secrets_preflight_bitwarden_device_identifier }}"
+      deviceName: "{{ host_secrets_preflight_bitwarden_device_name }}"
+      deviceType: "{{ host_secrets_preflight_bitwarden_device_type }}"
+    status_code: 200
+    return_content: true
+  register: host_secrets_preflight_bitwarden_token
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: List Bitwarden ciphers
+  ansible.builtin.uri:
+    url: "{{ host_secrets_preflight_bitwarden_api_url | regex_replace('/$', '') }}/ciphers"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ host_secrets_preflight_bitwarden_token.json.access_token }}"
+    return_content: true
+    status_code: 200
+  register: host_secrets_preflight_bitwarden_ciphers
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Normalize Bitwarden cipher list response
+  ansible.builtin.set_fact:
+    host_secrets_preflight_bitwarden_cipher_list: >-
+      {{
+        host_secrets_preflight_bitwarden_ciphers.json.data
+        if (
+          host_secrets_preflight_bitwarden_ciphers.json is mapping
+          and host_secrets_preflight_bitwarden_ciphers.json.data is defined
+        )
+        else host_secrets_preflight_bitwarden_ciphers.json
+      }}
+
+- name: Fail when Bitwarden vault data is still encrypted
+  ansible.builtin.fail:
+    msg: >-
+      Bitwarden /ciphers returned encrypted vault items (personal API keys cannot
+      read decrypted username/password). Unlock the vault first — for example
+      export BW_SESSION from `bw unlock` and use the Bitwarden CLI integration,
+      or use HashiCorp Vault / CyberArk for server-side credential retrieval.
+  when:
+    - (host_secrets_preflight_bitwarden_cipher_list | length) > 0
+    - host_secrets_preflight_bitwarden_cipher_list[0].name is defined
+    - host_secrets_preflight_bitwarden_cipher_list[0].name is match('^[0-9]+\.')
+
+- name: Select Bitwarden Login cipher matching lookup id
+  ansible.builtin.set_fact:
+    host_secrets_preflight_bitwarden_cipher: >-
+      {{
+        host_secrets_preflight_bitwarden_cipher_list
+        | selectattr('name', 'equalto', host_secret_lookup_id)
+        | selectattr('type', 'equalto', host_secrets_preflight_bitwarden_cipher_type_login)
+        | list
+        | first
+        | default(none)
+      }}
+
+- name: Fail when Bitwarden Login cipher is missing
+  ansible.builtin.fail:
+    msg: >-
+      No Bitwarden Login cipher named '{{ host_secret_lookup_id }}' was returned by the API.
+  when: host_secrets_preflight_bitwarden_cipher is none
+
+- name: Resolve Bitwarden SSH private key from Login hidden custom field
+  ansible.builtin.set_fact:
+    host_secrets_preflight_bitwarden_ssh_private_key: "{{ _bw_ssh_key_match.value | default('') }}"
+  vars:
+    _bw_ssh_key_field_name: >-
+      {{
+        hostvars[target_host].host_secret_bitwarden_ssh_private_key_field
+        | default(host_secrets_preflight_bitwarden_ssh_private_key_field)
+      }}
+    _bw_ssh_key_candidates: >-
+      {{
+        host_secrets_preflight_bitwarden_cipher.fields
+        | default([])
+        | selectattr('name', 'equalto', _bw_ssh_key_field_name)
+        | list
+      }}
+    _bw_ssh_key_match: >-
+      {{
+        (
+          _bw_ssh_key_candidates
+          | selectattr('type', 'equalto', 1)
+          | list
+          | first
+        )
+        if host_secrets_preflight_bitwarden_ssh_private_key_require_hidden | bool
+        else (
+          _bw_ssh_key_candidates
+          | selectattr('type', 'equalto', 1)
+          | list
+          | first
+          | default(
+              _bw_ssh_key_candidates
+              | selectattr('type', 'equalto', 0)
+              | list
+              | first
+            )
+        )
+      }}
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Fail when Bitwarden Login hidden SSH key field is missing
+  ansible.builtin.fail:
+    msg: >-
+      Bitwarden Login '{{ host_secret_lookup_id }}' is missing hidden custom field
+      '{{ hostvars[target_host].host_secret_bitwarden_ssh_private_key_field
+         | default(host_secrets_preflight_bitwarden_ssh_private_key_field) }}'
+      (type 1). Add a hidden custom field — do not store SSH keys in Notes.
+  when:
+    - host_secrets_preflight_set_ansible_ssh_private_key | bool
+    - hostvars[target_host].host_secret_require_ssh_private_key | default(false) | bool
+    - host_secrets_preflight_bitwarden_ssh_private_key | default('') | length == 0
+
+- name: Capture Bitwarden Login cipher payload
+  ansible.builtin.set_fact:
+    _host_secrets_preflight_payload:
+      username: "{{ host_secrets_preflight_bitwarden_cipher.login.username | default('') }}"
+      password: "{{ host_secrets_preflight_bitwarden_cipher.login.password | default('') }}"
+      ssh_private_key: "{{ host_secrets_preflight_bitwarden_ssh_private_key | default('') }}"
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: Map Bitwarden payload to connection fields
+  ansible.builtin.include_tasks: map_payload.yml

@@ -1,0 +1,28 @@
+---
+# Minimal gMSA + WinRM walkthrough — fetch password from AD, then win_ping / whoami.
+# Run via ansible-navigator only (EE container — do not use ansible-playbook on the host).
+#
+#   ansible-navigator run playbook-simple.yml -e @vars/gmsa.yml
+
+- name: gMSA WinRM — simple LDAP fetch and WinRM auth
+  hosts: windows
+  gather_facts: false
+  tasks:
+    - name: Fetch gMSA password and configure WinRM credentials
+      ansible.builtin.include_role:
+        name: gmsa_winrm
+
+    - name: win_ping as gMSA
+      ansible.windows.win_ping:
+      when: not gmsa_skip_win_ping | default(false) | bool
+
+    - name: whoami as gMSA
+      ansible.windows.win_shell:
+        cmd: whoami
+      register: gmsa_whoami
+      when: not gmsa_skip_win_ping | default(false) | bool
+
+    - name: Display whoami
+      ansible.builtin.debug:
+        msg: "{{ gmsa_whoami.stdout | trim }}"
+      when: not gmsa_skip_win_ping | default(false) | bool

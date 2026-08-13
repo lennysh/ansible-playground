@@ -1,0 +1,47 @@
+---
+# Per-host secrets preflight demo — resolve credentials, then run a follow-up play.
+#
+#   cp vars/secrets.example.yml vars/secrets.yml
+#   cp inventories/hosts.example.yml inventories/hosts.yml
+#   ansible-playbook playbook.yml -e @vars/secrets.yml
+
+- name: Preflight — resolve per-host credentials from external secrets providers
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Resolve host connection variables before target plays
+      ansible.builtin.include_role:
+        name: host_secrets_preflight
+      vars:
+        host_secrets_preflight_target_hosts: "{{ groups['managed'] | default([]) }}"
+
+- name: Workload — connect using per-host credentials set during preflight
+  hosts: managed
+  gather_facts: false
+  tasks:
+    - name: Show resolved connection identity (no secrets)
+      ansible.builtin.debug:
+        msg:
+          inventory_hostname: "{{ inventory_hostname }}"
+          provider: "{{ host_secret_provider | default(host_secrets_preflight_default_provider) }}"
+          lookup_id: "{{ host_secret_lookup_id | default('n/a') }}"
+          ansible_user: "{{ ansible_user | default('not set') }}"
+          ansible_connection: "{{ ansible_connection | default('ssh') }}"
+          ssh_key_cached: "{{ host_secrets_preflight_ssh_key_cached | default(false) | bool }}"
+
+    - name: Verify SSH connectivity when not using local connection
+      ansible.builtin.ping:
+      when: ansible_connection | default('ssh') != 'local'
+
+    - name: Simulate post-preflight task on local demo hosts
+      ansible.builtin.command:
+        cmd: "echo connected-as-{{ ansible_user | default('unknown') }}"
+      register: host_secrets_preflight_local_echo
+      changed_when: false
+      when: ansible_connection | default('ssh') == 'local'
+
+    - name: Show local demo command output
+      ansible.builtin.debug:
+        var: host_secrets_preflight_local_echo.stdout
+      when: ansible_connection | default('ssh') == 'local'

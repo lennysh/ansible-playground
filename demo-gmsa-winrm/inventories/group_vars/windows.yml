@@ -1,0 +1,7 @@
+---
+# WinRM connection defaults for the `windows` inventory group.
+# gMSA credentials are applied at runtime by the gmsa_winrm role.
+
+ansible_connection: winrm
+ansible_port: 5985
+ansible_winrm_transport: ntlm

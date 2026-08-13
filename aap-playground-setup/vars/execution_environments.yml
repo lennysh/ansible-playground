@@ -9,6 +9,12 @@ controller_execution_environments:
     pull: missing
     organization: "{{ playground_org_name }}"
 
+  - name: "{{ playground_ee_gmsa_winrm }}"
+    description: gMSA LDAP + WinRM tooling for demo-gmsa-winrm
+    image: "{{ playground_ee_gmsa_winrm_image }}"
+    pull: missing
+    organization: "{{ playground_org_name }}"
+
   - name: "{{ playground_ee_winrm_vs_psrp }}"
     description: Kerberos + WinRM/PSRP tooling for demo-winrm-vs-psrp
     image: "{{ playground_ee_winrm_vs_psrp_image }}"

@@ -1,0 +1,7 @@
+# Local lab config (copy from *.example.yml)
+vars/gmsa.yml
+inventories/hosts.yml
+
+gmsa-diag-report.txt
+context/*
+!context/bindep.txt

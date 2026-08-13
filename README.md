@@ -26,11 +26,15 @@ To load these demos into Ansible Automation Platform as an organization with sur
 | [demo-satellite-sync-and-promote](demo-satellite-sync-and-promote/README.md) | [Satellite sync, wait, and lifecycle promote](demo-satellite-sync-and-promote/README.md) — sync/publish/DEV, then tag-driven promote to QA and PROD after validation |
 | [demo-vmware-survey-options](demo-vmware-survey-options/README.md) | [vSphere survey option gather](demo-vmware-survey-options/README.md) — pull vsphere_destination / vsphere_datastore / vsphere_folder / vsphere_portgroup from vCenters and refresh an AAP provision JT survey |
 | [demo-kerberos-winrm](demo-kerberos-winrm/README.md) | [Kerberos tickets for WinRM](demo-kerberos-winrm/README.md) — EE diagnostics before/after `win_ping`; run via **ansible-navigator** or AAP only |
+| [demo-gmsa-winrm](demo-gmsa-winrm/README.md) | [gMSA WinRM authentication](demo-gmsa-winrm/README.md) — fetch `msDS-ManagedPassword` from AD, auth over WinRM as a gMSA; includes [lab-setup](demo-gmsa-winrm/lab-setup/README.md) from scratch |
 | [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md) | [WinRM vs PSRP timing (Kerberos)](demo-winrm-vs-psrp/README.md) — manual vs managed kinit, same Windows host, per-iteration comparison via Navigator/AAP EE |
 | [demo-aap-connectivity](demo-aap-connectivity/README.md) | [AAP installer connectivity preflight](demo-aap-connectivity/README.md) — Redis cluster bus, Receptor mesh, PostgreSQL, and platform TCP checks against an installer inventory |
 | [demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md) | [AAP Password survey PEM keys](demo-aap-survey-pem-key/README.md) — paste a masked multi-line private key into a Password survey; reconstruct PEM line breaks before downstream tasks |
 | [demo-support-assist](demo-support-assist/README.md) | [infra.support_assist](demo-support-assist/README.md) — AAP API gather, OCP must-gather, sosreport, and RH case create/update with surveyed AAP job templates |
 | [demo-aap-project-sync-collections](demo-aap-project-sync-collections/README.md) | [Project sync collection inventory](demo-aap-project-sync-collections/README.md) — parse galaxy install events from project updates (versions, download hosts, requirements/deps) across all or selected projects |
+| [demo-aap-pg-external-migrate](demo-aap-pg-external-migrate/README.md) | [External→external Postgres migrate](demo-aap-pg-external-migrate/README.md) — CLI playbook mirroring the controller operator `migrate_data.yml` dump\|restore pipe without requiring a managed PG pod (CLI-only) |
+| [demo-per-host-secrets](demo-per-host-secrets/README.md) | [Per-host secrets preflight](demo-per-host-secrets/README.md) — modular role that fetches each host's credentials from CyberArk, Vault, or Bitwarden before workload plays |
+| [demo-wjt-verbosity](demo-wjt-verbosity/README.md) | [WJT survey verbosity override](demo-wjt-verbosity/README.md) — workflow survey drives API updates to child job template verbosity, then resets for manual runs |
 
 
 ## Running a demo
@@ -40,7 +44,7 @@ cd demo-<name>
 ansible-playbook playbook.yml
 ```
 
-**Kerberos / Windows demos** ([demo-kerberos-winrm](demo-kerberos-winrm/README.md), [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md)) must run via **ansible-navigator** or **AAP** inside an execution environment — not bare `ansible-playbook` on your workstation (they template `/etc/krb5.conf` and run `kinit` on the controller).
+**Kerberos / Windows demos** ([demo-kerberos-winrm](demo-kerberos-winrm/README.md), [demo-winrm-vs-psrp](demo-winrm-vs-psrp/README.md), [demo-gmsa-winrm](demo-gmsa-winrm/README.md)) must run via **ansible-navigator** or **AAP** inside an execution environment — not bare `ansible-playbook` on your workstation (they template `/etc/krb5.conf` on the controller / in the EE).
 
 **PEM key survey demo** ([demo-aap-survey-pem-key](demo-aap-survey-pem-key/README.md)) requires `openssl` and `ssh-keygen` on the controller / execution environment.
 

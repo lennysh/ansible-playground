@@ -1,0 +1,9 @@
+---
+# Copy to hosts.yml and adjust hostnames.
+
+all:
+  children:
+    windows:
+      hosts:
+        win2022.example.com:
+          ansible_host: win2022.example.com

@@ -1,0 +1,29 @@
+---
+all:
+  children:
+    managed:
+      hosts:
+        web01:
+          ansible_connection: local
+          host_secret_provider: mock
+        web02:
+          ansible_connection: local
+          host_secret_provider: mock
+          host_secret_path_prefix: linux/
+          host_secret_path_suffix: "-ssh"
+        db01:
+          ansible_connection: local
+          host_secret_provider: mock
+          host_secret_id: db01-prod
+        app01:
+          ansible_connection: local
+          # hashicorp_vault — set host_secrets_preflight_vault_* in vars/secrets.yml
+          host_secret_provider: mock
+        app02:
+          ansible_connection: local
+          # cyberark — set host_secrets_preflight_cyberark_* in vars/secrets.yml
+          host_secret_provider: mock
+        app03:
+          ansible_connection: local
+          # bitwarden — set host_secrets_preflight_bitwarden_* in vars/secrets.yml
+          host_secret_provider: mock

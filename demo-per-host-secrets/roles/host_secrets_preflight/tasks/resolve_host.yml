@@ -1,0 +1,49 @@
+---
+- name: "Preflight block for {{ target_host }}"
+  block:
+    - name: "Build lookup identifier for {{ target_host }}"
+      ansible.builtin.set_fact:
+        host_secret_lookup_id: >-
+          {{
+            (
+              hostvars[target_host].host_secret_path_prefix
+              | default(host_secrets_preflight_path_prefix)
+            )
+            ~ (hostvars[target_host].host_secret_id | default(target_host))
+            ~ (
+              hostvars[target_host].host_secret_path_suffix
+              | default(host_secrets_preflight_path_suffix)
+            )
+          }}
+
+    - name: "Determine secrets provider for {{ target_host }}"
+      ansible.builtin.set_fact:
+        host_secret_provider_effective: >-
+          {{
+            hostvars[target_host].host_secret_provider
+            | default(host_secrets_preflight_default_provider)
+          }}
+
+    - name: "Validate provider for {{ target_host }}"
+      ansible.builtin.assert:
+        that:
+          - host_secret_provider_effective in host_secrets_preflight_supported_providers
+        fail_msg: >-
+          Host {{ target_host }} requested provider '{{ host_secret_provider_effective }}'.
+          Supported providers: {{ host_secrets_preflight_supported_providers | join(', ') }}.
+
+    - name: Fetch credentials from secrets provider
+      ansible.builtin.include_tasks: "providers/{{ host_secret_provider_effective }}.yml"
+
+    - name: "Apply connection variables on {{ target_host }}"
+      ansible.builtin.include_tasks: apply_connection_facts.yml
+
+  rescue:
+    - name: "Handle credential resolution failure for {{ target_host }}"
+      ansible.builtin.fail:
+        msg: >-
+          Failed to resolve secrets for {{ target_host }}
+          (provider={{ host_secret_provider_effective | default('unknown') }},
+          lookup_id={{ host_secret_lookup_id | default('unknown') }}):
+          {{ ansible_failed_result.msg | default(ansible_failed_result) }}
+      when: host_secrets_preflight_fail_on_missing | bool

@@ -1,0 +1,67 @@
+---
+- name: GMSA WinRM demo block
+  block:
+    - name: Deploy krb5.conf for the lab realm
+      ansible.builtin.template:
+        src: krb5.conf.j2
+        dest: /etc/krb5.conf
+        mode: "0644"
+      become: true
+      when: gmsa_deploy_krb5_conf | bool
+
+    - name: Retrieve gMSA managed password from Active Directory
+      ansible.builtin.command:
+        argv: "{{ gmsa_fetch_argv }}"
+      register: gmsa_fetch_cmd
+      changed_when: false
+      no_log: true
+      vars:
+        gmsa_fetch_argv: >-
+          {{
+            [
+              role_path ~ '/files/fetch_gmsa_password.py',
+              '--server', gmsa_ldap_server,
+              '--port', gmsa_ldap_port | string,
+              '--domain', gmsa_ldap_netbios_domain,
+              '--username', gmsa_ldap_lookup_user,
+              '--password', gmsa_ldap_lookup_password,
+              '--search-base', gmsa_ldap_search_base,
+              '--sam-account-name', gmsa_sam_account_name,
+              '--realm', gmsa_realm,
+              '--bind-type', gmsa_ldap_bind_type,
+            ]
+            + (['--use-ssl'] if gmsa_ldap_use_ssl | bool else [])
+            + (['--start-tls'] if gmsa_ldap_start_tls | bool else [])
+          }}
+
+    - name: Parse gMSA fetch JSON
+      ansible.builtin.set_fact:
+        gmsa_fetch: "{{ gmsa_fetch_cmd.stdout | from_json }}"
+
+    - name: Fail when gMSA password retrieval failed
+      ansible.builtin.fail:
+        msg: "gMSA password retrieval failed: {{ gmsa_fetch.error | default('unknown error') }}"
+      when: not gmsa_fetch.success | default(false) | bool
+
+    - name: Record gMSA identity (no secrets)
+      ansible.builtin.set_fact:
+        gmsa_resolved_upn: "{{ gmsa_fetch.upn }}"
+        gmsa_resolved_sam: "{{ gmsa_fetch.sam_account_name }}"
+
+    - name: Display resolved gMSA identity
+      ansible.builtin.debug:
+        msg:
+          sam_account_name: "{{ gmsa_resolved_sam }}"
+          upn: "{{ gmsa_resolved_upn }}"
+          ldap_server: "{{ gmsa_ldap_server }}"
+          winrm_transport: "{{ gmsa_winrm_transport }}"
+
+    - name: Apply gMSA credentials for WinRM
+      ansible.builtin.set_fact:
+        ansible_user: "{{ gmsa_resolved_upn }}"
+        ansible_password: "{{ gmsa_fetch.ntlm_password }}"
+        ansible_winrm_transport: "{{ gmsa_winrm_transport }}"
+      no_log: true
+
+  delegate_to: localhost
+  run_once: true

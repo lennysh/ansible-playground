@@ -1,0 +1,50 @@
+---
+- name: "Write SSH private key file for {{ target_host }}"
+  ansible.builtin.copy:
+    dest: "{{ host_secrets_preflight_key_cache_dir }}/{{ target_host }}.pem"
+    content: "{{ _host_secrets_preflight_ssh_private_key }}\n"
+    mode: "0600"
+  when:
+    - host_secrets_preflight_set_ansible_ssh_private_key | bool
+    - _host_secrets_preflight_ssh_private_key | default('') | length > 0
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+
+- name: "Set ansible SSH private key facts on {{ target_host }}"
+  ansible.builtin.set_fact:
+    ansible_ssh_private_key_file: "{{ host_secrets_preflight_key_cache_dir }}/{{ target_host }}.pem"
+    host_secret_lookup_id: "{{ host_secret_lookup_id }}"
+    host_secrets_preflight_ssh_key_cached: true
+  delegate_to: "{{ target_host }}"
+  delegate_facts: true
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+  when:
+    - host_secrets_preflight_set_ansible_ssh_private_key | bool
+    - _host_secrets_preflight_ssh_private_key | default('') | length > 0
+
+- name: "Set ansible_user on {{ target_host }} from secrets provider"
+  ansible.builtin.set_fact:
+    ansible_user: "{{ _host_secrets_preflight_username }}"
+    host_secret_lookup_id: "{{ host_secret_lookup_id }}"
+  delegate_to: "{{ target_host }}"
+  delegate_facts: true
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+  when:
+    - host_secrets_preflight_set_ansible_user | bool
+    - _host_secrets_preflight_username | default('') | length > 0
+
+- name: "Set ansible_password on {{ target_host }} from secrets provider"
+  ansible.builtin.set_fact:
+    ansible_password: "{{ _host_secrets_preflight_password }}"
+    ansible_become_password: >-
+      {{
+        _host_secrets_preflight_password
+        if host_secrets_preflight_set_ansible_become_password | bool
+        else omit
+      }}
+    host_secret_lookup_id: "{{ host_secret_lookup_id }}"
+  delegate_to: "{{ target_host }}"
+  delegate_facts: true
+  no_log: "{{ host_secrets_preflight_no_log | bool }}"
+  when:
+    - host_secrets_preflight_set_ansible_password | bool
+    - _host_secrets_preflight_password | default('') | length > 0
