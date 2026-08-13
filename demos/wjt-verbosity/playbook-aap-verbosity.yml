@@ -1,0 +1,23 @@
+---
+# AAP entry — set or reset Job Template verbosity via controller API.
+#
+# Required extra var:
+#   wjt_verbosity_mode — set | reset (workflow nodes pass via extra_data)
+#
+# Workflow survey / extra vars:
+#   wjt_verbosity_level — survey label (e.g. "2 (More Verbose)") or integer for CLI
+#
+# Job template extra_vars (configure on the JT):
+#   wjt_verbosity_target_job_templates — list of JT names to update
+#   wjt_verbosity_default — skip API when survey level equals this (default 0)
+#
+# Requires AAP Credential on the job template.
+
+- name: Manage job template verbosity for workflow sample steps
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Apply verbosity API role
+      ansible.builtin.include_role:
+        name: wjt_verbosity_api

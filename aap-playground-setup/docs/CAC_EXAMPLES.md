@@ -43,7 +43,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | AAP credential + textarea project list | `Demo \| Project Sync Collections` |
 | VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
 | VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
-| WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` workflow + Set/Reset/Sample JTs in [`demo-wjt-verbosity/`](../../demo-wjt-verbosity/README.md) |
+| WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` workflow — Manage Verbosity JT twice (`extra_data` mode) + sample JTs in [`demos/wjt-verbosity/`](../../demos/wjt-verbosity/README.md) |
 
 ## Demo selection → supporting objects
 
@@ -64,7 +64,7 @@ Unselected demos skip create; existing objects are **not** deleted.
 
 ## Adding a new AAP demo
 
-1. Add `demo-<name>/playbook-aap.yml` (+ README survey docs).
+1. Add `demos/<name>/playbook-aap.yml` (+ README survey docs).
 2. Append a `Demo | …` entry to `vars/job_templates.yml` (copy the closest pattern above). Attach any credentials / inventory / EE the demo needs on that JT.
 3. Add or extend an entry in `vars/demo_catalog.yml` (`job_templates:` and optional `workflows:`).
 4. Extend `vars/credentials.yml` / `credential_types.yml` / inventories / EEs if the demo needs **new** object types (selection filtering picks them up from the JT).

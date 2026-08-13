@@ -98,5 +98,5 @@ Selection filtering: `playbook.yml` derives supporting objects from each
 selected JT (plus `playground_always_*` / optional `playground_demo_deps` in
 [`vars/bootstrap.yml`](vars/bootstrap.yml)).
 
-Dynamic-inventory demos, `demo-lint-noqa`, and unfinished stubs are not given
+Dynamic-inventory demos, `demos/lint-noqa`, and unfinished stubs are not given
 job templates.

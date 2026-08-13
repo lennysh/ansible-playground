@@ -1,0 +1,41 @@
+---
+# Example vars for demos/aap-pg-external-migrate/playbook.yml
+# Copy and fill in real values; do not commit secrets.
+#
+# ansible-playbook playbook.yml -e @vars/migrate.yml
+# ansible-playbook playbook.yml -e @vars/migrate.yml -e migrate_check_only=true
+# ansible-playbook playbook.yml -e @vars/migrate.yml -e migrate_confirm=true
+
+require_confirm: true
+migrate_confirm: false
+migrate_check_only: false
+
+source_pg_host: old-pg.example.com
+source_pg_port: 5432
+source_pg_user: awx
+source_pg_password: CHANGE_ME_SOURCE
+source_pg_database: awx
+source_pg_sslmode: prefer
+
+dest_pg_host: new-pg.example.com
+dest_pg_port: 5432
+dest_pg_user: awx
+dest_pg_password: CHANGE_ME_DEST
+dest_pg_database: awx
+dest_pg_sslmode: prefer
+
+# Extra args appended to pg_dump (operator default: empty).
+# Useful for VM→cluster migrations that needed --exclude-table-data etc.
+pg_dump_suffix: ""
+
+# Operator migrate_data.yml uses: pg_restore --clean --if-exists
+pg_restore_extra_args: "--clean --if-exists"
+
+# Only needed to mirror managed-postgres GRANT/REVOKE behavior.
+grant_postgres_role: false
+# dest_pg_admin_user: postgres
+# dest_pg_admin_password: CHANGE_ME_ADMIN
+# dest_pg_app_user: awx
+
+keepalive_interval_seconds: 60
+hide_secrets: true

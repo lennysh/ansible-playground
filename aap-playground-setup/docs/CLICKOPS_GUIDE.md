@@ -249,9 +249,9 @@ re-run Apply with overrides to recreate).
 - [ ] Credential shells for the demos you selected filled in the UI (Machine /
       Satellite / Offline Token / VMware as needed)
 - [ ] Kerberos / gMSA EE images built and pushed **if** you selected those demos:
-      - `demo-kerberos-winrm-ee:latest` (see `demo-kerberos-winrm/execution-environment.yml`)
-      - `demo-gmsa-winrm-ee:latest` (see `demo-gmsa-winrm/execution-environment.yml`)
-      - `demo-winrm-vs-psrp-ee:latest` (see `demo-winrm-vs-psrp/execution-environment.yml`)
+      - `demo-kerberos-winrm-ee:latest` (see `demos/kerberos-winrm/execution-environment.yml`)
+      - `demo-gmsa-winrm-ee:latest` (see `demos/gmsa-winrm/execution-environment.yml`)
+      - `demo-winrm-vs-psrp-ee:latest` (see `demos/winrm-vs-psrp/execution-environment.yml`)
   - If images live under a registry prefix, re-run Setup with extra var
     `playground_ee_registry: quay.io/your-ns` (or edit `vars/bootstrap.yml` /
     [`extra_vars.example.yml`](../extra_vars.example.yml))

@@ -4,19 +4,19 @@
 # playground_ee_registry in bootstrap.yml or as an extra var if needed.
 controller_execution_environments:
   - name: "{{ playground_ee_kerberos_winrm }}"
-    description: Kerberos + WinRM tooling for demo-kerberos-winrm
+    description: Kerberos + WinRM tooling for demos/kerberos-winrm
     image: "{{ playground_ee_kerberos_winrm_image }}"
     pull: missing
     organization: "{{ playground_org_name }}"
 
   - name: "{{ playground_ee_gmsa_winrm }}"
-    description: gMSA LDAP + WinRM tooling for demo-gmsa-winrm
+    description: gMSA LDAP + WinRM tooling for demos/gmsa-winrm
     image: "{{ playground_ee_gmsa_winrm_image }}"
     pull: missing
     organization: "{{ playground_org_name }}"
 
   - name: "{{ playground_ee_winrm_vs_psrp }}"
-    description: Kerberos + WinRM/PSRP tooling for demo-winrm-vs-psrp
+    description: Kerberos + WinRM/PSRP tooling for demos/winrm-vs-psrp
     image: "{{ playground_ee_winrm_vs_psrp_image }}"
     pull: missing
     organization: "{{ playground_org_name }}"

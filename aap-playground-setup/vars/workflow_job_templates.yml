@@ -4,8 +4,8 @@
 controller_workflows:
   - name: "Demo | WJT Verbosity"
     description: >-
-      Survey-driven workflow verbosity: Set JT updates target template verbosity
-      via API, sample steps run, Reset JT restores default for manual launches.
+      Survey-driven workflow verbosity: Manage Verbosity JT updates target template
+      verbosity via API (set then reset), sample steps run in between.
     organization: "{{ playground_org_name }}"
     survey_enabled: true
     allow_simultaneous: false
@@ -14,13 +14,13 @@ controller_workflows:
     survey_spec:
       name: ""
       description: >-
-        Verbosity applies to the sample job templates configured on the Set/Reset
-        job templates (not to the Set/Reset steps themselves).
+        Verbosity applies to the sample job templates configured on the Manage
+        Verbosity job template (not to the Manage Verbosity steps themselves).
       spec:
         - question_name: Verbosity
           question_description: >-
             Ansible verbosity for sample job templates (same labels as Job
-            Template verbosity). Default skips Set and Reset API calls.
+            Template verbosity). Default skips set and reset API calls.
             Non-zero values are restored after sample steps even when a sample
             step fails.
           variable: wjt_verbosity_level
@@ -30,8 +30,10 @@ controller_workflows:
           choices: "{{ playground_wjt_verbosity_survey_choices }}"
     simplified_workflow_nodes:
       - identifier: wjt-verbosity-set
-        unified_job_template: "Demo | WJT Verbosity | Set Verbosity"
+        unified_job_template: "Demo | WJT Verbosity | Manage Verbosity"
         lookup_organization: "{{ playground_org_name }}"
+        extra_data:
+          wjt_verbosity_mode: set
         success_nodes:
           - wjt-verbosity-step-a
         failure_nodes:
@@ -49,5 +51,7 @@ controller_workflows:
         always_nodes:
           - wjt-verbosity-reset
       - identifier: wjt-verbosity-reset
-        unified_job_template: "Demo | WJT Verbosity | Reset Verbosity"
+        unified_job_template: "Demo | WJT Verbosity | Manage Verbosity"
         lookup_organization: "{{ playground_org_name }}"
+        extra_data:
+          wjt_verbosity_mode: reset

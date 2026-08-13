@@ -102,7 +102,7 @@ controller_templates:
     description: Reconstruct PEM private keys pasted into an AAP Password survey
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-aap-survey-pem-key/playbook-aap.yml
+    playbook: demos/aap-survey-pem-key/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -133,7 +133,7 @@ controller_templates:
     description: Runnable catalog of stock Jinja2 filters
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-jinja2-filters/playbook-aap.yml
+    playbook: demos/jinja2-filters/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -154,7 +154,7 @@ controller_templates:
     description: Runnable catalog of ansible.builtin filter plugins
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-ansible-filters/playbook-aap.yml
+    playbook: demos/ansible-filters/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -164,7 +164,7 @@ controller_templates:
     description: Download a collection artifact from Automation Hub via offline token
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-download-collection-tarball/playbook-aap.yml
+    playbook: demos/download-collection-tarball/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -202,7 +202,7 @@ controller_templates:
     description: Satellite sync/publish/DEV then survey-driven promote to QA/PROD
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-satellite-sync-and-promote/playbook-aap.yml
+    playbook: demos/satellite-sync-and-promote/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_satellite_credential_name }}"
@@ -260,7 +260,7 @@ controller_templates:
       Demo | VMware Provision Survey (Destination, Datastore, Folder, Portgroup)
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-vmware-survey-options/playbook-aap.yml
+    playbook: demos/vmware-survey-options/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_vmware_credential_name }}"
@@ -353,7 +353,7 @@ controller_templates:
       Folder, Portgroup) are refreshed by Demo | VMware Survey Options
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-vmware-survey-options/playbook-provision-survey.yml
+    playbook: demos/vmware-survey-options/playbook-provision-survey.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -413,7 +413,7 @@ controller_templates:
     description: Normalize messy survey host lists into a dynamic hosts target
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-hosts-advanced/playbook-aap.yml
+    playbook: demos/hosts-advanced/playbook-aap.yml
     inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
@@ -448,7 +448,7 @@ controller_templates:
       and set ansible_user/password before workload plays
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-per-host-secrets/playbook-aap.yml
+    playbook: demos/per-host-secrets/playbook-aap.yml
     inventory: "{{ playground_fake_hosts_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -528,7 +528,7 @@ controller_templates:
     description: "when: pitfalls — version checks, bool coercion, survey strings"
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-when/playbook-aap.yml
+    playbook: demos/when/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
@@ -563,7 +563,7 @@ controller_templates:
     description: Show strategy free interleaved host execution
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-strategy-free/playbook-aap.yml
+    playbook: demos/strategy-free/playbook-aap.yml
     inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
@@ -577,7 +577,7 @@ controller_templates:
     description: Forks vs async/poll 0 with controller-side monitoring
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-ansible-forks-async/playbook-aap.yml
+    playbook: demos/ansible-forks-async/playbook-aap.yml
     inventory: "{{ playground_fake_hosts_inventory_name }}"
     credentials:
       - "{{ playground_machine_credential_name }}"
@@ -621,7 +621,7 @@ controller_templates:
     description: Preflight TCP checks against an AAP installer inventory
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-aap-connectivity/playbook-aap.yml
+    playbook: demos/aap-connectivity/playbook-aap.yml
     credentials:
       - "{{ playground_machine_credential_name }}"
     job_type: run
@@ -661,7 +661,7 @@ controller_templates:
     description: Fetch gMSA password from AD and authenticate over WinRM
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-gmsa-winrm/playbook-aap.yml
+    playbook: demos/gmsa-winrm/playbook-aap.yml
     inventory: "{{ playground_windows_inventory_name }}"
     execution_environment: "{{ playground_ee_gmsa_winrm }}"
     credentials:
@@ -734,7 +734,7 @@ controller_templates:
     description: EE Kerberos diagnostics and optional win_ping
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-kerberos-winrm/playbook-aap.yml
+    playbook: demos/kerberos-winrm/playbook-aap.yml
     inventory: "{{ playground_windows_inventory_name }}"
     execution_environment: "{{ playground_ee_kerberos_winrm }}"
     credentials:
@@ -795,7 +795,7 @@ controller_templates:
     description: Time WinRM vs PSRP under manual and managed Kerberos kinit
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-winrm-vs-psrp/playbook-aap.yml
+    playbook: demos/winrm-vs-psrp/playbook-aap.yml
     inventory: "{{ playground_windows_inventory_name }}"
     execution_environment: "{{ playground_ee_winrm_vs_psrp }}"
     credentials:
@@ -859,7 +859,7 @@ controller_templates:
     description: Gather AAP API diagnostics and create a Red Hat support case with upload
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-aap-api-gather-aap.yml
+    playbook: demos/support-assist/playbook-aap-api-gather-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -959,7 +959,7 @@ controller_templates:
     description: Gather AAP API diagnostics and upload to an existing Red Hat support case
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-aap-api-gather-aap.yml
+    playbook: demos/support-assist/playbook-aap-api-gather-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -997,7 +997,7 @@ controller_templates:
     description: "Run OpenShift must-gather, create a Red Hat support case, and upload the archive"
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-ocp-must-gather-aap.yml
+    playbook: demos/support-assist/playbook-ocp-must-gather-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -1336,7 +1336,7 @@ controller_templates:
       Run OpenShift must-gather and upload the archive to an existing Red Hat support case
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-ocp-must-gather-aap.yml
+    playbook: demos/support-assist/playbook-ocp-must-gather-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -1451,7 +1451,7 @@ controller_templates:
       Collect sosreport from inventory hosts, create a Red Hat support case, and upload
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-sos-report-aap.yml
+    playbook: demos/support-assist/playbook-sos-report-aap.yml
     credentials:
       - "{{ playground_offline_token_credential_name }}"
       - "{{ playground_machine_credential_name }}"
@@ -1701,7 +1701,7 @@ controller_templates:
       Collect sosreport from inventory hosts and upload to an existing Red Hat support case
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-sos-report-aap.yml
+    playbook: demos/support-assist/playbook-sos-report-aap.yml
     credentials:
       - "{{ playground_offline_token_credential_name }}"
       - "{{ playground_machine_credential_name }}"
@@ -1728,7 +1728,7 @@ controller_templates:
     description: Create a Red Hat support case via the API (no diagnostic gather)
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-rh-case-create-aap.yml
+    playbook: demos/support-assist/playbook-rh-case-create-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -1817,7 +1817,7 @@ controller_templates:
       Target localhost and/or remote hosts (attachments read per host).
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-support-assist/playbook-rh-case-update-aap.yml
+    playbook: demos/support-assist/playbook-rh-case-update-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_offline_token_credential_name }}"
@@ -1885,7 +1885,7 @@ controller_templates:
       across all or selected projects
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-aap-project-sync-collections/playbook-aap.yml
+    playbook: demos/aap-project-sync-collections/playbook-aap.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_aap_credential_name }}"
@@ -1978,35 +1978,16 @@ controller_templates:
           default: /tmp/project-sync-collections
 
   # ---------------------------------------------------------------------------
-  # Workflow verbosity override (API set / sample steps / API reset)
+  # Workflow verbosity override (API manage / sample steps)
   # ---------------------------------------------------------------------------
-  - name: "Demo | WJT Verbosity | Set Verbosity"
+  - name: "Demo | WJT Verbosity | Manage Verbosity"
     description: >-
-      Update controller verbosity on target job templates before workflow sample
-      steps (skips API when wjt_verbosity_level equals default).
+      Set or reset controller verbosity on target job templates (wjt_verbosity_mode
+      extra var). Workflow nodes pass mode via extra_data; skips API when survey
+      verbosity equals default.
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-wjt-verbosity/playbook-aap-set-verbosity.yml
-    inventory: "{{ playground_inventory_name }}"
-    credentials:
-      - "{{ playground_aap_credential_name }}"
-    job_type: run
-    become_enabled: false
-    ask_variables_on_launch: true
-    extra_vars:
-      wjt_verbosity_default: 0
-      wjt_verbosity_organization: "{{ playground_org_name }}"
-      wjt_verbosity_target_job_templates:
-        - "Demo | WJT Verbosity | Sample Step A"
-        - "Demo | WJT Verbosity | Sample Step B"
-
-  - name: "Demo | WJT Verbosity | Reset Verbosity"
-    description: >-
-      Restore default controller verbosity on target job templates after workflow
-      sample steps.
-    organization: "{{ playground_org_name }}"
-    project: "{{ playground_project_name }}"
-    playbook: demo-wjt-verbosity/playbook-aap-reset-verbosity.yml
+    playbook: demos/wjt-verbosity/playbook-aap-verbosity.yml
     inventory: "{{ playground_inventory_name }}"
     credentials:
       - "{{ playground_aap_credential_name }}"
@@ -2024,7 +2005,7 @@ controller_templates:
     description: Sample workflow child — demonstrates verbosity on debug tasks
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-wjt-verbosity/playbook-aap-sample-step.yml
+    playbook: demos/wjt-verbosity/playbook-aap-sample-step.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false
@@ -2036,7 +2017,7 @@ controller_templates:
     description: Second sample workflow child — same playbook, different label
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
-    playbook: demo-wjt-verbosity/playbook-aap-sample-step.yml
+    playbook: demos/wjt-verbosity/playbook-aap-sample-step.yml
     inventory: "{{ playground_inventory_name }}"
     job_type: run
     become_enabled: false

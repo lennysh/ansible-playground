@@ -64,8 +64,7 @@ playground_demo_catalog:
       - "Demo | WinRM vs PSRP"
   "WJT Verbosity":
     job_templates:
-      - "Demo | WJT Verbosity | Set Verbosity"
-      - "Demo | WJT Verbosity | Reset Verbosity"
+      - "Demo | WJT Verbosity | Manage Verbosity"
       - "Demo | WJT Verbosity | Sample Step A"
       - "Demo | WJT Verbosity | Sample Step B"
     workflows:
