@@ -155,6 +155,6 @@ Deterministic offline credentials for CI and learning:
 
 ## AAP
 
-Job template: **Demo | Per-Host Secrets** (after running **Playground | Apply CaC**).
+Job template: **Demo | Per-Host Secrets** (select the **Per-Host Secrets** demo on **Playground | Apply CaC**).
 
 Uses the **Playground Fake Hosts Inventory** with the mock provider by default. Set per-host `host_secret_provider` in inventory host_vars when you attach a real inventory and provider configuration.

@@ -1,6 +1,6 @@
 ---
-# Workflow job templates — created when any Demo | WJT Verbosity | … JT is selected
-# on Playground | Apply CaC (see playground_demo_workflow_map in bootstrap.yml).
+# Workflow job templates — created when a demo lists workflows: in
+# vars/demo_catalog.yml (e.g. WJT Verbosity).
 controller_workflows:
   - name: "Demo | WJT Verbosity"
     description: >-

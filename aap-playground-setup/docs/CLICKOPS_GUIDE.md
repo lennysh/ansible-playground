@@ -164,7 +164,7 @@ survey). The second launch (Step 6b) uses the survey to pick demos.
 
 | Question | Variable | Notes |
 |---|---|---|
-| Demo job templates | `playground_demos` | Multiselect of every `Demo \| …` JT (default: all) |
+| Demos | `playground_demos` | Multiselect of catalog demo names (default: all); expands to JTs + WJTs |
 | Machine username | `playground_machine_username` | e.g. `ec2-user` |
 | Satellite URL | `playground_satellite_url` | e.g. `https://satellite.example.com` |
 | Satellite username | `playground_satellite_username` | |
@@ -174,9 +174,8 @@ survey). The second launch (Step 6b) uses the survey to pick demos.
 | VMware password | `playground_vmware_password` | Password type |
 | EE registry prefix | `playground_ee_registry` | e.g. `quay.io/your-ns` |
 
-Canonical demo list: `playground_demo_templates` in
-[`vars/bootstrap.yml`](../vars/bootstrap.yml). Survey spec:
-[`vars/job_templates.yml`](../vars/job_templates.yml).
+Canonical demo catalog: [`vars/demo_catalog.yml`](../vars/demo_catalog.yml)
+(`playground_demo_catalog`). Survey spec: [`vars/job_templates.yml`](../vars/job_templates.yml).
 
 ---
 
@@ -200,9 +199,10 @@ On success you should have:
 
 ### 6b — Select demos
 
-Open **Playground | Apply CaC** → **Launch** again. Use **Demo job templates**
-to choose what to create (default: all selected). Unselected demos are skipped;
-existing objects are **not** deleted.
+Open **Playground | Apply CaC** → **Launch** again. Use **Demos** to choose
+what to create (default: all selected). Each demo expands to its job templates
+and workflow templates. Unselected demos are skipped; existing objects are not
+deleted.
 
 Supporting objects (credentials, custom credential types, EEs, fake-hosts /
 Windows inventories) are created only when a selected demo needs them — for

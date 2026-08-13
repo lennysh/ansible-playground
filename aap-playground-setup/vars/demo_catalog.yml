@@ -1,0 +1,82 @@
+---
+# Demo catalog for Playground | Apply CaC survey (playground_demos multiselect).
+# Keys are human-facing demo names; values list the AAP objects to create.
+# Supporting credentials / inventories / EEs are still derived from the JTs.
+playground_demo_catalog:
+  "AAP Connectivity":
+    job_templates:
+      - "Demo | AAP Connectivity"
+  "AAP Survey PEM Key":
+    job_templates:
+      - "Demo | AAP Survey PEM Key"
+  "Ansible Filters":
+    job_templates:
+      - "Demo | Ansible Filters"
+  "Download Collection Tarball":
+    job_templates:
+      - "Demo | Download Collection Tarball"
+  "Forks and Async":
+    job_templates:
+      - "Demo | Forks and Async"
+  "Hosts Advanced":
+    job_templates:
+      - "Demo | Hosts Advanced"
+  "Per-Host Secrets":
+    job_templates:
+      - "Demo | Per-Host Secrets"
+  "Jinja2 Filters":
+    job_templates:
+      - "Demo | Jinja2 Filters"
+  "GMSA WinRM":
+    job_templates:
+      - "Demo | GMSA WinRM"
+  "Kerberos WinRM":
+    job_templates:
+      - "Demo | Kerberos WinRM"
+  "Project Sync Collections":
+    job_templates:
+      - "Demo | Project Sync Collections"
+  "Satellite Sync and Promote":
+    job_templates:
+      - "Demo | Satellite Sync and Promote"
+  "Strategy Free":
+    job_templates:
+      - "Demo | Strategy Free"
+  "VMware Survey Options":
+    job_templates:
+      - "Demo | VMware Survey Options"
+      - "Demo | VMware Provision Survey"
+  "Support Assist":
+    job_templates:
+      - "Demo | Support Assist | AAP API Gather | Create Case"
+      - "Demo | Support Assist | AAP API Gather | Update Case"
+      - "Demo | Support Assist | OCP Must Gather | Create Case"
+      - "Demo | Support Assist | OCP Must Gather | Update Case"
+      - "Demo | Support Assist | RH Case | Create"
+      - "Demo | Support Assist | RH Case | Update"
+      - "Demo | Support Assist | SOS Report | Create Case"
+      - "Demo | Support Assist | SOS Report | Update Case"
+  "When":
+    job_templates:
+      - "Demo | When"
+  "WinRM vs PSRP":
+    job_templates:
+      - "Demo | WinRM vs PSRP"
+  "WJT Verbosity":
+    job_templates:
+      - "Demo | WJT Verbosity | Set Verbosity"
+      - "Demo | WJT Verbosity | Reset Verbosity"
+      - "Demo | WJT Verbosity | Sample Step A"
+      - "Demo | WJT Verbosity | Sample Step B"
+    workflows:
+      - "Demo | WJT Verbosity"
+
+# Sorted keys for the Setup JT survey multiselect.
+playground_demo_names: >-
+  {{
+    playground_demo_catalog
+    | dict2items
+    | map(attribute='key')
+    | sort
+    | list
+  }}

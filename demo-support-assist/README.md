@@ -57,7 +57,7 @@ Gather without upload: `-e upload=false`.
 
 ## Ansible Automation Platform
 
-After syncing this project, run **Playground | Apply CaC** to create:
+After syncing this project, run **Playground | Apply CaC** and select the **Support Assist** demo to create:
 
 | Job template | Playbook | Credentials |
 |--------------|----------|-------------|

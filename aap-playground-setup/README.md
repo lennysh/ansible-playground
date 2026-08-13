@@ -18,6 +18,9 @@ sync the project and launch:
 
 **Templates → `Playground | Apply CaC` → Launch**
 
+On the survey, use **Demos** to pick catalog entries (each expands to its job
+templates and workflow templates). See [`vars/demo_catalog.yml`](vars/demo_catalog.yml).
+
 The playbook is idempotent: existing objects are updated; missing ones are
 created. Playground credentials use `state: exists` so re-runs do **not**
 overwrite username, host, or secrets you set in the UI after first create.
@@ -57,7 +60,7 @@ Optional credential / EE overrides (**initial create only** — credentials use
 
 | Extra var | Used for |
 |-----------|----------|
-| `playground_demos` | List of `Demo \| …` JT names (`[]` / omit = Setup JT only) |
+| `playground_demos` | List of catalog demo names (`[]` / omit = Setup JT only) |
 | `playground_apply_all_demos` | `true` → apply every demo (CLI convenience) |
 | `playground_machine_username` | Machine credential username |
 | `playground_satellite_url` | Satellite credential host |

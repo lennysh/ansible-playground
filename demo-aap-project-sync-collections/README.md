@@ -88,7 +88,7 @@ If **all three** export flags are `false`, no files are written and the playbook
 
 ## Ansible Automation Platform
 
-After project sync, run **Playground | Apply CaC** to create **Demo | Project Sync Collections**.
+After project sync, run **Playground | Apply CaC** and select the **Project Sync Collections** demo to create **Demo | Project Sync Collections**.
 
 | Survey / extra var | Purpose |
 |--------------------|---------|

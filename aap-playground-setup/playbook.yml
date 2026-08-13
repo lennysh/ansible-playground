@@ -60,14 +60,14 @@
           - yml
           - yaml
 
-    - name: Resolve demo job template selection
+    - name: Resolve selected demos from survey
       ansible.builtin.set_fact:
         # First clickops launch has no survey yet → playground_demos undefined →
-        # Setup JT only (adds the survey without creating every demo).
-        # Survey / -e with a list → those demos. playground_apply_all_demos → all.
-        playground_demos_selected: >-
+        # Setup JT only. Survey / -e with a list → those demos.
+        # playground_apply_all_demos → every key in playground_demo_catalog.
+        playground_demos_survey_selected: >-
           {{
-            playground_demo_templates
+            playground_demo_names
             if (playground_apply_all_demos | default(false) | bool)
             else (
               (
@@ -82,6 +82,43 @@
               if playground_demos is defined
               else []
             )
+          }}
+
+    - name: Resolve job templates and workflows for selected demos
+      ansible.builtin.set_fact:
+        playground_demos_selected: >-
+          {{
+            playground_demos_survey_selected
+            | map('extract', playground_demo_catalog)
+            | selectattr('job_templates', 'defined')
+            | map(attribute='job_templates')
+            | flatten
+            | unique
+            | list
+          }}
+        playground_workflows_selected: >-
+          {{
+            playground_demos_survey_selected
+            | map('extract', playground_demo_catalog)
+            | selectattr('workflows', 'defined')
+            | map(attribute='workflows')
+            | flatten
+            | unique
+            | list
+          }}
+
+    - name: Filter controller_workflows to selected workflows
+      when: controller_workflows is defined
+      ansible.builtin.set_fact:
+        controller_workflows: >-
+          {{
+            (
+              controller_workflows
+              | selectattr('name', 'in', playground_workflows_selected)
+              | list
+            )
+            if playground_workflows_selected | length > 0
+            else []
           }}
 
     - name: Filter controller_templates to Setup JT plus selected demos
@@ -104,7 +141,7 @@
       ansible.builtin.set_fact:
         playground_deps_extras: >-
           {{
-            playground_demos_selected
+            playground_demos_survey_selected
             | select('in', (playground_demo_deps | default({})) | list)
             | map('extract', playground_demo_deps | default({}))
             | list
@@ -253,48 +290,20 @@
       ansible.builtin.set_fact:
         controller_credentials: "{{ _playground_sanitized_credentials }}"
 
-    - name: Resolve workflow job templates for selected demos
-      ansible.builtin.set_fact:
-        playground_workflows_selected: >-
-          {{
-            (
-              playground_demo_workflow_map | default({})
-              | dict2items
-              | selectattr('key', 'in', playground_demos_selected)
-              | map(attribute='value')
-              | flatten
-              | unique
-              | list
-            )
-          }}
-
-    - name: Filter controller_workflows to workflows for selected demos
-      when: controller_workflows is defined
-      ansible.builtin.set_fact:
-        controller_workflows: >-
-          {{
-            (
-              controller_workflows
-              | selectattr('name', 'in', playground_workflows_selected)
-              | list
-            )
-            if playground_workflows_selected | length > 0
-            else []
-          }}
-
-    - name: Show which demo job templates will be applied
+    - name: Show which demos will be applied
       ansible.builtin.debug:
         msg: >-
-          Applying Setup JT + {{ playground_demos_selected | length }} demo(s):
-          {{ playground_demos_selected | join(', ')
-             if playground_demos_selected | length > 0
+          Applying Setup JT + {{ playground_demos_survey_selected | length }} demo(s):
+          {{ playground_demos_survey_selected | join(', ')
+             if playground_demos_survey_selected | length > 0
              else '(none — Setup JT only)' }}
 
-    - name: Show which workflow job templates will be applied
-      when: playground_workflows_selected | default([]) | length > 0
+    - name: Show derived job and workflow templates
+      when: playground_demos_survey_selected | length > 0
       ansible.builtin.debug:
-        msg: >-
-          Workflows: {{ playground_workflows_selected | join(', ') }}
+        msg:
+          - "Job templates ({{ playground_demos_selected | length }}): {{ playground_demos_selected | join(', ') }}"
+          - "Workflow templates ({{ playground_workflows_selected | length }}): {{ playground_workflows_selected | join(', ') if playground_workflows_selected | length > 0 else '(none)' }}"
 
     - name: Show supporting objects derived from selection
       ansible.builtin.debug:

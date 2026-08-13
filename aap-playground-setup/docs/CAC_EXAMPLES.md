@@ -11,7 +11,8 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 
 | Object type | Variable key | Sample file | Notes |
 |-------------|--------------|-------------|-------|
-| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names, `playground_demo_templates`, always-on + `playground_demo_deps` |
+| Naming / SCM constants | *(facts)* | [`vars/bootstrap.yml`](../vars/bootstrap.yml) | Org name, project URL, credential/EE names, always-on + `playground_demo_deps` |
+| Demo catalog (survey → JTs / WJTs) | `playground_demo_catalog` | [`vars/demo_catalog.yml`](../vars/demo_catalog.yml) | Keys are Setup survey choices; values list `job_templates` and optional `workflows` |
 | Organization | `aap_organizations` | [`vars/organizations.yml`](../vars/organizations.yml) | Always applied |
 | Inventory | `controller_inventories` | [`vars/inventories.yml`](../vars/inventories.yml) | Filtered by selected demos (localhost always) |
 | Host | `controller_hosts` | [`vars/hosts.yml`](../vars/hosts.yml) | Filtered with inventories; `ansible_connection: local` |
@@ -20,14 +21,14 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Credential | `controller_credentials` | [`vars/credentials.yml`](../vars/credentials.yml) | Filtered by selected demos (AAP credential always); `state: exists` |
 | Execution environment | `controller_execution_environments` | [`vars/execution_environments.yml`](../vars/execution_environments.yml) | Filtered by selected demos |
 | Job template + survey | `controller_templates` | [`vars/job_templates.yml`](../vars/job_templates.yml) | Setup JT + selected `Demo \| …` surveys |
-| Workflow job template + survey | `controller_workflows` | [`vars/workflow_job_templates.yml`](../vars/workflow_job_templates.yml) | Selected when a demo JT is listed in `playground_demo_workflow_map` |
+| Workflow job template + survey | `controller_workflows` | [`vars/workflow_job_templates.yml`](../vars/workflow_job_templates.yml) | Created when parent demo lists `workflows:` in `demo_catalog.yml` |
 
 ## Survey patterns in `job_templates.yml`
 
 | Pattern | Example JT |
 |---------|------------|
 | Optional seed survey (first create only) | `Playground \| Apply CaC` → Machine / Satellite / offline token / EE registry |
-| Demo multiselect (skip unselected JTs + unused deps) | `Playground \| Apply CaC` → `playground_demos` (list in `vars/bootstrap.yml`) |
+| Demo multiselect (skip unselected demos + unused deps) | `Playground \| Apply CaC` → `playground_demos` (keys in `vars/demo_catalog.yml`) |
 | Password (masked secret) | `Demo \| AAP Survey PEM Key` → `survey_pem_key` |
 | Textarea | `Demo \| Hosts Advanced` → `host_limit` |
 | Multiple choice / true-false | `Demo \| When`, Kerberos demos |
@@ -65,7 +66,7 @@ Unselected demos skip create; existing objects are **not** deleted.
 
 1. Add `demo-<name>/playbook-aap.yml` (+ README survey docs).
 2. Append a `Demo | …` entry to `vars/job_templates.yml` (copy the closest pattern above). Attach any credentials / inventory / EE the demo needs on that JT.
-3. Append the same JT name to `playground_demo_templates` in `vars/bootstrap.yml`.
+3. Add or extend an entry in `vars/demo_catalog.yml` (`job_templates:` and optional `workflows:`).
 4. Extend `vars/credentials.yml` / `credential_types.yml` / inventories / EEs if the demo needs **new** object types (selection filtering picks them up from the JT).
-5. Only if something must exist but is **not** on the JT, add an entry under `playground_demo_deps`.
+5. Only if something must exist but is **not** on the JT, add an entry under `playground_demo_deps` in `vars/bootstrap.yml` (key = catalog demo name).
 6. Re-run **Playground | Apply CaC** after project sync.

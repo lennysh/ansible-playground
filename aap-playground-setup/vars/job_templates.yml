@@ -26,15 +26,16 @@ controller_templates:
         On later launches, choose demos below (default: all). Credential and EE
         fields are optional seeds (first credential create only).
       spec:
-        - question_name: Demo job templates
+        - question_name: Demos
           question_description: >-
-            Select demos to create or refresh. Unselected demos are skipped
-            (existing JTs are not deleted). Default is all demos.
+            Select demos to create or refresh. Each demo expands to its job
+            templates (and workflow templates when applicable). Unselected demos
+            are skipped; existing objects are not deleted. Default is all demos.
           variable: playground_demos
           type: multiselect
           required: false
-          default: "{{ playground_demo_templates | join('\n') }}"
-          choices: "{{ playground_demo_templates }}"
+          default: "{{ playground_demo_names | join('\n') }}"
+          choices: "{{ playground_demo_names }}"
         - question_name: Machine username
           question_description: >-
             Playground Machine Credential username (e.g. ec2-user). Leave blank

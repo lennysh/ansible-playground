@@ -106,7 +106,7 @@ vsphere_portgroup:
 
 ## Ansible Automation Platform
 
-Two job templates (created by **Playground | Apply CaC**):
+Two job templates (select the **VMware Survey Options** demo on **Playground | Apply CaC**):
 
 | Job template | Role |
 |--------------|------|

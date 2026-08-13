@@ -64,8 +64,8 @@ the same skip rule.
 
 ## Launch in AAP
 
-1. Re-run **Playground \| Apply CaC** with this demo selected (creates the four
-   job templates and the workflow).
+1. Re-run **Playground \| Apply CaC** and select the **WJT Verbosity** demo
+   (creates four job templates and the workflow).
 2. Open **Templates → Workflow Templates → Demo \| WJT Verbosity**.
 3. Launch and pick **Verbosity** (0 = Normal … 5 = WinRM Debug).
 4. Inspect the Set step output, then the sample steps (higher verbosity shows
