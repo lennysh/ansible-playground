@@ -109,7 +109,38 @@ To use this pattern in another WJT:
 Only list job templates that should run at the elevated verbosity — omit the
 Manage Verbosity template itself.
 
-## Survey (workflow)
+### CaC in this repo
+
+Canonical definitions live under [`aap-playground-setup/vars/`](../../aap-playground-setup/vars/):
+
+| File | What it defines |
+|------|-----------------|
+| [`workflow_job_templates.yml`](../../aap-playground-setup/vars/workflow_job_templates.yml) | `Demo \| WJT Verbosity` workflow — survey, workflow `extra_vars` (targets/default/org), node `extra_data` (mode) |
+| [`job_templates.yml`](../../aap-playground-setup/vars/job_templates.yml) | Manage Verbosity + sample step job templates |
+| [`demo_catalog.yml`](../../aap-playground-setup/vars/demo_catalog.yml) | **WJT Verbosity** catalog entry (Setup survey multiselect) |
+
+The workflow `extra_vars` block in this README matches
+`workflow_job_templates.yml` for the demo workflow.
+
+## Sample step job templates
+
+Sample Step A and B share [`playbook-aap-sample-step.yml`](playbook-aap-sample-step.yml)
+but are separate job templates so each can have its own controller **verbosity**
+field (what the Manage Verbosity JT updates via API).
+
+Each sample JT sets a display label in **job template** `extra_vars` (not on the
+workflow):
+
+```yaml
+extra_vars:
+  wjt_verbosity_step_label: "Sample Step A"   # or "Sample Step B"
+```
+
+That var only affects debug banner text in the sample playbook. When reusing the
+pattern for real workloads, either create one JT per child playbook or pass
+`wjt_verbosity_step_label` via workflow node `extra_data` if the child JT
+prompts for extra variables.
+
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -148,8 +179,10 @@ ansible-playbook playbook.yml -e @vars/wjt_verbosity.yml
 |------|---------|
 | `playbook-aap-verbosity.yml` | WJT set/reset nodes — mode from `wjt_verbosity_mode` |
 | `playbook-aap-sample-step.yml` | Shared sample child playbook |
-| `roles/wjt_verbosity_api/` | API logic (`ansible.controller.job_template`) |
 | `playbook.yml` | CLI wrapper for set/reset testing |
+| `roles/wjt_verbosity_api/` | API logic (`ansible.controller.job_template`) |
+| `vars/wjt_verbosity.example.yml` | Example targets / mode / level for CLI runs |
+| `collections/requirements.yml` | `ansible.controller` for API module |
 
 ## Notes
 
