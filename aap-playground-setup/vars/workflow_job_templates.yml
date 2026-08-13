@@ -11,11 +11,18 @@ controller_workflows:
     allow_simultaneous: false
     ask_variables_on_launch: false
     destroy_current_nodes: true
+    extra_vars:
+      wjt_verbosity_default: 0
+      wjt_verbosity_organization: "{{ playground_org_name }}"
+      wjt_verbosity_target_job_templates:
+        - "Demo | WJT Verbosity | Sample Step A"
+        - "Demo | WJT Verbosity | Sample Step B"
     survey_spec:
       name: ""
       description: >-
-        Verbosity applies to the sample job templates configured on the Manage
-        Verbosity job template (not to the Manage Verbosity steps themselves).
+        Verbosity applies to the sample job templates listed in this workflow's
+        extra_vars (wjt_verbosity_target_job_templates), not to the Manage
+        Verbosity steps themselves.
       spec:
         - question_name: Verbosity
           question_description: >-

@@ -1982,9 +1982,9 @@ controller_templates:
   # ---------------------------------------------------------------------------
   - name: "Demo | WJT Verbosity | Manage Verbosity"
     description: >-
-      Set or reset controller verbosity on target job templates (wjt_verbosity_mode
-      extra var). Workflow nodes pass mode via extra_data; skips API when survey
-      verbosity equals default.
+      Set or reset controller verbosity on target job templates. Workflow passes
+      wjt_verbosity_mode via node extra_data; targets/default/org via workflow
+      extra_vars. Skips API when survey verbosity equals default.
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demos/wjt-verbosity/playbook-aap-verbosity.yml
@@ -1994,12 +1994,6 @@ controller_templates:
     job_type: run
     become_enabled: false
     ask_variables_on_launch: true
-    extra_vars:
-      wjt_verbosity_default: 0
-      wjt_verbosity_organization: "{{ playground_org_name }}"
-      wjt_verbosity_target_job_templates:
-        - "Demo | WJT Verbosity | Sample Step A"
-        - "Demo | WJT Verbosity | Sample Step B"
 
   - name: "Demo | WJT Verbosity | Sample Step A"
     description: Sample workflow child — demonstrates verbosity on debug tasks

@@ -12,9 +12,9 @@ pattern:
    templates via the API (skipped when the survey value is the default).
 3. **Sample steps** — child job templates that run at the updated verbosity.
 
-The Manage Verbosity job template is **workflow-agnostic**: point it at any list
-of job template names through `extra_vars`, and pass `wjt_verbosity_mode` per
-workflow node via `extra_data`.
+The Manage Verbosity job template is **workflow-agnostic**: it has no target list
+or org baked in. Each workflow job template supplies those via **workflow
+`extra_vars`**, and passes `wjt_verbosity_mode` per node via **`extra_data`**.
 
 ## Architecture
 
@@ -82,28 +82,29 @@ calls the API so you can force-restore templates outside a workflow.
 
 ## Configuring targets (reuse pattern)
 
-On the Manage Verbosity job template, `extra_vars` define which templates to
-touch:
+On each **workflow job template**, set `extra_vars` for which templates to touch:
 
 ```yaml
-wjt_verbosity_target_job_templates:
-  - "Demo | WJT Verbosity | Sample Step A"
-  - "Demo | WJT Verbosity | Sample Step B"
-wjt_verbosity_default: 0
+extra_vars:
+  wjt_verbosity_default: 0
+  wjt_verbosity_organization: "Lenny's Ansible Playground"
+  wjt_verbosity_target_job_templates:
+    - "Demo | WJT Verbosity | Sample Step A"
+    - "Demo | WJT Verbosity | Sample Step B"
 ```
+
+The Manage Verbosity **job template** stays empty of workflow-specific vars —
+only `ask_variables_on_launch: true` so workflow and node vars are accepted.
 
 To use this pattern in another WJT:
 
-1. Add **Manage Verbosity** as the first and last workflow nodes.
-2. On the set node, set `extra_data: { wjt_verbosity_mode: set }`; on the reset
-   node, `extra_data: { wjt_verbosity_mode: reset }`.
-3. Keep **Prompt for extra variables** enabled on the JT (`ask_variables_on_launch:
-   true` in CaC) so node `extra_data` is accepted.
-4. Either keep the default `extra_vars` target list on the JT, or override
-   `wjt_verbosity_target_job_templates` on the workflow node for that workflow
-   only.
-5. Add a WJT survey question `wjt_verbosity_level` (multiple choice, same labels
-   as Job Template verbosity) — workflow survey answers propagate to child nodes.
+1. Add **Manage Verbosity** as the first and last workflow nodes (same JT both times).
+2. On the set node, `extra_data: { wjt_verbosity_mode: set }`; on reset,
+   `extra_data: { wjt_verbosity_mode: reset }`.
+3. Define `wjt_verbosity_target_job_templates` (and optional default/org) on
+   **that workflow's** `extra_vars` with the job templates that workflow runs.
+4. Add a WJT survey question `wjt_verbosity_level` (multiple choice, same labels
+   as Job Template verbosity).
 
 Only list job templates that should run at the elevated verbosity — omit the
 Manage Verbosity template itself.

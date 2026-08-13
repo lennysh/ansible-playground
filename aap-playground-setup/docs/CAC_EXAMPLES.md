@@ -43,7 +43,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | AAP credential + textarea project list | `Demo \| Project Sync Collections` |
 | VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
 | VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
-| WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` workflow — Manage Verbosity JT twice (`extra_data` mode) + sample JTs in [`demos/wjt-verbosity/`](../../demos/wjt-verbosity/README.md) |
+| WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` — workflow `extra_vars` hold targets; Manage Verbosity JT is reusable; node `extra_data` sets mode — see [`demos/wjt-verbosity/`](../../demos/wjt-verbosity/README.md) |
 
 ## Demo selection → supporting objects
 

@@ -8,8 +8,8 @@ wjt_verbosity_level: "{{ wjt_verbosity_default }}"
 # Restored verbosity after workflow sample steps and skip threshold for set mode.
 wjt_verbosity_default: 0
 
-# Job template names to update (list). Override on the Set/Reset JT via extra_vars.
+# Job template names to update (list). Set on the workflow job template extra_vars.
 wjt_verbosity_target_job_templates: []
 
-# Organization for job template API lookups (set on Set/Reset JT extra_vars in CaC).
+# Organization for job template API lookups (workflow extra_vars).
 wjt_verbosity_organization: ""

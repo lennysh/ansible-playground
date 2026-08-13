@@ -26,8 +26,9 @@
     that:
       - wjt_verbosity_target_job_templates_normalized | length > 0
     fail_msg: >-
-      wjt_verbosity_target_job_templates is empty. Configure the list on the
-      Manage Verbosity job template extra_vars (or pass -e for CLI runs).
+      wjt_verbosity_target_job_templates is empty. Configure
+      wjt_verbosity_target_job_templates on the workflow job template extra_vars
+      (or pass -e for CLI runs).
 
 - name: Normalize survey verbosity to controller integer
   ansible.builtin.set_fact:
