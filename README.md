@@ -39,3 +39,9 @@ Run manually against all files:
 ```bash
 pre-commit run sanitize-strings --all-files
 ```
+
+## Related repos
+
+- [cheat-sheets](https://github.com/lennysh/cheat-sheets) — copy-paste notes (AAP, Automation Orchestrator, OpenShift, …)
+- [eda-playground](https://github.com/lennysh/eda-playground) — Event-Driven Ansible
+- [argocd-playground](https://github.com/lennysh/argocd-playground) — Argo CD GitOps for AAP, Automation Orchestrator, and related apps on OpenShift
