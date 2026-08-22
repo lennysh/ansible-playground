@@ -1,0 +1,72 @@
+---
+# AAP version — attach to inventory hosts (Linux recommended for Part 1).
+#
+# Part 1 writes to /etc/ansible/facts.d and requires become on the job template.
+# Part 2 uses a demo-owned directory under /tmp without become.
+#
+# CLI scaffolding (localhost, connection: local) lives in playbook.yml.
+- name: "Part 1 — default facts.d (/etc/ansible/facts.d)"
+  hosts: all
+  become: true
+  gather_facts: false
+  tags: [default-facts, local-facts]
+  vars:
+    demo_default_fact_dir: /etc/ansible/facts.d
+    demo_fact_path_label: "default /etc/ansible/facts.d"
+    demo_fact_dir: "{{ demo_default_fact_dir }}"
+    demo_fact_file: "{{ demo_fact_dir }}/playground-default.fact"
+    demo_fact_key: playground-default
+    demo_cleanup_path: "{{ demo_fact_file }}"
+  tasks:
+    - name: Note — setup and gather_facts use /etc/ansible/facts.d when fact_path is omitted
+      ansible.builtin.debug:
+        msg: >-
+          Default fact_path is {{ demo_default_fact_dir }}.
+          setup is called without fact_path so Ansible reads that directory.
+          Cleanup removes only {{ demo_fact_file | basename }}, not other files in facts.d.
+
+    - name: Demonstrate default facts.d write, re-gather, and cleanup
+      block:
+        - name: Run shared local-facts flow (default path)
+          ansible.builtin.include_tasks: tasks/demo_local_facts_flow.yml
+      rescue:
+        - name: Part 1 skipped — /etc/ansible/facts.d requires working become/root
+          ansible.builtin.debug:
+            msg: >-
+              Could not write to {{ demo_default_fact_dir }} (become failed).
+              Part 2 still runs below. Ensure the job template has privilege escalation enabled.
+      always:
+        - name: Cleanup — remove only our demo fact file (not all of facts.d)
+          ansible.builtin.file:
+            path: "{{ demo_cleanup_path }}"
+            state: absent
+          failed_when: false
+
+- name: "Part 2 — custom fact_path (/tmp/...)"
+  hosts: all
+  become: false
+  gather_facts: false
+  tags: [custom-facts, local-facts]
+  vars:
+    demo_fact_path_label: "custom fact_path"
+    demo_fact_dir: /tmp/ansible-playground-local-facts-demo
+    demo_fact_file: "{{ demo_fact_dir }}/playground-custom.fact"
+    demo_fact_key: playground-custom
+    demo_setup_fact_path: "{{ demo_fact_dir }}"
+    demo_cleanup_path: "{{ demo_fact_dir }}"
+  tasks:
+    - name: Note — pass fact_path to setup to use a non-default directory
+      ansible.builtin.debug:
+        msg: >-
+          fact_path={{ demo_fact_dir }} is passed to setup (can also be a play keyword).
+          This directory is demo-owned, so cleanup removes the whole tree.
+
+    - name: Demonstrate custom fact_path write, re-gather, and cleanup
+      block:
+        - name: Run shared local-facts flow (custom fact_path)
+          ansible.builtin.include_tasks: tasks/demo_local_facts_flow.yml
+      always:
+        - name: Cleanup — remove demo-owned facts.d directory
+          ansible.builtin.file:
+            path: "{{ demo_cleanup_path }}"
+            state: absent

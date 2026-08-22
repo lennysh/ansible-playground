@@ -33,6 +33,9 @@ playground_demo_catalog:
   "Kerberos WinRM":
     job_templates:
       - "Demo | Kerberos WinRM"
+  "Local Facts":
+    job_templates:
+      - "Demo | Local Facts"
   "Project Sync Collections":
     job_templates:
       - "Demo | Project Sync Collections"

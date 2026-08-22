@@ -1,0 +1,81 @@
+---
+# Shared flow for one facts.d location.
+# Vars from the including play:
+#   demo_fact_path_label — human label for debug output
+#   demo_fact_dir        — directory on the managed host
+#   demo_fact_file       — full path to the .fact file we create
+#   demo_fact_key        — filename without .fact (ansible_local.<key>)
+#   demo_cleanup_path    — removed at start (clean slate) and in the play always block
+#   demo_setup_fact_path — optional; omit to use default /etc/ansible/facts.d
+
+- name: "[{{ demo_fact_path_label }}] Clean slate — remove only our demo artifact(s)"
+  ansible.builtin.file:
+    path: "{{ demo_cleanup_path }}"
+    state: absent
+
+- name: "[{{ demo_fact_path_label }}] Gather local facts (no .fact file on disk yet)"
+  ansible.builtin.setup:
+    filter: ansible_local
+    fact_path: "{{ demo_setup_fact_path | default(omit) }}"
+
+- name: "[{{ demo_fact_path_label }}] Show ansible_local.{{ demo_fact_key }} is absent before write"
+  ansible.builtin.debug:
+    msg: >-
+      ansible_local.{{ demo_fact_key }} is
+      {{ 'defined' if (ansible_local is defined and demo_fact_key in ansible_local)
+      else 'undefined' }}
+      (expected: undefined)
+
+- name: "[{{ demo_fact_path_label }}] Cat fact file before write (expect missing)"
+  ansible.builtin.command: cat "{{ demo_fact_file }}"
+  register: demo_cat_before
+  failed_when: false
+  changed_when: false
+
+- name: "[{{ demo_fact_path_label }}] Display on-disk fact file before write"
+  ansible.builtin.debug:
+    msg: "{{ demo_cat_before.stdout if demo_cat_before.rc == 0 else '(file does not exist yet)' }}"
+
+- name: "[{{ demo_fact_path_label }}] Ensure facts.d directory exists"
+  ansible.builtin.file:
+    path: "{{ demo_fact_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: "[{{ demo_fact_path_label }}] Write local fact file"
+  ansible.builtin.copy:
+    dest: "{{ demo_fact_file }}"
+    mode: "0644"
+    content: "{{ demo_local_fact_data | to_nice_json }}"
+  vars:
+    demo_local_fact_data:
+      demo: true
+      message: Hello from facts.d
+      method: "{{ demo_fact_path_label }}"
+      source: ansible-playground local-facts demo
+
+- name: "[{{ demo_fact_path_label }}] Cat fact file after write"
+  ansible.builtin.command: cat "{{ demo_fact_file }}"
+  register: demo_cat_after
+  changed_when: false
+
+- name: "[{{ demo_fact_path_label }}] Display on-disk fact file after write"
+  ansible.builtin.debug:
+    var: demo_cat_after.stdout
+
+- name: "[{{ demo_fact_path_label }}] Show ansible_local.{{ demo_fact_key }} still absent without re-gather"
+  ansible.builtin.debug:
+    msg: >-
+      ansible_local.{{ demo_fact_key }} is still
+      {{ 'defined' if (ansible_local is defined and demo_fact_key in ansible_local)
+      else 'undefined' }}
+      in this play until setup runs again (expected: undefined)
+
+- name: "[{{ demo_fact_path_label }}] Re-gather local facts after writing the file"
+  ansible.builtin.setup:
+    filter: ansible_local
+    fact_path: "{{ demo_setup_fact_path | default(omit) }}"
+
+- name: "[{{ demo_fact_path_label }}] Show ansible_local.{{ demo_fact_key }} now returns values"
+  ansible.builtin.debug:
+    msg: "{{ ansible_local[demo_fact_key] }}"

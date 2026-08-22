@@ -35,6 +35,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | Multiselect | `Demo \| AAP Connectivity` → suites |
 | Integer defaults | `Demo \| Forks and Async` — use YAML ints (`12`, not `"12"`) |
 | No survey | `Demo \| Ansible Filters`, `Demo \| Strategy Free` |
+| No survey + privilege escalation | `Demo \| Local Facts` — `become_enabled: true` for `/etc/ansible/facts.d` (Part 1); Part 2 uses `/tmp` without become |
 | Custom EE + ask inventory | `Demo \| GMSA WinRM`, `Demo \| Kerberos WinRM`, `Demo \| WinRM vs PSRP` |
 | Custom credential on JT | Download Collection (Offline Token), Satellite, VMware Survey Options |
 | Offline token + create/update surveys | `Demo \| Support Assist \| …` (product/severity, case_id, OCP must-gather fields) |

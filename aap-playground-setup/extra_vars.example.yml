@@ -41,4 +41,5 @@
 # playground_demos:
 #   - "AAP Survey PEM Key"
 #   - "Jinja2 Filters"
+#   - "Local Facts"
 #   - "WJT Verbosity"

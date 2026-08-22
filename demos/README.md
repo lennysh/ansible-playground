@@ -12,6 +12,7 @@ AAP-runnable samples, `playbook-aap.yml`. See the root
 | [ansible-forks-async](ansible-forks-async/README.md) | [Forks and async jobs](ansible-forks-async/README.md) — how `forks` limits parallel host work and how `async` + `poll: 0` frees controller forks while remote jobs run |
 | [hosts-advanced](hosts-advanced/README.md) | [Normalizing messy host limit input](hosts-advanced/README.md) — parsing AAP survey-style host lists into a clean dynamic `hosts:` target |
 | [when](when/README.md) | [`when:` condition examples and pitfalls](when/README.md) — version checks, boolean coercion, `default()` bugs, and AND/OR grouping |
+| [local-facts](local-facts/README.md) | [Local facts (`facts.d`)](local-facts/README.md) — default `/etc/ansible/facts.d` vs custom `fact_path`; `cat` before/after, re-gather with `setup`, scoped cleanup in `always` |
 | [jinja2-filters](jinja2-filters/README.md) | [Jinja2 built-in filters](jinja2-filters/README.md) — runnable example of every stock Jinja2 filter (54 including aliases) |
 | [ansible-filters](ansible-filters/README.md) | [ansible.builtin filters](ansible-filters/README.md) — runnable example of every ansible-core filter plugin (70 filters) |
 | [lint-noqa](lint-noqa/README.md) | [Suppressing `yaml[line-length]`](lint-noqa/README.md) — `# noqa` vs yamllint for long lines |

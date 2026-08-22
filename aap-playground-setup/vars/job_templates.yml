@@ -791,6 +791,22 @@ controller_templates:
             - file
             - stdout
 
+  - name: "Demo | Local Facts"
+    description: >-
+      facts.d local facts — default /etc/ansible/facts.d vs custom fact_path;
+      cat before/after, re-gather with setup, scoped cleanup
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/local-facts/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: true
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    survey_enabled: false
+
   - name: "Demo | WinRM vs PSRP"
     description: Time WinRM vs PSRP under manual and managed Kerberos kinit
     organization: "{{ playground_org_name }}"
