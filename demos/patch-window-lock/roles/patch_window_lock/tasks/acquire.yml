@@ -1,0 +1,149 @@
+---
+# Two-phase acquire: inspect every host (no writes), then write on hosts that remain.
+# Requires strategy: linear so hostvars are complete before the aggregate tasks.
+
+- name: Ensure facts.d directory exists
+  ansible.builtin.file:
+    path: "{{ patch_lock_fact_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Inspect current patch lock
+  ansible.builtin.include_tasks: inspect.yml
+
+- name: Note — stealing expired or forced lock
+  ansible.builtin.debug:
+    msg: >-
+      Stealing patch lock on {{ inventory_hostname }}:
+      previous owner={{ patch_lock_current.owner | default('') }}
+      job_id={{ patch_lock_current.job_id | default('') }}
+      expired={{ patch_lock_expired | bool }}
+      force={{ patch_lock_force | bool }}
+  when:
+    - patch_lock_has_lease | bool
+    - not (patch_lock_conflict | bool)
+    - not (patch_lock_is_ours | bool)
+
+- name: Build busy-host list from play hostvars
+  ansible.builtin.set_fact:
+    patch_lock_skipped_csv: "{{ _csv | trim | regex_replace(',$', '') }}"
+    patch_lock_conflict_hosts: >-
+      {{
+        (_csv | trim | regex_replace(',$', '')).split(',')
+        | map('trim')
+        | reject('equalto', '')
+        | list
+      }}
+  vars:
+    _csv: >-
+      {% for h in ansible_play_hosts_all -%}
+      {%- if hostvars[h].patch_lock_conflict | default(false) | bool -%}
+      {{ h }},
+      {%- endif -%}
+      {%- endfor %}
+
+- name: Publish lock identity and skipped hosts as job artifacts
+  ansible.builtin.set_stats:
+    data:
+      patch_lock_owner: "{{ patch_lock_owner | string }}"
+      patch_lock_id: "{{ patch_lock_id_resolved | string }}"
+      patch_lock_skipped_hosts: "{{ patch_lock_skipped_csv }}"
+    aggregate: false
+  run_once: true
+
+- name: Fail — at least one host has a foreign unexpired patch lock
+  ansible.builtin.fail:
+    msg: "{{ patch_lock_fail_message }}"
+  when:
+    - patch_lock_fail_on_conflict | bool
+    - (patch_lock_conflict_hosts | length) > 0
+  vars:
+    patch_lock_fail_message: |-
+      Foreign unexpired patch lock(s) on this inventory.
+      Entire job failed (patch_lock_fail_on_conflict=true). Busy hosts:
+      {% for h in patch_lock_conflict_hosts %}
+      - {{ h }}: owner={{ hostvars[h].patch_lock_current.owner | default('?') }}
+        job_id={{ hostvars[h].patch_lock_current.job_id | default('?') }}
+        ttl_remaining_seconds={{ hostvars[h].patch_lock_ttl_remaining | default('?') }}
+      {% endfor %}
+      Re-run when those jobs finish, after TTL, or with patch_lock_force=true.
+
+- name: Fail — every host is busy (nothing to patch)
+  ansible.builtin.fail:
+    msg: >-
+      All {{ ansible_play_hosts_all | length }} hosts are held by a foreign
+      patch lock. Re-run later with --limit {{ patch_lock_skipped_csv }}
+      (or after TTL / with patch_lock_force=true).
+  when:
+    - not (patch_lock_fail_on_conflict | bool)
+    - (patch_lock_conflict_hosts | length) == (ansible_play_hosts_all | length)
+    - (ansible_play_hosts_all | length) > 0
+
+- name: Report hosts skipped due to foreign locks
+  ansible.builtin.debug:
+    msg: >-
+      Skipped {{ patch_lock_conflict_hosts | length }} busy host(s).
+      Re-run with --limit {{ patch_lock_skipped_csv }}
+  run_once: true
+  when:
+    - not (patch_lock_fail_on_conflict | bool)
+    - (patch_lock_conflict_hosts | length) > 0
+    - (patch_lock_conflict_hosts | length) < (ansible_play_hosts_all | length)
+
+- name: Remove busy host from the rest of this play
+  ansible.builtin.meta: end_host
+  when:
+    - not (patch_lock_fail_on_conflict | bool)
+    - patch_lock_conflict | bool
+
+- name: Write patch lock lease
+  ansible.builtin.copy:
+    dest: "{{ patch_lock_fact_file }}"
+    mode: "0644"
+    content: "{{ patch_lock_payload | to_nice_json }}"
+  vars:
+    patch_lock_payload:
+      locked: true
+      owner: "{{ patch_lock_owner | string }}"
+      lock_id: "{{ patch_lock_id_resolved | string }}"
+      job_id: "{{ patch_lock_job_id_resolved | string }}"
+      workflow_job_id: "{{ patch_lock_workflow_job_id_resolved | string }}"
+      started_at: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+      started_epoch: "{{ now(utc=true, fmt='%s') | int }}"
+      ttl_seconds: "{{ patch_lock_ttl_seconds_resolved | int }}"
+      ttl_minutes: "{{ ((patch_lock_ttl_seconds_resolved | int) / 60) | int }}"
+
+- name: Re-gather local facts after lock write
+  ansible.builtin.setup:
+    filter: ansible_local
+    fact_path: "{{ patch_lock_fact_dir }}"
+
+- name: Verify we still own the lease
+  ansible.builtin.set_fact:
+    patch_lock_current: "{{ _written }}"
+    patch_lock_lost_race: "{{ _lost | bool }}"
+    patch_lock_acquired: "{{ not (_lost | bool) }}"
+  vars:
+    _written: "{{ (ansible_local | default({}))[patch_lock_fact_name] | default({}) }}"
+    _lost: >-
+      {{
+        (_written.lock_id | default('') | string) != (patch_lock_id_resolved | string)
+        or (_written.owner | default('') | string) != (patch_lock_owner | string)
+      }}
+
+- name: Lost the write race — another job holds the lock
+  ansible.builtin.fail:
+    msg: >-
+      Lost race on {{ inventory_hostname }}: lock is
+      owner={{ patch_lock_current.owner | default('') }}
+      lock_id={{ patch_lock_current.lock_id | default('') }}.
+      Did not delete the winner's lease.
+  when:
+    - patch_lock_fail_on_conflict | bool
+    - patch_lock_lost_race | bool
+
+- name: Remove host that lost the write race from the rest of this play
+  ansible.builtin.meta: end_host
+  when:
+    - not (patch_lock_fail_on_conflict | bool)
+    - patch_lock_lost_race | bool

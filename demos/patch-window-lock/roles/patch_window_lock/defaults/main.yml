@@ -1,0 +1,31 @@
+---
+# acquire — inspect every host, then write a lease (or fail / skip).
+# release — remove the lease if we own it, it is expired, or force is set.
+patch_lock_state: acquire
+
+# Who holds the lease. Both teams use this role; only owner differs.
+# ORGA host-patching → host-patch; ORGB app-patching → app-patch.
+patch_lock_owner: cli
+
+# true: if ANY host has a foreign unexpired lock, fail every host (no writes).
+# false: skip busy hosts (meta: end_host), print a --limit CSV, continue.
+# Always fail when every host would be skipped so the job is not green.
+patch_lock_fail_on_conflict: true
+
+# Steal a live (unexpired) foreign lock. Expired locks are stolen without this.
+patch_lock_force: false
+
+# Lease lifetime from write time. Host patching might use 60; app patching 20.
+# Stored on disk as ttl_seconds. Override with patch_lock_ttl_seconds (extra-var)
+# when you need second-level precision; that wins over minutes when defined.
+patch_lock_ttl_minutes: 240
+
+# Standalone Release JT (no workflow): also match by owner. Inside a workflow,
+# lock_id is tower_workflow_job_id / awx_workflow_job_id so Work and the
+# always-node Release share identity without owner-only (avoids deleting a
+# sibling same-owner workflow's lease).
+patch_lock_release_match_owner_only: false
+
+# Default production path.
+patch_lock_fact_dir: /etc/ansible/facts.d
+patch_lock_fact_name: patch_lock

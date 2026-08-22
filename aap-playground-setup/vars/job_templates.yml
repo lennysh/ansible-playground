@@ -2034,3 +2034,121 @@ controller_templates:
     verbosity: 0
     extra_vars:
       wjt_verbosity_step_label: "Sample Step B"
+
+  # ---------------------------------------------------------------------------
+  # Patch window lock (cross-team lease in facts.d)
+  # ---------------------------------------------------------------------------
+  - name: "Demo | Patch Window | Work"
+    description: >-
+      Acquire a facts.d patch lease, pause (demo), always-release. Owner and
+      TTL come from the parent workflow extra_vars / survey. Launch the Host
+      Patch or App Patch workflow so the always-node Release still runs on cancel.
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/patch-window-lock/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: true
+    allow_simultaneous: true
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    ask_limit_on_launch: true
+    survey_enabled: true
+    extra_vars:
+      patch_lock_owner: host-patch
+    survey_spec:
+      name: ""
+      description: >-
+        Direct launch is supported, but prefer the Host Patch / App Patch
+        workflows so cancel still hits the Release node. Override owner via
+        extra vars when launching this template directly as app-patch.
+      spec:
+        - question_name: Fail if any host is already leased
+          question_description: >-
+            true = fail the entire job when any host has a foreign unexpired
+            lock. false = skip those hosts and print a comma-separated --limit.
+          variable: patch_lock_fail_on_conflict
+          type: multiplechoice
+          required: true
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Hold lock seconds (demo pause)
+          question_description: >-
+            Seconds to pause while holding the lease so you can launch a
+            second job. Production playbooks omit this pause.
+          variable: patch_lock_hold_seconds
+          type: integer
+          required: true
+          default: 90
+          min: 0
+          max: 3600
+        - question_name: Lock TTL minutes
+          question_description: >-
+            Abandoned leases expire after this many minutes and may be stolen.
+            Direct launch default is 60; App Patch workflow defaults to 20.
+          variable: patch_lock_ttl_minutes
+          type: integer
+          required: true
+          default: 60
+          min: 1
+          max: 10080
+        - question_name: Force steal live lock
+          question_description: >-
+            Ignore TTL and steal another owner's unexpired lease. Use only to
+            recover a stuck host.
+          variable: patch_lock_force
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+
+  - name: "Demo | Patch Window | Release"
+    description: >-
+      Remove patch_lock.fact when we own the lease, it is expired, or Force is
+      set. Workflow always-node after Work; also launch standalone for stuck locks.
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/patch-window-lock/playbook-aap-release.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_machine_credential_name }}"
+    job_type: run
+    become_enabled: true
+    allow_simultaneous: true
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    ask_limit_on_launch: true
+    survey_enabled: true
+    extra_vars:
+      patch_lock_release_match_owner_only: true
+    survey_spec:
+      name: ""
+      description: >-
+        When launched from a workflow, owner comes from workflow extra_vars
+        and this survey is unused. Standalone: set owner to the team whose
+        lease should be cleared.
+      spec:
+        - question_name: Lock owner
+          question_description: >-
+            Must match the owner that wrote the lease (host-patch or app-patch)
+            unless Force is true.
+          variable: patch_lock_owner
+          type: text
+          required: true
+          default: host-patch
+        - question_name: Force steal live lock
+          question_description: Remove the fact file even if another owner holds an unexpired lease.
+          variable: patch_lock_force
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+

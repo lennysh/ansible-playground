@@ -1,0 +1,90 @@
+---
+- name: Validate patch_lock_state
+  ansible.builtin.assert:
+    that:
+      - patch_lock_state in ['acquire', 'release']
+    fail_msg: >-
+      patch_lock_state must be 'acquire' or 'release'
+      (got {{ patch_lock_state | default('undefined') }}).
+
+- name: Validate patch_lock_owner
+  ansible.builtin.assert:
+    that:
+      - (patch_lock_owner | default('') | string | length) > 0
+    fail_msg: patch_lock_owner must be a non-empty string (e.g. host-patch, app-patch).
+
+- name: Resolve lock identity and TTL
+  ansible.builtin.set_fact:
+    patch_lock_id_resolved: "{{ _resolved_id | string }}"
+    patch_lock_held_id: "{{ _resolved_id | string }}"
+    patch_lock_job_id_resolved: "{{ _job_id_resolved | string }}"
+    patch_lock_workflow_job_id_resolved: "{{ _workflow_id | string }}"
+    patch_lock_ttl_seconds_resolved: "{{ _ttl_seconds | int }}"
+    patch_lock_fact_file: "{{ patch_lock_fact_dir }}/{{ patch_lock_fact_name }}.fact"
+  vars:
+    _workflow_id: "{{ awx_workflow_job_id | default(tower_workflow_job_id | default('')) | string }}"
+    _job_id: "{{ awx_job_id | default(tower_job_id | default('')) | string }}"
+    _resolved_id: >-
+      {{
+        (
+          [
+            patch_lock_held_id | default('') | string,
+            patch_lock_id | default('') | string,
+            awx_workflow_job_id | default(tower_workflow_job_id | default('')) | string,
+            awx_job_id | default(tower_job_id | default('')) | string
+          ]
+          | map('trim')
+          | reject('equalto', '')
+          | list
+          + ['']
+        ) | first
+      }}
+    _job_id_resolved: >-
+      {{
+        (
+          [awx_job_id | default(tower_job_id | default('')) | string]
+          | map('trim')
+          | reject('equalto', '')
+          | list
+          + [_resolved_id]
+        ) | first
+      }}
+    _ttl_seconds: >-
+      {{
+        (patch_lock_ttl_seconds | int)
+        if patch_lock_ttl_seconds is defined
+        else ((patch_lock_ttl_minutes | default(240) | int) * 60)
+      }}
+
+- name: Require AAP job identity
+  ansible.builtin.assert:
+    that:
+      - (patch_lock_id_resolved | default('') | string | length) > 0
+    fail_msg: >-
+      patch-window-lock is AAP-only. Launch Demo | Patch Window | Host Patch
+      or App Patch so awx_workflow_job_id / tower_workflow_job_id (preferred:
+      Work and the always-node Release share it) or awx_job_id / tower_job_id
+      is injected. To exercise playbook-aap.yml without a controller, pass
+      -e tower_workflow_job_id=<id> -e tower_job_id=<id>.
+
+- name: Show patch lock parameters
+  ansible.builtin.debug:
+    msg:
+      state: "{{ patch_lock_state }}"
+      owner: "{{ patch_lock_owner }}"
+      lock_id: "{{ patch_lock_id_resolved }}"
+      job_id: "{{ patch_lock_job_id_resolved }}"
+      workflow_job_id: "{{ patch_lock_workflow_job_id_resolved }}"
+      ttl_seconds: "{{ patch_lock_ttl_seconds_resolved | int }}"
+      fail_on_conflict: "{{ patch_lock_fail_on_conflict | bool }}"
+      force: "{{ patch_lock_force | bool }}"
+      fact_file: "{{ patch_lock_fact_file }}"
+  run_once: true
+
+- name: Acquire patch lock lease
+  ansible.builtin.include_tasks: acquire.yml
+  when: patch_lock_state == 'acquire'
+
+- name: Release patch lock lease
+  ansible.builtin.include_tasks: release.yml
+  when: patch_lock_state == 'release'

@@ -1,0 +1,40 @@
+---
+# Gather ansible_local from patch_lock_fact_dir and classify the lease on this host.
+# Does not create the directory (acquire does that before including this file).
+
+- name: Gather ansible_local from patch lock fact_path (acquire)
+  ansible.builtin.setup:
+    filter: ansible_local
+    fact_path: "{{ patch_lock_fact_dir }}"
+  when: patch_lock_state == 'acquire'
+
+- name: Gather ansible_local from patch lock fact_path (release)
+  ansible.builtin.setup:
+    filter: ansible_local
+    fact_path: "{{ patch_lock_fact_dir }}"
+  ignore_unreachable: true
+  when: patch_lock_state == 'release'
+
+- name: Evaluate existing patch lock lease
+  ansible.builtin.set_fact:
+    patch_lock_current: "{{ _current }}"
+    patch_lock_has_lease: "{{ _has | bool }}"
+    patch_lock_now_epoch: "{{ _now | int }}"
+    patch_lock_expired: "{{ _expired | bool }}"
+    patch_lock_ttl_remaining: "{{ _remaining | int }}"
+    patch_lock_owner_matches: "{{ _owner_matches | bool }}"
+    patch_lock_id_matches: "{{ _id_matches | bool }}"
+    patch_lock_is_ours: "{{ _is_ours | bool }}"
+    patch_lock_conflict: "{{ _conflict | bool }}"
+  vars:
+    _now: "{{ now(utc=true, fmt='%s') | int }}"
+    _current: "{{ (ansible_local | default({}))[patch_lock_fact_name] | default({}) }}"
+    _has: "{{ (_current.owner | default('') | string | length) > 0 }}"
+    _started: "{{ _current.started_epoch | default(0) | int }}"
+    _ttl: "{{ _current.ttl_seconds | default(0) | int }}"
+    _expired: "{{ (_has | bool) and (_ttl | int > 0) and ((_now | int) > ((_started | int) + (_ttl | int))) }}"
+    _remaining: "{{ [((_started | int) + (_ttl | int)) - (_now | int), 0] | max }}"
+    _owner_matches: "{{ (_current.owner | default('') | string) == (patch_lock_owner | string) }}"
+    _id_matches: "{{ (_current.lock_id | default('') | string) == (patch_lock_id_resolved | string) }}"
+    _is_ours: "{{ (_has | bool) and (_owner_matches | bool) and (_id_matches | bool) }}"
+    _conflict: "{{ (_has | bool) and not (_is_ours | bool) and not (_expired | bool) and not (patch_lock_force | bool) }}"

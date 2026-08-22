@@ -1,0 +1,62 @@
+---
+# Best-effort release. Never deletes another owner's unexpired lease unless
+# patch_lock_force is true. Idempotent when the file is already gone.
+
+- name: Inspect current patch lock
+  ansible.builtin.include_tasks: inspect.yml
+
+- name: Decide whether this host's lease should be removed
+  ansible.builtin.set_fact:
+    patch_lock_should_release: "{{ _should | bool }}"
+  vars:
+    _artifact_id: "{{ patch_lock_id | default('', true) | string }}"
+    _artifact_defined: "{{ (_artifact_id | length) > 0 }}"
+    _in_workflow: "{{ (patch_lock_workflow_job_id_resolved | default('') | string | length) > 0 }}"
+    _lock_id_ok: >-
+      {{
+        (patch_lock_id_matches | bool)
+        or (
+          (_artifact_defined | bool)
+          and ((patch_lock_current.lock_id | default('') | string) == _artifact_id)
+        )
+      }}
+    _owner_only: >-
+      {{
+        (patch_lock_release_match_owner_only | bool)
+        and not (_in_workflow | bool)
+        and (patch_lock_owner_matches | bool)
+      }}
+    _should: >-
+      {{
+        (patch_lock_has_lease | bool)
+        and (
+          (patch_lock_force | bool)
+          or (patch_lock_expired | bool)
+          or ((patch_lock_owner_matches | bool) and (_lock_id_ok | bool))
+          or (_owner_only | bool)
+        )
+      }}
+
+- name: Skip release — no lease on disk
+  ansible.builtin.debug:
+    msg: "No patch lock on {{ inventory_hostname }} ({{ patch_lock_fact_file }})."
+  when: not (patch_lock_has_lease | default(false) | bool)
+
+- name: Skip release — foreign unexpired lock
+  ansible.builtin.debug:
+    msg: >-
+      Leaving foreign patch lock on {{ inventory_hostname }}:
+      owner={{ patch_lock_current.owner | default('') }}
+      job_id={{ patch_lock_current.job_id | default('') }}
+      ttl_remaining_seconds={{ patch_lock_ttl_remaining | default(0) }}
+  when:
+    - patch_lock_has_lease | default(false) | bool
+    - not (patch_lock_should_release | bool)
+
+- name: Remove patch lock fact file
+  ansible.builtin.file:
+    path: "{{ patch_lock_fact_file }}"
+    state: absent
+  ignore_unreachable: true
+  failed_when: false
+  when: patch_lock_should_release | default(false) | bool

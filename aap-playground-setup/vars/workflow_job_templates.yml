@@ -62,3 +62,154 @@ controller_workflows:
         lookup_organization: "{{ playground_org_name }}"
         extra_data:
           wjt_verbosity_mode: reset
+
+  # ---------------------------------------------------------------------------
+  # Patch window lock (cross-team lease in facts.d)
+  # ---------------------------------------------------------------------------
+  # Launch the two WJTs at the same time (not one workflow that runs both orgs).
+  # Owner and default TTL are baked per WJT; Work/Release JTs are shared.
+  - name: "Demo | Patch Window | Host Patch"
+    description: >-
+      ORGA host-patching: acquire a facts.d lease, hold, always-release. Launch
+      alongside App Patch to show the conflict. Default TTL 60 minutes.
+    organization: "{{ playground_org_name }}"
+    survey_enabled: true
+    allow_simultaneous: true
+    ask_inventory_on_launch: true
+    ask_limit_on_launch: true
+    ask_variables_on_launch: false
+    destroy_current_nodes: true
+    extra_vars:
+      patch_lock_owner: host-patch
+      patch_lock_ttl_minutes: 60
+    survey_spec:
+      name: ""
+      description: >-
+        Same role as App Patch; only patch_lock_owner (host-patch) and the
+        default TTL differ. Fail-on-conflict true fails the whole job if any
+        host is leased; false skips busy hosts and prints a --limit list.
+      spec:
+        - question_name: Fail if any host is already leased
+          question_description: >-
+            true = fail the entire job when any host has a foreign unexpired
+            lock. false = skip those hosts and print a comma-separated --limit.
+          variable: patch_lock_fail_on_conflict
+          type: multiplechoice
+          required: true
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Hold lock seconds (demo pause)
+          question_description: >-
+            Seconds to pause while holding the lease so you can launch the
+            other workflow. Production playbooks omit this pause.
+          variable: patch_lock_hold_seconds
+          type: integer
+          required: true
+          default: 90
+          min: 0
+          max: 3600
+        - question_name: Lock TTL minutes
+          question_description: >-
+            Abandoned leases (cancelled job, crashed EE) expire after this
+            many minutes and may be stolen. Host patching default is 60.
+          variable: patch_lock_ttl_minutes
+          type: integer
+          required: true
+          default: 60
+          min: 1
+          max: 10080
+        - question_name: Force steal live lock
+          question_description: >-
+            Ignore TTL and steal another owner's unexpired lease. Use only to
+            recover a stuck host.
+          variable: patch_lock_force
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+    simplified_workflow_nodes:
+      - identifier: patch-window-work
+        unified_job_template: "Demo | Patch Window | Work"
+        lookup_organization: "{{ playground_org_name }}"
+        always_nodes:
+          - patch-window-release
+      - identifier: patch-window-release
+        unified_job_template: "Demo | Patch Window | Release"
+        lookup_organization: "{{ playground_org_name }}"
+
+  - name: "Demo | Patch Window | App Patch"
+    description: >-
+      ORGB app-patching: same Work + Release JTs as Host Patch with owner
+      app-patch. Default TTL 20 minutes. Launch alongside Host Patch to collide.
+    organization: "{{ playground_org_name }}"
+    survey_enabled: true
+    allow_simultaneous: true
+    ask_inventory_on_launch: true
+    ask_limit_on_launch: true
+    ask_variables_on_launch: false
+    destroy_current_nodes: true
+    extra_vars:
+      patch_lock_owner: app-patch
+      patch_lock_ttl_minutes: 20
+    survey_spec:
+      name: ""
+      description: >-
+        Same role as Host Patch; only patch_lock_owner (app-patch) and the
+        default TTL differ.
+      spec:
+        - question_name: Fail if any host is already leased
+          question_description: >-
+            true = fail the entire job when any host has a foreign unexpired
+            lock. false = skip those hosts and print a comma-separated --limit.
+          variable: patch_lock_fail_on_conflict
+          type: multiplechoice
+          required: true
+          default: "true"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Hold lock seconds (demo pause)
+          question_description: >-
+            Seconds to pause while holding the lease so you can launch the
+            other workflow. Production playbooks omit this pause.
+          variable: patch_lock_hold_seconds
+          type: integer
+          required: true
+          default: 90
+          min: 0
+          max: 3600
+        - question_name: Lock TTL minutes
+          question_description: >-
+            Abandoned leases expire after this many minutes and may be stolen.
+            App patching default is 20.
+          variable: patch_lock_ttl_minutes
+          type: integer
+          required: true
+          default: 20
+          min: 1
+          max: 10080
+        - question_name: Force steal live lock
+          question_description: >-
+            Ignore TTL and steal another owner's unexpired lease. Use only to
+            recover a stuck host.
+          variable: patch_lock_force
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+    simplified_workflow_nodes:
+      - identifier: patch-window-work
+        unified_job_template: "Demo | Patch Window | Work"
+        lookup_organization: "{{ playground_org_name }}"
+        always_nodes:
+          - patch-window-release
+      - identifier: patch-window-release
+        unified_job_template: "Demo | Patch Window | Release"
+        lookup_organization: "{{ playground_org_name }}"
+

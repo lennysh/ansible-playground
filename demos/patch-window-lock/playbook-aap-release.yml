@@ -1,0 +1,26 @@
+---
+# AAP Release entry — workflow always-node and standalone stuck-lock cleanup.
+#
+# Inside a workflow, lock_id is the workflow job id (same extra var on Work and
+# this node). Standalone launch has no workflow id; owner-only matching then
+# applies (patch_lock_release_match_owner_only) so you can clear a stuck lease.
+#
+# Owner comes from the parent workflow extra_vars (host-patch / app-patch).
+# become required for /etc/ansible/facts.d.
+
+- name: Release patch window lock (AAP)
+  hosts: all
+  gather_facts: false
+  strategy: linear
+  become: true
+  vars:
+    patch_lock_owner: host-patch
+    patch_lock_fact_dir: /etc/ansible/facts.d
+    patch_lock_state: release
+    patch_lock_release_match_owner_only: true
+  tasks:
+    - name: Release patch lock
+      ansible.builtin.import_role:
+        name: patch_window_lock
+      vars:
+        patch_lock_state: release

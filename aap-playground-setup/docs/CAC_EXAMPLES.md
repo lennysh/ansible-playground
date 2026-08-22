@@ -45,6 +45,7 @@ Seed / clickops steps (org Galaxy credential, project, Setup JT):
 | VMware credential + textarea vCenter list | `Demo \| VMware Survey Options` |
 | VMware gather → refresh provision JT survey | `Demo \| VMware Survey Options` → `Demo \| VMware Provision Survey` |
 | WJT + API set/reset JT verbosity | `Demo \| WJT Verbosity` — workflow `extra_vars` hold targets; Manage Verbosity JT is reusable; node `extra_data` sets mode — see [`demos/wjt-verbosity/`](../../demos/wjt-verbosity/README.md) |
+| WJT + facts.d patch lease (always-node cleanup) | `Demo \| Patch Window \| Host Patch` / `App Patch` — **AAP-only**; shared Work + Release JTs; `lock_id` is `tower_workflow_job_id` so Release does not treat this run as a foreign lock; workflow `extra_vars` set `patch_lock_owner` and default `patch_lock_ttl_minutes` (60 vs 20); Work `--always-->` Release — see [`demos/patch-window-lock/`](../../demos/patch-window-lock/README.md) |
 
 ## Demo selection → supporting objects
 

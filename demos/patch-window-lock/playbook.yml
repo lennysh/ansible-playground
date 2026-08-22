@@ -1,0 +1,28 @@
+---
+# This demo is AAP-only. The lease keys off controller-injected
+# tower_workflow_job_id / awx_workflow_job_id (Work + always-node Release
+# share it) and tower_job_id / awx_job_id.
+#
+# Launch Demo | Patch Window | Host Patch and Demo | Patch Window | App Patch
+# after Playground | Apply CaC (select Patch Window Lock).
+#
+# To exercise playbook-aap.yml without a controller (lab only):
+#   ansible-playbook playbook-aap.yml -i <linux_inventory> \
+#     -e tower_workflow_job_id=1 -e tower_job_id=2 \
+#     -e patch_lock_owner=host-patch -e patch_lock_hold_seconds=0 \
+#     --become
+
+- name: Patch window lock is AAP-only
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Point operators at the workflow templates
+      ansible.builtin.fail:
+        msg: >-
+          This demo is AAP-only so the lease can key off
+          tower_workflow_job_id (Work and Release share it) and
+          tower_job_id. Launch "Demo | Patch Window | Host Patch"
+          and "Demo | Patch Window | App Patch" from the controller.
+          Lab without AAP: ansible-playbook playbook-aap.yml -i INVENTORY
+          -e tower_workflow_job_id=1 -e tower_job_id=2 --become

@@ -36,6 +36,13 @@ playground_demo_catalog:
   "Local Facts":
     job_templates:
       - "Demo | Local Facts"
+  "Patch Window Lock":
+    job_templates:
+      - "Demo | Patch Window | Work"
+      - "Demo | Patch Window | Release"
+    workflows:
+      - "Demo | Patch Window | Host Patch"
+      - "Demo | Patch Window | App Patch"
   "Project Sync Collections":
     job_templates:
       - "Demo | Project Sync Collections"
