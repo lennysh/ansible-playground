@@ -80,3 +80,5 @@
         - not (item.skipped | default(false))
         - item.rc | default(1) | int != 0
         - not ((item.item.ignore_errors | default(false) | bool) if item.item is mapping else false)
+      loop_control:
+        label: "{{ item.item.name | default(item.item.cmd | default(item.item)) }}"
