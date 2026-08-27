@@ -1,0 +1,18 @@
+---
+# ansible-playbook playbook.yml -i localhost, -c local -e @commands.example.yml
+#
+# Optional play target (default: all).
+# target_hosts: localhost
+
+commands:
+  - hostname
+  - cmd: id
+  - cmd: pwd
+    chdir: /tmp
+  - argv: [echo, hello from argv]
+  - name: expected missing path (stderr)
+    cmd: ls /this-path-should-not-exist
+    ignore_errors: true
+  # - cmd: id
+  #   become: true
+  #   become_user: root

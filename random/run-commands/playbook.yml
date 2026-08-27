@@ -1,0 +1,82 @@
+---
+# Run a list of ansible.builtin.command invocations.
+#
+# Each list item is a dict of command module parameters plus task keywords
+# (become, become_user, ignore_errors, ...). A bare string is treated as cmd.
+#
+#   ansible-playbook playbook.yml -i localhost, -c local -e @commands.example.yml
+#
+# Extra var `commands` may be a YAML list or a YAML string (AAP extra-vars paste).
+
+- name: Run commands
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  vars:
+    commands: []
+  tasks:
+    - name: Require a non-empty commands list # noqa: run-once[task]
+      ansible.builtin.assert:
+        that:
+          - commands_list | length > 0
+        fail_msg: >-
+          Set extra var 'commands' to a list of command strings or dicts.
+          See random/run-commands/commands.example.yml.
+      vars:
+        commands_list: "{{ commands | from_yaml if commands is string else commands }}"
+      run_once: true
+
+    - name: Run command  # noqa: command-instead-of-shell args[module]
+      ansible.builtin.command:
+        argv: "{{ _cmd.argv | default(omit) }}"
+        chdir: "{{ _cmd.chdir | default(omit) }}"
+        cmd: "{{ _cmd.cmd | default(omit) }}"
+        creates: "{{ _cmd.creates | default(omit) }}"
+        expand_argument_vars: "{{ _cmd.expand_argument_vars | default(omit) }}"
+        removes: "{{ _cmd.removes | default(omit) }}"
+        stdin: "{{ _cmd.stdin | default(omit) }}"
+        stdin_add_newline: "{{ _cmd.stdin_add_newline | default(omit) }}"
+        strip_empty_ends: "{{ _cmd.strip_empty_ends | default(omit) }}"
+      vars:
+        _cmd: "{{ item if item is mapping else {'cmd': item} }}"
+      become: "{{ _cmd.become | default(omit) }}"
+      become_exe: "{{ _cmd.become_exe | default(omit) }}"
+      become_flags: "{{ _cmd.become_flags | default(omit) }}"
+      become_method: "{{ _cmd.become_method | default(omit) }}"
+      become_user: "{{ _cmd.become_user | default(omit) }}"
+      environment: "{{ _cmd.environment | default({}) }}"
+      no_log: "{{ _cmd.no_log | default(omit) }}"
+      timeout: "{{ _cmd.timeout | default(omit) }}"
+      when: not (item is mapping) or (_cmd.when | default(true))
+      changed_when: _cmd.changed_when | default(true)
+      failed_when: false
+      loop: "{{ commands | from_yaml if commands is string else commands }}"
+      loop_control:
+        label: "{{ _cmd.name | default(_cmd.cmd | default(_cmd.argv | default(_cmd))) }}"
+      register: command_results
+
+    - name: Show stdout
+      ansible.builtin.debug:
+        msg: "{{ item.stdout }}"
+      loop: "{{ command_results.results }}"
+      when: item.stdout | default('') | length > 0
+      loop_control:
+        label: "{{ item.item.name | default(item.item.cmd | default(item.item)) }}"
+
+    - name: Show stderr
+      ansible.builtin.debug:
+        msg: "{{ item.stderr }}"
+      loop: "{{ command_results.results }}"
+      when: item.stderr | default('') | length > 0
+      loop_control:
+        label: "{{ item.item.name | default(item.item.cmd | default(item.item)) }}"
+
+    - name: Fail if a command returned non-zero
+      ansible.builtin.fail:
+        msg: >-
+          Command failed (rc={{ item.rc | default('n/a') }}):
+          {{ item.item.name | default(item.item.cmd | default(item.item)) }}
+      loop: "{{ command_results.results }}"
+      when:
+        - not (item.skipped | default(false))
+        - item.rc | default(1) | int != 0
+        - not ((item.item.ignore_errors | default(false) | bool) if item.item is mapping else false)

@@ -2,6 +2,8 @@
 
 Self-contained Ansible playbooks that demonstrate specific concepts, patterns, and pitfalls. Demos live under **[demos/](demos/README.md)** — each directory has a playbook and README.
 
+Grab-bag utilities that are not teaching demos live under **[random/](random/README.md)**.
+
 ## AAP bootstrap
 
 To load these demos into Ansible Automation Platform as an organization with surveyed job templates, see **[aap-playground-setup/](aap-playground-setup/README.md)**.
