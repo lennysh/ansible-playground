@@ -1,0 +1,161 @@
+---
+# Remove the locally attached AAP Controller subscription (license only).
+#
+# Inspect (default — does not DELETE):
+#   ansible-playbook playbook.yml -i localhost, -c local -e @vars/subscription.yml
+#
+# Deactivate:
+#   ansible-playbook playbook.yml -i localhost, -c local -e @vars/subscription.yml \
+#     -e aap_subscription_confirm=true
+#
+# This does not uninstall AAP or revoke the Red Hat account entitlement.
+# See README.md.
+
+- name: Deactivate AAP Controller subscription
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aap_hostname: "{{ lookup('env', 'AAP_HOSTNAME') | default('', true) }}"
+    aap_username: "{{ lookup('env', 'AAP_USERNAME') | default('', true) }}"
+    aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default('', true) }}"
+    aap_token: "{{ lookup('env', 'AAP_TOKEN') | default('', true) }}"
+    aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true, true) }}"
+    aap_use_gateway: true
+    aap_subscription_confirm: false
+  tasks:
+    - name: Require hostname and credentials
+      ansible.builtin.assert:
+        that:
+          - aap_hostname | length > 0
+          - (aap_token | length > 0) or (aap_username | length > 0 and aap_password | length > 0)
+        fail_msg: >-
+          Set aap_hostname and either aap_token or aap_username + aap_password
+          (extra vars, vars/subscription.yml, or AAP_* environment variables).
+          The account must be a Controller superuser to DELETE.
+
+    - name: Build config API URL
+      ansible.builtin.set_fact:
+        aap_config_url: "{{ _scheme }}{{ _host }}{{ _path }}"
+      vars:
+        _raw: "{{ aap_hostname | trim }}"
+        _scheme: "{{ '' if _raw is match('^https?://') else 'https://' }}"
+        _host: "{{ _raw | regex_replace('/+$', '') }}"
+        _path: "{{ '/api/controller/v2/config/' if aap_use_gateway | bool else '/api/v2/config/' }}"
+
+    - name: Call Controller config API
+      module_defaults:
+        ansible.builtin.uri:
+          url: "{{ aap_config_url }}"
+          url_username: "{{ omit if aap_token | length > 0 else aap_username }}"
+          url_password: "{{ omit if aap_token | length > 0 else aap_password }}"
+          force_basic_auth: "{{ aap_token | length == 0 }}"
+          headers: "{{ {'Authorization': 'Bearer ' ~ aap_token} if aap_token | length > 0 else {} }}"
+          validate_certs: "{{ aap_validate_certs | bool }}"
+          return_content: true
+      block:
+        - name: Show current subscription (GET)
+          ansible.builtin.uri:
+            method: GET
+            status_code: [200, 401, 403, 404]
+          register: aap_config_get
+          no_log: true
+
+        - name: Fail on unexpected GET status
+          ansible.builtin.assert:
+            that:
+              - aap_config_get.status == 200
+            fail_msg: "{{ _get_fail_msg[aap_config_get.status | string] | default(_get_fail_msg.other) }}"
+          vars:
+            _get_fail_msg:
+              "401": "HTTP 401 from {{ aap_config_url }} — bad username/password or token."
+              "403": "HTTP 403 from {{ aap_config_url }} — authenticated, but not allowed. DELETE needs a Controller superuser."
+              "404": "HTTP 404 from {{ aap_config_url }} — wrong API path. Set aap_use_gateway true for AAP 2.5+ (Gateway), false for 2.4 / direct Controller."
+              other: "HTTP {{ aap_config_get.status }} from {{ aap_config_url }}."
+
+        - name: Summarize attached subscription
+          ansible.builtin.debug:
+            msg:
+              api_url: "{{ aap_config_url }}"
+              controller_version: "{{ aap_config_get.json.version | default('unknown') }}"
+              licensed: "{{ _licensed }}"
+              subscription_name: "{{ _info.subscription_name | default('none') }}"
+              license_type: "{{ _info.license_type | default('UNLICENSED') }}"
+              sku: "{{ _info.sku | default('none') }}"
+              instance_count: "{{ _info.instance_count | default(0) }}"
+              trial: "{{ _info.trial | default(false) }}"
+              date_expired: "{{ _info.date_expired | default('n/a') }}"
+              time_remaining_seconds: "{{ _info.time_remaining | default('n/a') }}"
+          vars:
+            _info: "{{ aap_config_get.json.license_info | default({}) }}"
+            _licensed: "{{ (_info.valid_key | default(false)) | bool }}"
+
+        - name: End when no subscription is attached
+          when: not ((aap_config_get.json.license_info | default({})).valid_key | default(false) | bool)
+          block:
+            - name: Report already unlicensed
+              ansible.builtin.debug:
+                msg: No valid Controller subscription is attached. Nothing to DELETE.
+            - name: Skip deactivation
+              ansible.builtin.meta: end_play
+
+        - name: End after inspect unless confirmed
+          when: not (aap_subscription_confirm | bool)
+          block:
+            - name: Explain how to deactivate
+              ansible.builtin.debug:
+                msg: >-
+                  A subscription is attached. Re-run with aap_subscription_confirm=true
+                  to DELETE this endpoint (license only — other Controller settings are kept).
+                  Example: ansible-playbook playbook.yml -i localhost, -c local
+                  -e @vars/subscription.yml -e aap_subscription_confirm=true
+            - name: Skip deactivation
+              ansible.builtin.meta: end_play
+
+        - name: Remove locally attached subscription (DELETE)
+          ansible.builtin.uri:
+            method: DELETE
+            status_code: [204, 401, 403, 404]
+            return_content: false
+          register: aap_config_delete
+          when: not ansible_check_mode
+          no_log: true
+
+        - name: Fail on unexpected DELETE status
+          ansible.builtin.assert:
+            that:
+              - aap_config_delete.status == 204
+            fail_msg: "{{ _del_fail_msg[aap_config_delete.status | string] | default(_del_fail_msg.other) }}"
+          vars:
+            _del_fail_msg:
+              "401": "HTTP 401 on DELETE — bad username/password or token."
+              "403": "HTTP 403 on DELETE — the user is not a Controller superuser."
+              "404": "HTTP 404 on DELETE — wrong API path (aap_use_gateway)."
+              other: "HTTP {{ aap_config_delete.status }} on DELETE {{ aap_config_url }}."
+          when: not ansible_check_mode
+
+        - name: Confirm subscription was removed (GET)
+          ansible.builtin.uri:
+            method: GET
+            status_code: [200]
+          register: aap_config_after
+          when: not ansible_check_mode
+          no_log: true
+
+        - name: Fail if license is still attached
+          ansible.builtin.assert:
+            that:
+              - not ((aap_config_after.json.license_info | default({})).valid_key | default(false) | bool)
+            fail_msg: >-
+              DELETE returned 204 but GET still shows a valid license.
+              Confirm you hit the intended Controller cluster.
+          when: not ansible_check_mode
+
+        - name: Report deactivation complete
+          ansible.builtin.debug:
+            msg: >-
+              Local Controller subscription removed. The UI will prompt for a new
+              subscription. Job launches stay blocked until a valid subscription is
+              attached or the application is uninstalled. This did not revoke the
+              Red Hat account entitlement.
+          when: not ansible_check_mode

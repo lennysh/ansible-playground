@@ -1,0 +1,21 @@
+---
+# Copy to subscription.yml and fill in. Do not commit real credentials.
+#
+#   cp vars/subscription.example.yml vars/subscription.yml
+
+# Hostname or full URL of the AAP UI / API (Gateway on 2.5+, Controller on 2.4).
+aap_hostname: aap.example.com
+
+# true  — AAP 2.5+ behind automation hub/gateway  →  /api/controller/v2/config/
+# false — AAP 2.4, Tower, or direct Controller     →  /api/v2/config/
+aap_use_gateway: true
+
+# Superuser basic auth, or a superuser OAuth2/PAT token (token wins if both set).
+aap_username: admin
+aap_password: change-me
+# aap_token: ""
+
+aap_validate_certs: true
+
+# Safety gate. Inspect-only until this is true.
+aap_subscription_confirm: false
