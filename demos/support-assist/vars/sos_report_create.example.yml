@@ -1,6 +1,7 @@
 ---
-# Create a new case with sosreport + upload.
-# ansible-playbook -i inventories/hosts.yml playbook-sos-report.yml -e @vars/sos_report_create.example.yml
+# Create a new case with RHEL sosreport + upload.
+# ansible-playbook -i inventories/hosts.yml playbook-sos-report.yml \
+#   -e @vars/sos_report_create.example.yml
 case_product: Red Hat Enterprise Linux
 case_product_version: "9.4"
 case_summary: Automated Test Case Creation - SOS Report Upload
@@ -9,3 +10,6 @@ case_type: Configuration Issue
 case_severity: "4 (Low)"
 upload: true
 clean: true
+# Optional sos CLI knobs (see roles/sos_report README):
+# sos_report_low_priority: true   # default true in collection 2.0+
+# sos_report_since: "1d"

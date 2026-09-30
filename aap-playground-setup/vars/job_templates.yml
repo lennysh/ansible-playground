@@ -524,6 +524,21 @@ controller_templates:
           required: false
           default: ""
 
+  - name: "Demo | Tags"
+    description: >-
+      Playbook tags — selective runs; special focus on always and never.
+      Leave Job Tags empty for the default (all); try config, debug, never,
+      or all,never. Try Skip Tags always or config (watch the always+config task).
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/tags/playbook-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    job_type: run
+    become_enabled: false
+    ask_tags_on_launch: true
+    ask_skip_tags_on_launch: true
+    survey_enabled: false
+
   - name: "Demo | When"
     description: "when: pitfalls — version checks, bool coercion, survey strings"
     organization: "{{ playground_org_name }}"
@@ -1462,9 +1477,10 @@ controller_templates:
           type: text
           required: false
 
-  - name: "Demo | Support Assist | SOS Report | Create Case"
+  - name: "Demo | Support Assist | SOS Report (RHEL) | Create Case"
     description: >-
-      Collect sosreport from inventory hosts, create a Red Hat support case, and upload
+      Collect sosreport from RHEL inventory hosts (sos_report_rhel), create a Red Hat
+      support case, and upload
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demos/support-assist/playbook-sos-report-aap.yml
@@ -1712,9 +1728,10 @@ controller_templates:
             - 3 (Normal)
             - 4 (Low)
 
-  - name: "Demo | Support Assist | SOS Report | Update Case"
+  - name: "Demo | Support Assist | SOS Report (RHEL) | Update Case"
     description: >-
-      Collect sosreport from inventory hosts and upload to an existing Red Hat support case
+      Collect sosreport from RHEL inventory hosts (sos_report_rhel) and upload to an
+      existing Red Hat support case
     organization: "{{ playground_org_name }}"
     project: "{{ playground_project_name }}"
     playbook: demos/support-assist/playbook-sos-report-aap.yml
@@ -1739,6 +1756,201 @@ controller_templates:
           required: true
           min: 8
           max: 8
+
+  - name: "Demo | Support Assist | SOS Report (OCP) | Create Case"
+    description: >-
+      Collect sosreport from OCP/RHCOS nodes via oc debug (sos_report_ocp), create a
+      Red Hat support case, and upload. Requires oc on the EE.
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/support-assist/playbook-sos-report-ocp-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: What is the Product?
+          question_description: Select the product that is experiencing the issue.
+          variable: case_product
+          type: multiplechoice
+          required: true
+          default: OpenShift Container Platform
+          choices:
+            - OpenShift Container Platform
+            - OpenShift Dedicated
+            - Azure Red Hat OpenShift
+            - Red Hat OpenShift Service on AWS
+            - Red Hat OpenShift Service on AWS Hosted Control Planes
+            - Red Hat Openstack Services on OpenShift
+            - Other
+        - question_name: Product Version
+          question_description: >-
+            Enter the version of the product that is experiencing the issue. Must match a version
+            listed in the dropdown (for the selected product) on the Red Hat Support Portal.
+          variable: case_product_version
+          type: text
+          required: true
+          default: ""
+        - question_name: Case Summary/Title
+          question_description: >-
+            A short, descriptive summary of the issue (Max 255 characters). This serves as the public
+            title of the case.
+          variable: case_summary
+          type: text
+          required: true
+          default: Automated Test Case Creation - OCP Node SOS Report Upload
+        - question_name: Problem Description/Details
+          question_description: >-
+            A detailed explanation of the issue, including steps to reproduce, observed behavior, and
+            expected results. Provide as much detail as possible. CRM API v3 stores this as plaintext.
+          variable: case_description
+          type: textarea
+          required: true
+          default: Automated case created via Ansible Automation Platform for testing purposes.
+        - question_name: What is the Type of Issue?
+          question_description: >-
+            Select the category that best defines the issue to ensure the case is routed to the
+            correct support queue (e.g., Configuration, Bug, or Usage).
+          variable: case_type
+          type: multiplechoice
+          required: true
+          default: Configuration Issue
+          choices:
+            - Account / Customer Service Request
+            - Certification
+            - Configuration Issue
+            - Defect / Bug
+            - Feature / Enhancement Request
+            - Other
+            - RCA Only
+            - Usage / Documentation Help
+        - question_name: Case Severity
+          question_description: >-
+            Select the severity based on the immediate business impact. **1 (Urgent)** requires
+            severe, critical impact; **4 (Low)** is a non-urgent query or information request.
+          variable: case_severity
+          type: multiplechoice
+          required: true
+          default: 4 (Low)
+          choices:
+            - 1 (Urgent)
+            - 2 (High)
+            - 3 (Normal)
+            - 4 (Low)
+        - question_name: OpenShift Login Token
+          question_description: >-
+            Bearer token (Service Account or OAuth) used by oc debug node/ to collect SOS reports.
+          variable: sos_report_ocp_token
+          type: password
+          required: true
+          default: ""
+        - question_name: OpenShift Cluster API URL
+          question_description: >-
+            Full URL of the cluster API (e.g., https://api.mycluster.domain:6443).
+          variable: sos_report_ocp_server_url
+          type: text
+          required: true
+          default: "https://api.example.invalid:6443"
+        - question_name: Validate SSL
+          question_description: >-
+            Set to 'true' to validate the cluster SSL certificate. Set to 'false' only for
+            self-signed or internal CA certificates.
+          variable: sos_report_ocp_validate_ssl
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Node label selector (optional)
+          question_description: >-
+            Kubernetes label selector used when no explicit node list is given
+            (e.g., node-role.kubernetes.io/worker=). Leave blank to collect from all nodes.
+          variable: sos_report_ocp_node_selector
+          type: text
+          required: false
+          default: ""
+        - question_name: Explicit node names (optional)
+          question_description: >-
+            One node name per line. When set, only these nodes are collected (overrides the
+            label selector). Leave blank to use the selector or all nodes.
+          variable: sos_report_ocp_nodes_text
+          type: textarea
+          required: false
+          default: ""
+
+  - name: "Demo | Support Assist | SOS Report (OCP) | Update Case"
+    description: >-
+      Collect sosreport from OCP/RHCOS nodes via oc debug (sos_report_ocp) and upload to an
+      existing Red Hat support case. Requires oc on the EE.
+    organization: "{{ playground_org_name }}"
+    project: "{{ playground_project_name }}"
+    playbook: demos/support-assist/playbook-sos-report-ocp-aap.yml
+    inventory: "{{ playground_inventory_name }}"
+    credentials:
+      - "{{ playground_offline_token_credential_name }}"
+    job_type: run
+    become_enabled: false
+    survey_enabled: true
+    survey_spec:
+      name: ""
+      description: ""
+      spec:
+        - question_name: Existing Red Hat Case ID
+          question_description: >-
+            **Enter the existing Red Hat Support Case number (e.g., 00000000).** This ID is required
+            to skip case creation and proceed directly to diagnostic collection and file upload.
+          variable: case_id
+          type: text
+          required: true
+          min: 8
+          max: 8
+        - question_name: OpenShift Login Token
+          question_description: >-
+            Bearer token (Service Account or OAuth) used by oc debug node/ to collect SOS reports.
+          variable: sos_report_ocp_token
+          type: password
+          required: true
+          default: ""
+        - question_name: OpenShift Cluster API URL
+          question_description: >-
+            Full URL of the cluster API (e.g., https://api.mycluster.domain:6443).
+          variable: sos_report_ocp_server_url
+          type: text
+          required: true
+          default: "https://api.example.invalid:6443"
+        - question_name: Validate SSL
+          question_description: >-
+            Set to 'true' to validate the cluster SSL certificate. Set to 'false' only for
+            self-signed or internal CA certificates.
+          variable: sos_report_ocp_validate_ssl
+          type: multiplechoice
+          required: true
+          default: "false"
+          choices:
+            - "true"
+            - "false"
+        - question_name: Node label selector (optional)
+          question_description: >-
+            Kubernetes label selector used when no explicit node list is given
+            (e.g., node-role.kubernetes.io/worker=). Leave blank to collect from all nodes.
+          variable: sos_report_ocp_node_selector
+          type: text
+          required: false
+          default: ""
+        - question_name: Explicit node names (optional)
+          question_description: >-
+            One node name per line. When set, only these nodes are collected (overrides the
+            label selector). Leave blank to use the selector or all nodes.
+          variable: sos_report_ocp_nodes_text
+          type: textarea
+          required: false
+          default: ""
 
   - name: "Demo | Support Assist | RH Case | Create"
     description: Create a Red Hat support case via the API (no diagnostic gather)
@@ -1864,20 +2076,20 @@ controller_templates:
           default: ""
         - question_name: Comment type
           question_description: >-
-            markdown (default, matches rh_case) or plaintext. Ignored if Comment
-            is blank.
+            CRM API v3 posts comments as plaintext (markdown is not rendered).
+            Ignored if Comment is blank.
           variable: case_comment_type
           type: multiplechoice
           required: false
-          default: markdown
+          default: plaintext
           choices:
-            - markdown
             - plaintext
         - question_name: Attachment path on each host (optional)
           question_description: >-
             Absolute path read on every inventory host in the job (e.g. same
-            path on three servers → three uploads). Provide this and/or a
-            comment above (at least one is required).
+            path on three servers → three uploads via CRM API v3
+            presigned URL). Provide this and/or a comment above (at least one
+            is required).
           variable: case_attachment
           type: text
           required: false

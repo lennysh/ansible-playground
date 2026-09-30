@@ -1,6 +1,7 @@
 ---
-# Update an existing case with sosreport + upload.
-# ansible-playbook -i inventories/hosts.yml playbook-sos-report.yml -e @vars/sos_report_update.example.yml
+# Update an existing case with RHEL sosreport + upload.
+# ansible-playbook -i inventories/hosts.yml playbook-sos-report.yml \
+#   -e @vars/sos_report_update.example.yml
 case_id: "01234567"
 upload: true
 clean: true

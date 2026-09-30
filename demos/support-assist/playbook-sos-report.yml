@@ -1,5 +1,8 @@
 ---
-# CLI wrapper — imports infra.support_assist.sos_report.
-# Run against a real inventory (-i). See vars/*.example.yml and the demo README.
-- name: Run infra.support_assist.sos_report
-  ansible.builtin.import_playbook: infra.support_assist.sos_report
+# CLI wrapper — imports infra.support_assist.sos_report_rhel (RHEL hosts).
+# Run against a real inventory (-i). See vars/sos_report_*.example.yml.
+#
+# The collection's sos_report playbook is a deprecated alias; prefer
+# sos_report_rhel (this wrapper) or playbook-sos-report-ocp.yml for OCP nodes.
+- name: Run infra.support_assist.sos_report_rhel
+  ansible.builtin.import_playbook: infra.support_assist.sos_report_rhel

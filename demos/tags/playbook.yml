@@ -1,0 +1,88 @@
+---
+# Tags demo — selective task runs with special focus on always / never.
+# Docs: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_tags.html
+#
+# Preview without executing:
+#   ansible-playbook playbook.yml --list-tags
+#   ansible-playbook playbook.yml --tags config --list-tasks
+- name: Tags — always, never, and selective execution
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    # ------------------------------------------------------------------
+    # Special tag: always
+    # ------------------------------------------------------------------
+    - name: "1. always — safety / preflight (expect: RUN unless skipped)"
+      ansible.builtin.debug:
+        msg: >-
+          Tagged always — Ansible runs this with the default (all) and with any
+          --tags selection, unless you --skip-tags always (or skip another tag
+          also on this task).
+      tags:
+        - always
+
+    # ------------------------------------------------------------------
+    # Untagged vs normal tags
+    # ------------------------------------------------------------------
+    - name: "2. untagged — no tags keyword (expect: RUN with default; OMITTED with --tags X)"
+      ansible.builtin.debug:
+        msg: >-
+          No tags — runs when you use the default (all) or --tags untagged;
+          omitted when you pass specific tags such as --tags config.
+
+    - name: "3. packages — normal tag (expect: RUN with default)"
+      ansible.builtin.debug:
+        msg: "Tagged packages — select with --tags packages"
+      tags:
+        - packages
+
+    - name: "4. config — normal tag (expect: RUN with default)"
+      ansible.builtin.debug:
+        msg: "Tagged config — select with --tags config"
+      tags:
+        - config
+
+    # ------------------------------------------------------------------
+    # always combined with another tag
+    # ------------------------------------------------------------------
+    - name: "5. always + config — always, unless you skip always or config"
+      ansible.builtin.debug:
+        msg: >-
+          Tagged always,config — runs by default and with --tags config;
+          omitted by --skip-tags always OR --skip-tags config.
+      tags:
+        - always
+        - config
+
+    # ------------------------------------------------------------------
+    # Special tag: never
+    # ------------------------------------------------------------------
+    - name: "6. never + debug — rare debug dump (expect: OMITTED by default)"
+      ansible.builtin.debug:
+        msg: >-
+          Tagged never,debug — omitted unless you request it with --tags debug,
+          --tags never, or --tags all,never.
+      tags:
+        - never
+        - debug
+
+    - name: "7. never alone — only when never is requested (expect: OMITTED by default)"
+      ansible.builtin.debug:
+        msg: "Tagged never — omitted unless you explicitly pass --tags never (or all,never)"
+      tags:
+        - never
+
+    # ------------------------------------------------------------------
+    # Tag inheritance via block
+    # ------------------------------------------------------------------
+    - name: "8. deploy block — tag on the block applies to every task inside"
+      tags:
+        - deploy
+      block:
+        - name: "8a. deploy — first block task (expect: RUN with default)"
+          ansible.builtin.debug:
+            msg: "Block-level deploy tag is inherited by this task"
+
+        - name: "8b. deploy — second block task (expect: RUN with default)"
+          ansible.builtin.debug:
+            msg: "Both block tasks run together when deploy is selected (or with all)"

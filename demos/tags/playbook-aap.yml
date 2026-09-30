@@ -1,0 +1,4 @@
+---
+# AAP version — identical tasks to playbook.yml. Use Job Tags / Skip Tags at
+# launch (Prompt on Launch) to exercise always / never / selective runs.
+- ansible.builtin.import_playbook: playbook.yml

@@ -1,0 +1,20 @@
+---
+# Create a new case with OCP node sosreport (oc debug) + upload.
+# Requires `oc` on the control/EE node. export REDHAT_OFFLINE_TOKEN=...
+# ansible-playbook playbook-sos-report-ocp.yml -e @vars/sos_report_ocp_create.example.yml
+case_product: OpenShift Container Platform
+case_product_version: "4.16"
+case_summary: Automated Test Case Creation - OCP Node SOS Report Upload
+case_description: Automated case created via Ansible for testing purposes.
+case_type: Configuration Issue
+case_severity: "4 (Low)"
+upload: true
+clean: true
+sos_report_ocp_server_url: "https://api.example.invalid:6443"
+sos_report_ocp_token: "sha256~REPLACE_ME"
+sos_report_ocp_validate_ssl: false
+# Leave both empty to collect from all nodes. Prefer a selector or explicit list.
+# sos_report_ocp_node_selector: "node-role.kubernetes.io/worker="
+# sos_report_ocp_nodes:
+#   - worker-0.ocp.example.com
+# Or survey-style textarea (one name per line) via sos_report_ocp_nodes_text.

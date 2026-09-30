@@ -1,4 +1,5 @@
 ---
 collections:
   - name: infra.support_assist
-    version: ">=1.0.1"
+    # CRM API v3 + sos_report_rhel / sos_report_ocp
+    version: ">=2.0.0"

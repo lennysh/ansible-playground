@@ -1,0 +1,13 @@
+---
+# Update an existing case with OCP node sosreport (oc debug) + upload.
+# Requires `oc` on the control/EE node. export REDHAT_OFFLINE_TOKEN=...
+# ansible-playbook playbook-sos-report-ocp.yml -e @vars/sos_report_ocp_update.example.yml
+case_id: "01234567"
+upload: true
+clean: true
+sos_report_ocp_server_url: "https://api.example.invalid:6443"
+sos_report_ocp_token: "sha256~REPLACE_ME"
+sos_report_ocp_validate_ssl: false
+# sos_report_ocp_node_selector: "node-role.kubernetes.io/worker="
+# sos_report_ocp_nodes:
+#   - worker-0.ocp.example.com

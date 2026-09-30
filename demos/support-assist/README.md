@@ -1,24 +1,25 @@
 # demos/support-assist — Red Hat Support Assist (infra.support_assist)
 
-Wrappers around the [infra.support_assist](https://github.com/redhat-cop/infra.support_assist) collection: gather diagnostics (AAP API dump, OpenShift must-gather, sosreport), optionally **create or update** a Red Hat Support Case, and upload artifacts.
+Wrappers around the [infra.support_assist](https://github.com/redhat-cop/infra.support_assist) collection (**2.0+** / CRM API **v3**): gather diagnostics (AAP API dump, OpenShift must-gather, RHEL or OCP sosreport), optionally **create or update** a Red Hat Support Case, and upload artifacts.
 
-Each flow has a CLI playbook and an AAP twin (`*-aap.yml`). Job templates live in [`aap-playground-setup/vars/job_templates.yml`](../aap-playground-setup/vars/job_templates.yml).
+Each flow has a CLI playbook and an AAP twin (`*-aap.yml`). Job templates live in [`aap-playground-setup/vars/job_templates.yml`](../../aap-playground-setup/vars/job_templates.yml).
 
 ## Prerequisites
 
 | Need | Used by |
 |------|---------|
-| `infra.support_assist` collection | all |
+| `infra.support_assist` `>=2.0.0` | all |
 | Red Hat offline token (`redhat_offline_token` / `REDHAT_OFFLINE_TOKEN`) | case create/update / upload |
 | AAP API credential (or `AAP_*` env) | AAP API Gather |
-| `oc` on control/EE | OCP Must Gather |
-| SSH + become to Linux hosts | SOS Report |
-| `curl` on control/EE | case file upload |
+| `oc` on control/EE | OCP Must Gather, OCP SOS Report |
+| SSH + become to Linux hosts | SOS Report (RHEL) |
 
 ```bash
 ansible-galaxy collection install -r collections/requirements.yml
 export REDHAT_OFFLINE_TOKEN='YOUR_OFFLINE_TOKEN'   # https://access.redhat.com/management/api
 ```
+
+Prefer `redhat_offline_token` (extra-var or credential). The collection still accepts deprecated `offline_token` as a fallback.
 
 ## Playbooks
 
@@ -26,11 +27,14 @@ export REDHAT_OFFLINE_TOKEN='YOUR_OFFLINE_TOKEN'   # https://access.redhat.com/m
 |----------|------------------|-------------------|
 | [`playbook-aap-api-gather.yml`](playbook-aap-api-gather.yml) | `infra.support_assist.aap_api_gather` | localhost |
 | [`playbook-ocp-must-gather.yml`](playbook-ocp-must-gather.yml) | `infra.support_assist.ocp_must_gather` | localhost |
-| [`playbook-sos-report.yml`](playbook-sos-report.yml) | `infra.support_assist.sos_report` | real Linux hosts |
+| [`playbook-sos-report.yml`](playbook-sos-report.yml) | `infra.support_assist.sos_report_rhel` | real Linux hosts |
+| [`playbook-sos-report-ocp.yml`](playbook-sos-report-ocp.yml) | `infra.support_assist.sos_report_ocp` | localhost (`oc debug`) |
 | [`playbook-rh-case-create.yml`](playbook-rh-case-create.yml) | `infra.support_assist.rh_case_create` | localhost |
 | [`playbook-rh-case-update.yml`](playbook-rh-case-update.yml) | roles (survey-friendly builder) | localhost |
 
 **Create vs update:** omit `case_id` and supply create fields (`case_summary`, `case_description`, `case_product`, `case_product_version`, `case_type`, `case_severity`) to create; set `case_id` to update an existing case.
+
+**Comments:** CRM API v3 posts comments as **plaintext** (markdown is not rendered).
 
 Example vars: [`vars/`](vars/) (`*.example.yml`).
 
@@ -43,10 +47,13 @@ ansible-playbook playbook-aap-api-gather.yml -e @vars/aap_api_gather_update.exam
 # OCP must-gather → new case
 ansible-playbook playbook-ocp-must-gather.yml -e @vars/ocp_must_gather_create.example.yml
 
-# SOS report (needs inventory)
+# SOS report on RHEL hosts (needs inventory)
 cp inventories/hosts.example.yml inventories/hosts.yml   # edit hosts
 ansible-playbook -i inventories/hosts.yml playbook-sos-report.yml \
   -e @vars/sos_report_create.example.yml
+
+# SOS report on OCP nodes via oc debug
+ansible-playbook playbook-sos-report-ocp.yml -e @vars/sos_report_ocp_create.example.yml
 
 # Case API only
 ansible-playbook playbook-rh-case-create.yml -e @vars/rh_case_create.example.yml
@@ -65,14 +72,16 @@ After syncing this project, run **Playground | Apply CaC** and select the **Supp
 | Demo \| Support Assist \| AAP API Gather \| Update Case | same | same |
 | Demo \| Support Assist \| OCP Must Gather \| Create Case | `playbook-ocp-must-gather-aap.yml` | Hub Offline Token |
 | Demo \| Support Assist \| OCP Must Gather \| Update Case | same | same |
-| Demo \| Support Assist \| SOS Report \| Create Case | `playbook-sos-report-aap.yml` | Hub Offline Token + Machine (ask inventory/limit) |
-| Demo \| Support Assist \| SOS Report \| Update Case | same | same |
+| Demo \| Support Assist \| SOS Report (RHEL) \| Create Case | `playbook-sos-report-aap.yml` | Hub Offline Token + Machine (ask inventory/limit) |
+| Demo \| Support Assist \| SOS Report (RHEL) \| Update Case | same | same |
+| Demo \| Support Assist \| SOS Report (OCP) \| Create Case | `playbook-sos-report-ocp-aap.yml` | Hub Offline Token |
+| Demo \| Support Assist \| SOS Report (OCP) \| Update Case | same | same |
 | Demo \| Support Assist \| RH Case \| Create | `playbook-rh-case-create-aap.yml` | Hub Offline Token |
 | Demo \| Support Assist \| RH Case \| Update | `playbook-rh-case-update-aap.yml` | Hub Offline Token |
 
 Offline token is injected as `redhat_offline_token` via the **Playground Hub Offline Token** credential type (same as the collection-download demo). Do not put the token in a survey.
 
-OCP must-gather needs an EE (or control node) with `oc` installed.
+OCP must-gather and OCP SOS need an EE (or control node) with `oc` installed.
 
 ## Layout
 
@@ -97,3 +106,4 @@ See [eda-playground `opentrashmail_support_assist`](https://github.com/lennysh/e
 - [infra.support_assist README](https://github.com/redhat-cop/infra.support_assist)
 - [Case option lists](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md)
 - [Red Hat API tokens](https://access.redhat.com/management/api)
+- [CRM API v1 decommission](https://access.redhat.com/articles/7146730)

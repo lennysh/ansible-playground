@@ -1,0 +1,48 @@
+---
+# CLI / AAP wrapper for infra.support_assist.sos_report_ocp (OCP nodes via oc debug).
+# Runs on localhost; requires `oc` on the control/EE node.
+#
+# Survey-friendly: sos_report_ocp_nodes_text (textarea, one node per line) is
+# mapped to sos_report_ocp_nodes (list) before the collection playbook runs.
+# You can still pass sos_report_ocp_nodes as a YAML list via -e.
+#
+# See vars/sos_report_ocp_*.example.yml and the demo README.
+- name: Normalize survey-friendly OCP SOS vars
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Map sos_report_ocp_nodes_text (survey textarea) to sos_report_ocp_nodes list
+      when:
+        - >-
+          sos_report_ocp_nodes is not defined
+          or (sos_report_ocp_nodes is string)
+          or (sos_report_ocp_nodes | length | int) == 0
+        - sos_report_ocp_nodes_text | default('') | string | trim | length > 0
+      ansible.builtin.set_fact:
+        sos_report_ocp_nodes: >-
+          {{
+            sos_report_ocp_nodes_text | string | trim | split('\n')
+            | map('trim') | reject('equalto', '') | list
+          }}
+
+    - name: Coerce empty/string sos_report_ocp_nodes to a list
+      when: >-
+        sos_report_ocp_nodes is not defined
+        or sos_report_ocp_nodes is none
+        or (sos_report_ocp_nodes is string)
+      ansible.builtin.set_fact:
+        sos_report_ocp_nodes: >-
+          {{
+            []
+            if (sos_report_ocp_nodes is not defined
+                or sos_report_ocp_nodes is none
+                or (sos_report_ocp_nodes | string | trim | length) == 0)
+            else (
+              sos_report_ocp_nodes | string | trim | split('\n')
+              | map('trim') | reject('equalto', '') | list
+            )
+          }}
+
+- name: Run infra.support_assist.sos_report_ocp
+  ansible.builtin.import_playbook: infra.support_assist.sos_report_ocp

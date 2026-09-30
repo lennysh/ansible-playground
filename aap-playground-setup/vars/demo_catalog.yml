@@ -64,8 +64,13 @@ playground_demo_catalog:
       - "Demo | Support Assist | OCP Must Gather | Update Case"
       - "Demo | Support Assist | RH Case | Create"
       - "Demo | Support Assist | RH Case | Update"
-      - "Demo | Support Assist | SOS Report | Create Case"
-      - "Demo | Support Assist | SOS Report | Update Case"
+      - "Demo | Support Assist | SOS Report (RHEL) | Create Case"
+      - "Demo | Support Assist | SOS Report (RHEL) | Update Case"
+      - "Demo | Support Assist | SOS Report (OCP) | Create Case"
+      - "Demo | Support Assist | SOS Report (OCP) | Update Case"
+  "Tags":
+    job_templates:
+      - "Demo | Tags"
   "When":
     job_templates:
       - "Demo | When"

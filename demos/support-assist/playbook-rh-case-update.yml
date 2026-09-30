@@ -9,7 +9,7 @@
 #
 # Required: case_id, redhat_offline_token (or REDHAT_OFFLINE_TOKEN)
 # Optional: case_comment, case_attachment (at least one required),
-#           case_comment_type (markdown|plaintext, default markdown),
+#           case_comment_type (plaintext; CRM API v3 does not render markdown),
 #           case_attachment_description (survey default when using AAP)
 # Or pass a non-empty case_updates_needed directly (skips the builder).
 #
@@ -39,7 +39,8 @@
           ansible.builtin.set_fact:
             case_updates_needed: "{{ __case_updates }}"
           vars:
-            __comment_type: "{{ case_comment_type | default('markdown') | trim }}"
+            # CRM API v3 comments are plaintext only (markdown is not rendered).
+            __comment_type: "{{ case_comment_type | default('plaintext') | trim }}"
             __case_updates: >-
               {{
                 (
@@ -121,7 +122,8 @@
           ansible.builtin.include_role:
             name: infra.support_assist.rh_case
 
-    # Attachments are read from each targeted host's filesystem (curl -F file=@…).
+    # Attachments are read from each targeted host's filesystem, then uploaded
+    # via the CRM API v3 presigned URL flow (initiate → PUT → poll COMPLETED).
     - name: Upload attachment(s) from each targeted host
       when: case_updates_attachments | length > 0
       block:

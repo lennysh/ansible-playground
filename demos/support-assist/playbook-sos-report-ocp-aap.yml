@@ -1,0 +1,4 @@
+---
+# AAP version — survey / credential extra vars drive the collection playbook.
+# Uses playground localhost inventory; no Machine credential (oc debug from EE).
+- ansible.builtin.import_playbook: playbook-sos-report-ocp.yml
