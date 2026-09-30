@@ -1,0 +1,29 @@
+# Copy to ansible.cfg in this directory (ansible.cfg is gitignored).
+#
+# ansible-galaxy cannot do OAuth client_credentials natively. It POSTs
+# grant_type=refresh_token to auth_url. Run the local shim first:
+#
+#   set -a && source .env && set +a
+#   python3 galaxy_sa_auth_shim.py --port 8765
+#
+#   cp ansible.cfg.example ansible.cfg
+#   ansible-galaxy collection download ansible.posix:2.2.2 -p ./cols
+
+[defaults]
+# collections_paths = ./collections
+
+[galaxy]
+server_list = rh_hub_certified, rh_hub_validated, galaxy
+
+[galaxy_server.rh_hub_certified]
+url = https://console.redhat.com/api/automation-hub/content/published/
+auth_url = http://127.0.0.1:8765/token
+token = ignored-placeholder
+
+[galaxy_server.rh_hub_validated]
+url = https://console.redhat.com/api/automation-hub/content/validated/
+auth_url = http://127.0.0.1:8765/token
+token = ignored-placeholder
+
+[galaxy_server.galaxy]
+url = https://galaxy.ansible.com/

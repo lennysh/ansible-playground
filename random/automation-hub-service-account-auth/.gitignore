@@ -1,0 +1,11 @@
+.env
+.env.local
+ansible.cfg
+hub_token.out
+*.tar.gz
+cols/
+collections/
+__pycache__/
+*.pyc
+.DS_Store
+ignore_*
